@@ -41,7 +41,7 @@ async function run(label, viewport) {
   });
 
   await step(S('no horizontal overflow on every page'), async () => {
-    for (const r of ['/', '/logs', '/logs/new', '/troubleshoot', '/commands', '/security', '/agent', '/voice', '/files', '/tasks', '/requirements', '/apprenticeship', '/import', '/kb', '/skills', '/settings']) {
+    for (const r of ['/', '/logs', '/logs/new', '/troubleshoot', '/commands', '/security', '/agent', '/voice', '/files', '/live', '/board', '/tasks', '/requirements', '/apprenticeship', '/import', '/kb', '/skills', '/settings']) {
       await go(r); await noHScroll();
     }
   });
@@ -528,6 +528,31 @@ async function run(label, viewport) {
     ok(await p.getByRole('button', { name: 'Save names' }).isDisabled(), 'email in a label is blocked');
     await p.getByRole('button', { name: 'Reset appearance' }).click();
     ok((await p.evaluate(() => document.documentElement.style.fontSize)) === '', 'reset clears text size');
+  });
+
+  await step(S('live notes: timeline is scrubbed, guide builds, finish and reopen'), async () => {
+    await go('/live');
+    await p.getByLabel('Job label (optional)').fill('Scan to email fault');
+    await p.getByRole('button', { name: 'Start a live note' }).click();
+    await p.getByLabel('Add a line').fill('Checked the SMTP settings for jo.bloggs@client.com');
+    await p.getByRole('button', { name: 'Add', exact: true }).click();
+    await p.getByRole('list', { name: 'Timeline' }).waitFor({ state: 'visible', timeout: 3000 });
+    ok(!(await p.getByRole('list', { name: 'Timeline' }).innerText()).includes('jo.bloggs'), 'email removed from the line');
+    ok((await p.getByText(/detail.* removed/).count()) > 0, 'removal is reported');
+    ok(!(await p.evaluate(() => Object.values(localStorage).join('|'))).includes('jo.bloggs'), 'email not stored');
+    await p.getByRole('button', { name: 'Fixed', exact: true }).click();
+    for (const t of ['Open the scan profile in the web admin', 'Re-enter the SMTP server name', 'Send a test scan to email']) {
+      await p.getByLabel('Add a line').fill(t);
+      await p.getByRole('button', { name: 'Add', exact: true }).click();
+    }
+    await p.getByRole('region', { name: 'Guide so far' }).getByTestId('visual-guide').waitFor({ state: 'visible', timeout: 4000 });
+    await p.getByRole('button', { name: 'Save guide' }).click();
+    await p.getByText(/Guide saved/).waitFor({ state: 'visible', timeout: 4000 });
+    await p.getByRole('button', { name: 'Finish note' }).click();
+    await p.getByRole('button', { name: 'Reopen' }).waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('button', { name: 'Reopen' }).click();
+    await p.getByLabel('Add a line').waitFor({ state: 'visible', timeout: 3000 });
+    await shot('live-notes');
   });
 
   await step(S('encryption: on, stored as ciphertext, locks, wrong passphrase refused, unlock, lock now'), async () => {

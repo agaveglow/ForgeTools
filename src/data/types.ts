@@ -222,6 +222,23 @@ export interface ApprenticeEntry extends BaseRecord {
   requirementIds: ID[];
 }
 
+// ---------- Live notes (paper trail) ----------
+
+export type NoteTag = 'note' | 'tried' | 'found' | 'fixed' | 'next' | 'caution';
+export const NOTE_TAG_LABEL: Record<NoteTag, string> = { note: 'Note', tried: 'Tried', found: 'Found', fixed: 'Fixed', next: 'Next', caution: 'Caution' };
+
+/** One timestamped line. Text is cleaned of names, numbers and secrets before it is stored. */
+export interface JobNoteLine { id: string; at: string; text: string; tag: NoteTag }
+
+/** A running note for one job. A neutral title only, never a customer name. */
+export interface JobNote extends BaseRecord {
+  title: string;
+  status: 'open' | 'closed';
+  startedAt: string;
+  endedAt?: string;
+  lines: JobNoteLine[];
+}
+
 // ---------- Settings / meta ----------
 
 export interface DashboardLayout {
@@ -274,6 +291,7 @@ export const COLLECTIONS = [
   'tasks',
   'requirements',
   'apprenticeLogs',
+  'jobNotes',
 ] as const;
 export type CollectionName = (typeof COLLECTIONS)[number];
 
@@ -287,6 +305,7 @@ export interface CollectionMap {
   tasks: Task;
   requirements: Requirement;
   apprenticeLogs: ApprenticeEntry;
+  jobNotes: JobNote;
 }
 
 export const SCHEMA_VERSION = 1;

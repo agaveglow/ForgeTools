@@ -128,6 +128,10 @@ Under the diagram and the player, **Ask about step N** answers questions about o
 
 The walkthrough builder reorganises what was said (what you need, ordered steps, commands, cautions, result) and never adds steps. It warns when steps or a result are missing. The raw transcript is saved with the guide. Audio itself is not stored.
 
+### Live notes
+
+A **Note** button sits in the top bar on every page (a dot shows when one is open), and **Live notes** is in the menu. Start a note for the job you are on, then type or dictate lines as you go. Each line gets a time stamp and an optional tag (Tried, Found, Fixed, Next, Caution), and is cleaned of names, numbers and secrets before it is stored. As lines come in, a diagram and guide build underneath; save the guide to the library or turn the note into a work log. **Copy trail** copies the timeline as plain text for your own paper trail. Dictation relies on the phone or browser's speech recognition, which may use the vendor's servers.
+
 ## Security
 
 - **Content Security Policy** in `index.html`: only the app's own scripts run; there is no `eval` and no raw-HTML rendering.

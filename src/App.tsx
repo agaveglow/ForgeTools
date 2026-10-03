@@ -11,10 +11,11 @@ import { CommandsPage } from './pages/CommandsPage';
 import { SecurityList, SecurityRun } from './pages/SecurityPage';
 import { AgentPage } from './pages/AgentPage';
 import { LockScreen } from './ui/LockScreen';
-import { store, useSettings, useVault } from './data/hooks';
+import { store, useCollection, useSettings, useVault } from './data/hooks';
 import { VoicePage } from './pages/VoicePage';
 import { FilesPage } from './pages/FilesPage';
 import { applyLook } from './lib/look';
+import { LivePage } from './pages/LivePage';
 import { BoardPage } from './pages/BoardPage';
 import { TasksPage } from './pages/TasksPage';
 import { ImportPage } from './pages/ImportPage';
@@ -28,6 +29,7 @@ interface NavItem { to: string; label: string; short: string; icon: string; root
 const NAV: NavItem[] = [
   { to: '/', label: 'Dashboard', short: 'Home', icon: '⌂', root: '/' },
   { to: '/tasks', label: 'Tasks', short: 'Tasks', icon: '☑', root: '/tasks' },
+  { to: '/live', label: 'Live notes', short: 'Notes', icon: '✎', root: '/live' },
   { to: '/board', label: 'Task board', short: 'Board', icon: '▥', root: '/board' },
   { to: '/logs', label: 'Work logs', short: 'Logs', icon: '☰', root: '/logs' },
   { to: '/requirements', label: 'Requirements', short: 'Goals', icon: '◎', root: '/requirements' },
@@ -71,6 +73,7 @@ function route(path: string): ReactNode {
   if (path === '/import') return <ImportPage />;
   if (path === '/tasks') return <TasksPage />;
   if (path === '/board') return <BoardPage />;
+  if (path === '/live') return <LivePage />;
   if (path === '/requirements') return <RequirementsPage />;
   if (path === '/apprenticeship') return <ApprenticeshipPage />;
   if (path === '/kb') return <KbList />;
@@ -136,6 +139,7 @@ function useAutoLock() {
 
 function Shell() {
   const { appName } = useSettings();
+  const hasOpenNote = useCollection('jobNotes').some((n) => n.status === 'open');
   useAutoLock();
   const path = usePath();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -182,6 +186,7 @@ function Shell() {
         <header className="md:hidden sticky top-0 z-30 bg-surface border-b border-line pt-safe">
           <div className="flex items-center justify-between px-4 h-12">
             <Link to="/" className="flex items-center gap-2 font-semibold min-h-11"><span className="inline-grid place-items-center size-6 rounded-sm bg-accent text-accent-ink font-mono text-xs">{(appName || 'ForgeTools')[0]?.toUpperCase()}</span>{appName || 'ForgeTools'}</Link>
+            <Link to="/live" aria-label={hasOpenNote ? 'Live note, one is open' : 'Live notes'} className={clsx('min-h-11 px-3 inline-flex items-center gap-1 rounded-sm border text-sm ml-auto mr-2', hasOpenNote ? 'border-accent text-accent font-medium' : 'border-line hover:bg-surface2')}>{hasOpenNote && <span aria-hidden className="size-2 rounded-full bg-accent" />}Note</Link>
             <button type="button" aria-label="Search" onClick={() => setSearchOpen(true)} className="min-h-11 px-3 rounded-sm border border-line text-sm hover:bg-surface2">Search</button>
           </div>
         </header>
