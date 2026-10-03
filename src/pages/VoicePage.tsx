@@ -9,6 +9,8 @@ import type { Dictation } from '../lib/transcribe';
 import { buildWalkthrough, walkthroughBody, walkthroughToGuide } from '../lib/walkthrough';
 import { Badge, Button, Card, CopyButton, Field, PageHeader, SectionTitle, TextArea, TextInput } from '../ui/primitives';
 import { GuideView, Sources } from '../ui/GuideView';
+import { hasVisuals, modelFromGuide } from '../lib/visual';
+import { VisualGuide } from '../ui/VisualGuide';
 import { Link, navigate } from '../ui/router';
 import { PrivacyNote, SensitivePanel, useSaveGuard } from '../ui/SensitivePanel';
 import { useTitle } from '../ui/hooks';
@@ -39,6 +41,8 @@ export function VoicePage() {
 
   const wt = useMemo(() => buildWalkthrough(transcript), [transcript]);
   const guide = useMemo(() => (made ? walkthroughToGuide(wt, ctx, title.trim() || undefined) : null), [made, wt, ctx, title]);
+
+  const vmodel = useMemo(() => (guide ? modelFromGuide(guide) : { title: '', steps: [], cautions: [] }), [guide]);
 
   const onFiles = async (e: { target: { files: FileList | null; value: string } }) => {
     const list = Array.from(e.target.files ?? []);
@@ -146,6 +150,7 @@ export function VoicePage() {
             )}
             <div className="flex flex-wrap gap-1.5"><Badge tone="accent">{wt.steps.length} {wt.steps.length === 1 ? 'step' : 'steps'}</Badge>{wt.commands.length > 0 && <Badge>{wt.commands.length} {wt.commands.length === 1 ? 'command' : 'commands'}</Badge>}{wt.cautions.length > 0 && <Badge tone="warn">{wt.cautions.length} {wt.cautions.length === 1 ? 'caution' : 'cautions'}</Badge>}</div>
             <GuideView guide={guide} />
+            {hasVisuals(vmodel) && <details className="border border-line rounded-md"><summary className="min-h-11 px-3 py-2.5 cursor-pointer text-sm font-medium">Visual guide: diagram and animated walkthrough</summary><div className="p-3 pt-1"><VisualGuide model={vmodel} /><p className="text-xs text-muted mt-2">Save the guide, then open it in the Knowledge base to attach photos or screenshots to steps.</p></div></details>}
             <Sources items={guide.sources} />
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <Button variant="primary" onClick={() => save()} disabled={!guard.canSave}>{savedId ? 'Update saved guide' : 'Save guide'}</Button>

@@ -8,6 +8,8 @@ import type { WebResult } from '../lib/web';
 import { timeAgo } from '../lib/util';
 import { Badge, Button, Card, CopyButton, Empty, Field, PageHeader, SectionTitle, TextArea, TextInput } from '../ui/primitives';
 import { GuideView, Sources } from '../ui/GuideView';
+import { hasVisuals, modelFromGuide } from '../lib/visual';
+import { VisualGuide } from '../ui/VisualGuide';
 import { Link, navigate } from '../ui/router';
 import { PrivacyNote, SensitivePanel, useSaveGuard } from '../ui/SensitivePanel';
 import { useTitle } from '../ui/hooks';
@@ -143,6 +145,7 @@ export function AgentPage() {
     navigate(`/session/${s.id}`);
   };
   const reset = () => { setAnalysis(null); setGuide(null); setMsgs([]); setText(''); setSavedId(undefined); setFilePath(''); guard.setConfirmed(false); };
+  const model = useMemo(() => (guide ? modelFromGuide(guide) : { title: '', steps: [], cautions: [] }), [guide]);
   const redact = (r: Record<string, string>) => { setText(r.text); guard.setConfirmed(false); };
 
   return (
@@ -174,6 +177,7 @@ export function AgentPage() {
                 <h2 className="text-lg font-semibold wrap-any">{guide.title}</h2>
               </div>
               <GuideView guide={guide} />
+              {hasVisuals(model) && <details className="border border-line rounded-md"><summary className="min-h-11 px-3 py-2.5 cursor-pointer text-sm font-medium">Visual guide: diagram and animated walkthrough</summary><div className="p-3 pt-1"><VisualGuide model={model} /><p className="text-xs text-muted mt-2">Save the guide, then open it in the Knowledge base to attach photos or screenshots to steps.</p></div></details>}
               <Sources items={guide.sources} />
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <Button variant="primary" onClick={() => save()} disabled={!guard.canSave}>{savedId ? 'Update saved guide' : 'Save guide'}</Button>

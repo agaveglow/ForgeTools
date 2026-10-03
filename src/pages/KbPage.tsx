@@ -3,7 +3,11 @@ import { store, useCollection, useRecord, useSettings } from '../data/hooks';
 import { KB_CATEGORIES } from '../data/types';
 import type { KbCategory, KbEntry } from '../data/types';
 import { parseTags, timeAgo } from '../lib/util';
-import { Badge, Button, Card, Chip, CodeBlock, DemoBadge, Empty, Field, Modal, PageHeader, Select, TextArea, TextInput } from '../ui/primitives';
+import { Badge, Button, Card, Chip, CodeBlock, DemoBadge, Empty, Field, Modal, PageHeader, SectionTitle, Select, TextArea, TextInput } from '../ui/primitives';
+import { files, notifyFilesChanged } from '../data/files';
+import { hasVisuals, modelFromText } from '../lib/visual';
+import { VisualGuide } from '../ui/VisualGuide';
+import { StepPhotos, useEntryImages } from '../ui/StepPhotos';
 import { Link, navigate } from '../ui/router';
 import { PrivacyNote, SensitivePanel, useSaveGuard } from '../ui/SensitivePanel';
 import { useTitle } from '../ui/hooks';
@@ -81,6 +85,13 @@ export function KbDetail({ id }: { id: string }) {
   }, [id]);
   if (!e) return <Empty title="Entry not found."><Link to="/kb" className="underline">Back</Link></Empty>;
   const en: KbEntry = e;
+  return <KbDetailView en={en} confirmDel={confirmDel} setConfirmDel={setConfirmDel} />;
+}
+
+function KbDetailView({ en, confirmDel, setConfirmDel }: { en: KbEntry; confirmDel: boolean; setConfirmDel: (v: boolean) => void }) {
+  const model = useMemo(() => modelFromText(en.title, en.body), [en.title, en.body]);
+  const imgs = useEntryImages(en);
+  const imgMap = useMemo(() => Object.fromEntries(Object.entries(imgs).map(([k, v]) => [Number(k), v.map(({ src, caption }) => ({ src, caption }))])), [imgs]);
   return (
     <div className="max-w-3xl">
       <PageHeader title={en.title} sub={<span className="inline-flex flex-wrap gap-1.5 items-center"><Badge>{en.category}</Badge>{en.tags.map((t) => <Badge key={t} tone="info">#{t}</Badge>)}{en.demo && <DemoBadge />}<span>· {timeAgo(en.updatedAt)}</span></span>} actions={
@@ -91,7 +102,13 @@ export function KbDetail({ id }: { id: string }) {
         </>
       } />
       <Card className="p-4"><KbBody text={en.body} /></Card>
-      {confirmDel && <Modal title="Delete this entry?" onClose={() => setConfirmDel(false)} footer={<><Button onClick={() => setConfirmDel(false)}>Cancel</Button><Button variant="danger" onClick={() => { store.remove('kbEntries', en.id); navigate('/kb'); }}>Delete</Button></>}><p>It will be removed from this device.</p></Modal>}
+      {hasVisuals(model) && (
+        <section className="mt-4" aria-label="Visual guide">
+          <SectionTitle>Visual guide</SectionTitle>
+          <Card className="p-4"><VisualGuide model={model} images={imgMap} photos={<StepPhotos entry={en} stepCount={model.steps.length} images={imgs} />} /></Card>
+        </section>
+      )}
+      {confirmDel && <Modal title="Delete this entry?" onClose={() => setConfirmDel(false)} footer={<><Button onClick={() => setConfirmDel(false)}>Cancel</Button><Button variant="danger" onClick={() => { (en.images ?? []).forEach((i) => files().remove(i.path).catch(() => undefined)); store.remove('kbEntries', en.id); notifyFilesChanged(); navigate('/kb'); }}>Delete</Button></>}><p>It will be removed from this device.</p></Modal>}
     </div>
   );
 }

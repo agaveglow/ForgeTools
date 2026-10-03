@@ -19,7 +19,7 @@ export function FilesPage() {
   useEffect(() => { refresh(); return subscribeFiles(refresh); }, [refresh]);
 
   const open = async (f: StoredFile) => setView({ file: f, text: (await files().read(f.path)) ?? '(could not read this file)' });
-  const dl = async (f: StoredFile) => { const t = await files().read(f.path); if (t !== null) downloadText(f.name, t, f.name.endsWith('.json') ? 'application/json' : 'text/plain'); };
+  const dl = async (f: StoredFile) => { const t = await files().read(f.path); if (t !== null && /^data:image\//.test(t)) { const a = document.createElement('a'); a.href = t; a.download = f.name.replace(/\.txt$/, '') + '.jpg'; a.click(); } else if (t !== null) downloadText(f.name, t, f.name.endsWith('.json') ? 'application/json' : 'text/plain'); };
   const share = async (f: StoredFile) => { if (!(await shareStoredFile(f.path, f.name))) setMsg('Sharing is only available in the phone app. Use Download instead.'); };
   const where = files().kind === 'native' ? 'the app’s private storage on this phone' : files().kind === 'browser' ? 'this browser’s storage' : 'memory (lost when you close the page)';
 
@@ -54,8 +54,8 @@ export function FilesPage() {
         </>
       )}
       {view && (
-        <Modal title={view.file.name} onClose={() => setView(null)} footer={<CopyButton text={view.text} label="Copy text" size="md" />}>
-          <pre className="font-mono text-xs whitespace-pre-wrap wrap-any max-h-[60dvh] overflow-y-auto">{view.text}</pre>
+        <Modal title={view.file.name} onClose={() => setView(null)} footer={/^data:image\//.test(view.text) ? undefined : <CopyButton text={view.text} label="Copy text" size="md" />}>
+          {/^data:image\//.test(view.text) ? <img src={view.text} alt={`Stored image ${view.file.name}`} className="max-w-full max-h-[60dvh] rounded-sm" /> : <pre className="font-mono text-xs whitespace-pre-wrap wrap-any max-h-[60dvh] overflow-y-auto">{view.text}</pre>}
         </Modal>
       )}
       {del && (

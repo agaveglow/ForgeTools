@@ -126,3 +126,7 @@ body {
     transition-duration: 0.001ms !important;
   }
 }
+
+@keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.fade-in { animation: fadein .35s ease; }
+@media (prefers-reduced-motion: reduce) { .fade-in { animation: none; } }

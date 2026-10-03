@@ -80,6 +80,16 @@ Design decisions:
 
 It is local and rules-based, not a language model. To add a real model, implement `AgentProvider` and keep the save guard in front of anything sent off-device.
 
+## Visual guides
+
+Any guide with two or more steps gets a **Visual guide** (agent, voice notes, and saved Knowledge base entries):
+
+- **Diagram:** a flowchart of the steps drawn as SVG from the guide itself (`src/lib/visual.ts`, `src/ui/VisualGuide.tsx`). It has a text alternative, and steps that mention a caution get an amber outline.
+- **Play:** an animated walkthrough. Steps advance with play/pause/back/next and a speed control, and commands type out in a terminal-style box. It is an illustration: it replays the guide's own steps and commands, shows no invented output, and runs nothing on the device. Animation is skipped when the phone's reduced-motion setting is on.
+- **Photos:** on a saved Knowledge base entry you can attach photos or screenshots to a step. Images are re-drawn to JPEG (smaller, rotation fixed, location data removed) and stored in Files (`images/`), encrypted along with everything else if encryption is on. Each needs a tick to confirm you checked it for passwords and private details, because the app cannot read what is inside an image.
+
+There is no AI-generated imagery or video file export. Real footage and generated pictures would need a cloud service.
+
 ## Voice notes
 
 `src/lib/walkthrough.ts`, `transcribe.ts`, `src/pages/VoicePage.tsx`. Speech-to-text needs a speech service, so there are three routes:

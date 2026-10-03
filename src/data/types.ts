@@ -132,6 +132,15 @@ export interface KbEntry extends BaseRecord {
   body: string;
   pinned: boolean;
   lastUsedAt?: string;
+  /** Photos and screenshots attached to steps. The image data lives in Files (images/). */
+  images?: KbImage[];
+}
+
+export interface KbImage {
+  path: string;
+  /** 0 = the guide in general, otherwise the step number. */
+  step: number;
+  caption: string;
 }
 
 // ---------- Skills ----------

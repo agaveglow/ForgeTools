@@ -22,7 +22,7 @@ export interface FileStorage {
   remove(path: string): Promise<void>;
 }
 
-export const FILE_DIRS = ['guides', 'transcripts', 'backups', 'web'] as const;
+export const FILE_DIRS = ['guides', 'transcripts', 'backups', 'web', 'images'] as const;
 export type FileDir = (typeof FILE_DIRS)[number];
 
 // ---------- memory (tests, and last-resort fallback) ----------

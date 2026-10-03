@@ -184,6 +184,42 @@ async function run(label, viewport) {
     ok((await p.getByText('generated').count()) > 0, 'KB entry tagged generated (url ' + p.url() + ')');
   });
 
+  await step(S('visual guide: diagram, animated player, photos attach with confirmation'), async () => {
+    await go('/agent');
+    await p.getByLabel('What do you need?').fill('Ricoh printer jams when printing from tray 2');
+    await p.getByRole('button', { name: 'Generate guide' }).click();
+    await p.getByText('Visual guide: diagram and animated walkthrough').click();
+    await p.getByTestId('diagram').locator('svg').waitFor({ state: 'visible', timeout: 3000 });
+    ok((await p.getByTestId('diagram').locator('text').count()) > 5, 'diagram has labelled nodes');
+    await p.getByTestId('diagram').scrollIntoViewIfNeeded(); await shot('diagram');
+    await p.getByRole('tab', { name: 'Play' }).click();
+    await p.getByText(/Step 1 of \d+/).waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('button', { name: 'Next step' }).click();
+    await p.getByText(/Step 2 of \d+/).waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('button', { name: /^▶ Play/ }).click();
+    await p.getByRole('button', { name: /Pause/ }).waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('button', { name: /Pause/ }).click();
+    await p.getByRole('button', { name: 'Save guide' }).click();
+    await p.getByRole('link', { name: 'Open in Knowledge base' }).click();
+    await p.waitForURL(/#\/kb\/[^/]+$/);
+    await p.getByRole('tab', { name: 'Photos' }).click();
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+    await p.getByLabel('Add photo or screenshot').setInputFiles({ name: 'shot.png', mimeType: 'image/png', buffer: png });
+    await p.getByAltText('Preview of the image you are about to attach').waitFor({ state: 'visible', timeout: 5000 });
+    ok(await p.getByRole('button', { name: 'Attach' }).isDisabled(), 'attach needs the privacy confirmation');
+    await p.getByLabel('Caption (optional)').fill('Password is Hunter2!x');
+    await p.getByRole('checkbox', { name: /checked this image/ }).check();
+    ok(await p.getByRole('button', { name: 'Attach' }).isDisabled(), 'secret in caption blocks attach');
+    await p.getByLabel('Caption (optional)').fill('Tray 2 latch');
+    await p.getByRole('button', { name: 'Attach' }).click();
+    await p.getByAltText('Tray 2 latch').first().waitFor({ state: 'visible', timeout: 5000 });
+    await p.getByRole('tab', { name: 'Play' }).click();
+    await p.getByAltText('Tray 2 latch').waitFor({ state: 'visible', timeout: 3000 });
+    await p.waitForTimeout(600); await shot('visual');
+    await go('/files');
+    await p.getByText(/images/).first().waitFor({ state: 'visible', timeout: 3000 });
+  });
+
   await step(S('guide agent: secret in question blocks saving'), async () => {
     await go('/agent');
     await p.getByLabel('What do you need?').fill('Printer jams. Admin password is Summer2024!x');
