@@ -49,7 +49,7 @@ bun tools/validate-content.ts        # checks all workflow/command content cross
 ```
 src/
   content/   Static reference content shipped with the app (workflows, commands, checklist, skills, learning prompts)
-  data/      types, StorageAdapter, Store, seed (demo) data, React hooks
+  data/      types, StorageAdapter, Store, React hooks, encryption vault
   lib/       pure logic: sensitive-data scanner, notes structurer, guide agent, walkthrough builder, crypto, web and transcription helpers, skills evaluation, search
   ui/        router, primitives, save guard, assistant panel, search palette
   pages/     one file per feature area
@@ -59,7 +59,7 @@ tests/       unit (bun), e2e + a11y (playwright)
 Design decisions:
 
 - **Static content vs user data.** Workflows, commands and the checklist are code (`src/content`), not data, so they are versioned and validated. User records live in the store.
-- **Backend swap point.** `StorageAdapter` (`src/data/storage.ts`) is the only thing that touches `localStorage`. Keys are scoped by account id (`forgetools:v1:{account}:`). To add accounts and sync later, implement the adapter against an API (it is synchronous today; make it async and let the store hydrate on load). Records already carry `id`, `createdAt`, `updatedAt` and a `demo` flag, and import uses newest-wins-by-id, which is the same rule a sync layer needs.
+- **Backend swap point.** `StorageAdapter` (`src/data/storage.ts`) is the only thing that touches `localStorage`. Keys are scoped by account id (`forgetools:v1:{account}:`). To add accounts and sync later, implement the adapter against an API (it is synchronous today; make it async and let the store hydrate on load). Records already carry `id`, `createdAt`, `updatedAt`, and import uses newest-wins-by-id, which is the same rule a sync layer needs.
 - **State.** `Store` holds immutable collection arrays; React reads them with `useSyncExternalStore`. No state library.
 - **Routing.** A ~40-line hash router. It works from `file://` and inside Capacitor with no server config.
 - **Theming.** Semantic CSS variables with light and dark sets, mapped into Tailwind with `@theme inline`; theme is set before first paint.
@@ -79,6 +79,16 @@ Design decisions:
 `src/lib/agent.ts` + `src/pages/AgentPage.tsx`. Type a how-to, a command or a problem. It matches your troubleshooting library, command reference, Knowledge base notes and past logs and builds a guide with sources. You can ask follow-ups ("what should I check first?", "what are the risks?", "which commands?"); when nothing matches it says so instead of guessing. **Save guide** stores it in the Knowledge base (tag `generated`) and as a file in Files. **Look it up online** searches Microsoft Learn and can add a cited, dated section from a page, labelled as external and unchecked.
 
 It is local and rules-based, not a language model. To add a real model, implement `AgentProvider` and keep the save guard in front of anything sent off-device.
+
+## Confidentiality: import, scrub, keep only the guide
+
+Built for work where customer details must not be stored.
+
+- **Import documents** (`/import`, `src/lib/docs.ts`): Word (.docx), text, Markdown and web pages are read on the device (nothing uploaded). PDFs and photos are not read directly yet; copy the text out on the phone and paste it. A procedure with numbered steps becomes ordered steps, commands and cautions; plain prose is organised like a spoken walkthrough.
+- **Automatic scrubbing** (`src/lib/scrub.ts`) runs before anything is shown or saved: emails, IP/MAC addresses, phone and long numbers, serials and account/contract/ticket numbers, host names, company names, links to private sites, labelled customer/contact fields, passwords and keys. You can see what was removed (on screen only), remove extra words, and scrub again. It is a safety net, not a guarantee: names inside ordinary sentences can be missed, so saving needs a tick confirming you read it.
+- **Only the guide is saved.** The source document, removed details and (by default) voice transcripts are not stored. Voice notes scrub the transcript as it arrives and keep the transcript only if you tick a box.
+- **Read aloud and voice questions:** reading steps and answers aloud uses only voices that run on the device; with none installed it stays off rather than using an online voice. The microphone uses the phone or browser's speech recognition, which may send audio to its vendor, and the app says so.
+- **Not built:** live screen share or live video help (phone browsers can't reliably share the screen, and live help needs a cloud AI model that would see customer data), reading text out of photos or PDFs directly.
 
 ## Progress tracking
 

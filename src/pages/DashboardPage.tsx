@@ -15,7 +15,7 @@ import { summarise } from './SecurityPage';
 import { TaskRow } from './TasksPage';
 
 const QUICK: Array<[string, string]> = [
-  ['+ Work log', '/logs/new'], ['Guide agent', '/agent'], ['Voice note', '/voice'], ['Troubleshoot', '/troubleshoot'], ['Security', '/security'], ['Commands', '/commands'], ['Notes', '/kb'],
+  ['+ Work log', '/logs/new'], ['Guide agent', '/agent'], ['Voice note', '/voice'], ['Import doc', '/import'], ['Troubleshoot', '/troubleshoot'], ['Security', '/security'], ['Commands', '/commands'], ['Notes', '/kb'],
 ];
 const DAY = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 

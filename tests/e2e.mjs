@@ -41,7 +41,7 @@ async function run(label, viewport) {
   });
 
   await step(S('no horizontal overflow on every page'), async () => {
-    for (const r of ['/', '/logs', '/logs/new', '/troubleshoot', '/commands', '/security', '/agent', '/voice', '/files', '/tasks', '/requirements', '/apprenticeship', '/kb', '/skills', '/settings']) {
+    for (const r of ['/', '/logs', '/logs/new', '/troubleshoot', '/commands', '/security', '/agent', '/voice', '/files', '/tasks', '/requirements', '/apprenticeship', '/import', '/kb', '/skills', '/settings']) {
       await go(r); await noHScroll();
     }
   });
@@ -257,9 +257,10 @@ async function run(label, viewport) {
     ok(/net stop spooler/.test(await w.innerText()), 'command kept');
     ok(!/reboot/i.test(await w.innerText()), 'nothing invented');
     await w.getByRole('button', { name: 'Save guide' }).click();
-    await p.getByText('Saved to Knowledge base and Files.').waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByText('Saved to Knowledge base and Files. The transcript was not kept.').waitFor({ state: 'visible', timeout: 3000 });
     await go('/files');
-    await p.getByText(/\.txt$/).first().waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByText(/\.md$/).first().waitFor({ state: 'visible', timeout: 3000 });
+    eq(await p.getByText('transcripts', { exact: true }).count(), 0, 'no transcript file kept by default');
     await shot('voice');
   });
 
@@ -355,6 +356,53 @@ async function run(label, viewport) {
     await p.getByRole('button', { name: 'Erase all data' }).click();
     await go('/logs');
     ok(await p.getByText('No work logs yet.').isVisible());
+  });
+
+  await step(S('import: document is scrubbed, guide saved without the source'), async () => {
+    const zlib = await import('node:zlib');
+    const w16 = (n) => [n & 255, (n >> 8) & 255]; const w32 = (n) => [n & 255, (n >> 8) & 255, (n >> 16) & 255, (n >>> 24) & 255];
+    const mkzip = (files) => { const parts = []; const cen = []; let off = 0; for (const [name, text] of Object.entries(files)) { const d = Buffer.from(text); const c = zlib.deflateRawSync(d); const nm = Buffer.from(name); const l = Buffer.from([0x50, 0x4b, 3, 4, ...w16(20), ...w16(0), ...w16(8), ...w16(0), ...w16(0), ...w32(0), ...w32(c.length), ...w32(d.length), ...w16(nm.length), ...w16(0), ...nm, ...c]); cen.push(Buffer.from([0x50, 0x4b, 1, 2, ...w16(20), ...w16(20), ...w16(0), ...w16(8), ...w16(0), ...w16(0), ...w32(0), ...w32(c.length), ...w32(d.length), ...w16(nm.length), ...w16(0), ...w16(0), ...w16(0), ...w16(0), ...w32(0), ...w32(off), ...nm])); parts.push(l); off += l.length; } const cd = cen.reduce((n, c) => n + c.length, 0); return Buffer.concat([...parts, ...cen, Buffer.from([0x50, 0x4b, 5, 6, ...w16(0), ...w16(0), ...w16(cen.length), ...w16(cen.length), ...w32(cd), ...w32(off), ...w16(0)])]); };
+    const para = (t, x = '') => `<w:p><w:pPr>${x}</w:pPr><w:r><w:t>${t}</w:t></w:r></w:p>`;
+    const num = '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>';
+    const numbering = '<w:numbering><w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0"><w:numFmt w:val="decimal"/></w:lvl></w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>';
+    const docx = mkzip({ 'word/document.xml': `<w:document><w:body>${para('Fix scanner for Acme Dental Ltd', '<w:pStyle w:val="Heading1"/>')}${para('Customer: Brightwater Solicitors')}${para('Log in to 192.168.4.20 as admin.', num)}${para('Send a test scan to jo.bloggs@acmedental.co.uk', num)}${para('Run net stop spooler and then net start spooler.', num)}</w:body></w:document>`, 'word/numbering.xml': numbering });
+    await go('/import');
+    await p.getByLabel('Choose a document').setInputFiles({ name: 'scanner.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', buffer: docx });
+    await until(async () => (await p.locator('#im-text').inputValue()).length > 20, 'document text loaded');
+    const cleaned = await p.locator('#im-text').inputValue();
+    ok(!/Acme|Brightwater|192\.168|bloggs/.test(cleaned), 'private details removed from the text box: ' + cleaned);
+    ok(await p.getByTestId('scrub-panel').getByText(/Removed \d+ items?/).isVisible(), 'scrub summary shown');
+    await p.getByRole('button', { name: /Make guide/ }).click();
+    await p.getByTestId('import-guide').waitFor({ state: 'visible', timeout: 3000 });
+    ok(await p.getByTestId('diagram').locator('svg').isVisible(), 'diagram shown first');
+    ok(await p.getByRole('button', { name: 'Save guide' }).isDisabled(), 'save needs the read-through confirmation');
+    await p.getByRole('checkbox', { name: /I have read this guide/ }).check();
+    await p.getByRole('button', { name: 'Save guide' }).click();
+    await p.getByText(/The source document was not kept/).waitFor({ state: 'visible', timeout: 3000 });
+    const stored = await p.evaluate(async () => { const db = await new Promise((res, rej) => { const r = indexedDB.open('forgetools-files', 1); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); const all = await new Promise((res) => { const r = db.transaction('files').objectStore('files').getAll(); r.onsuccess = () => res(r.result); }); return JSON.stringify(all) + JSON.stringify(Object.values(localStorage)); });
+    ok(!/Acme|Brightwater|192\.168|bloggs/.test(stored), 'nothing private in storage');
+    await shot('import');
+  });
+
+  await step(S('read aloud uses an offline voice and steps the player'), async () => {
+    await p.addInitScript(() => {
+      const spoken = [];
+      window.__spoken = spoken;
+      window.SpeechSynthesisUtterance = class { constructor(t) { this.text = t; } };
+      Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: { getVoices: () => [{ name: 'Online', lang: 'en-GB', localService: false }, { name: 'Local', lang: 'en-GB', localService: true }], speak(u) { spoken.push({ text: u.text, voice: u.voice.name }); setTimeout(() => u.onend && u.onend(), 30); }, cancel() {}, onvoiceschanged: null } });
+    });
+    await go('/agent');
+    await p.reload(); await p.waitForTimeout(300);
+    await p.getByLabel('What do you need?').fill('Ricoh printer jams when printing from tray 2');
+    await p.getByRole('button', { name: 'Generate guide' }).click();
+    await p.getByRole('tab', { name: 'Play' }).click();
+    await p.getByRole('button', { name: /Read aloud/ }).click();
+    await until(async () => (await p.evaluate(() => window.__spoken.length)) >= 1, 'spoke first step');
+    const first = await p.evaluate(() => window.__spoken[0]);
+    eq(first.voice, 'Local', 'only the offline voice is used');
+    ok(/^Step 1\./.test(first.text), 'reads the step');
+    await p.getByRole('button', { name: /^▶ Play/ }).click();
+    await until(async () => (await p.evaluate(() => window.__spoken.length)) >= 3, 'advances after speech ends');
   });
 
   await step(S('tasks, requirements and apprenticeship feed the dashboard'), async () => {

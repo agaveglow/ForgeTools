@@ -6,9 +6,12 @@ import type { Answer, Guide, TopicAnalysis } from '../lib/agent';
 import { fetchReadable, searchWeb, webSection } from '../lib/web';
 import type { WebResult } from '../lib/web';
 import { timeAgo } from '../lib/util';
-import { Badge, Button, Card, CopyButton, Empty, Field, PageHeader, SectionTitle, TextArea, TextInput } from '../ui/primitives';
+import { Badge, Button, Card, Checkbox, CopyButton, Empty, Field, PageHeader, SectionTitle, TextArea, TextInput } from '../ui/primitives';
 import { GuideView, Sources } from '../ui/GuideView';
 import { hasVisuals, modelFromGuide } from '../lib/visual';
+import { dictationSupported, startDictation } from '../lib/transcribe';
+import type { Dictation } from '../lib/transcribe';
+import { speak, speakFailMessage, speechSupported, stopSpeaking } from '../lib/speech';
 import { VisualGuide } from '../ui/VisualGuide';
 import { Link, navigate } from '../ui/router';
 import { PrivacyNote, SensitivePanel, useSaveGuard } from '../ui/SensitivePanel';
@@ -105,6 +108,10 @@ export function AgentPage() {
   const [filePath, setFilePath] = useState('');
   const [notice, setNotice] = useState('');
   const nextId = useRef(1);
+  const [readAnswers, setReadAnswers] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [voiceMsg, setVoiceMsg] = useState('');
+  const dict = useRef<Dictation | null>(null);
   const guard = useSaveGuard({ text });
 
   const generate = async (t = text) => {
@@ -119,7 +126,14 @@ export function AgentPage() {
     const answer = await localAgent.answer(question, analysis, ctx);
     setMsgs((m) => [...m, { id: nextId.current++, role: 'you', text: question }, { id: nextId.current++, role: 'agent', answer }]);
     setQ('');
+    if (readAnswers) { const r = speak(answer.blocks.map((b) => [b.heading, ...b.lines].filter(Boolean).join('. ')).join('. ')); if (!r.ok) { setReadAnswers(false); setVoiceMsg(speakFailMessage(r)); } else setVoiceMsg(''); }
     setTimeout(() => document.getElementById('agent-end')?.scrollIntoView({ block: 'nearest' }), 30);
+  };
+  const listen = () => {
+    if (listening) { dict.current?.stop(); return; }
+    setVoiceMsg('');
+    const d = startDictation({ onFinal: (t) => { ask(t); }, onInterim: () => undefined, onError: (m) => { setVoiceMsg(m); setListening(false); }, onEnd: () => setListening(false) });
+    if (d) { dict.current = d; setListening(true); }
   };
   const flash = (t: string) => { setNotice(t); setTimeout(() => setNotice(''), 3500); };
   const save = async () => {
@@ -185,7 +199,7 @@ export function AgentPage() {
                 {guide.workflowId && guide.kind !== 'command' && <Button onClick={startSession}>Start troubleshooting session</Button>}
                 {savedId && <Link to={`/kb/${savedId}`} className="inline-flex items-center min-h-11 px-2 text-sm underline">Open in Knowledge base</Link>}
                 {filePath && <Link to="/files" className="inline-flex items-center min-h-11 px-2 text-sm underline">See in Files</Link>}
-                {notice && <Badge tone={notice.startsWith('Saved') ? 'ok' : 'warn'}>{notice}</Badge>}
+                {notice && <Badge tone={notice.startsWith('Saved') ? 'ok' : 'warn'} className="!whitespace-normal">{notice}</Badge>}
               </div>
             </Card>
           </div>
@@ -206,7 +220,13 @@ export function AgentPage() {
             <form className="flex gap-2 mt-2" onSubmit={(e: { preventDefault(): void }) => { e.preventDefault(); ask(q); }}>
               <TextInput aria-label="Ask a follow-up question" placeholder="Ask a follow-up…" value={q} onChange={(e: { target: { value: string } }) => setQ(e.target.value)} />
               <Button variant="primary" type="submit" disabled={!q.trim()}>Ask</Button>
+              {dictationSupported() && <Button onClick={listen} aria-pressed={listening} variant={listening ? 'danger' : 'secondary'} aria-label={listening ? 'Stop listening' : 'Ask by voice'}>{listening ? '■' : '🎤'}</Button>}
             </form>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              {speechSupported() && <Checkbox checked={readAnswers} onChange={(v) => { if (!v) stopSpeaking(); setReadAnswers(v); }} label="Read answers aloud (offline voice only)" />}
+            </div>
+            {voiceMsg && <p role="alert" className="text-sm text-warn mt-1">{voiceMsg}</p>}
+            {dictationSupported() && <p className="text-xs text-muted mt-1">The microphone uses your phone or browser’s speech recognition, which may send audio to its vendor. Don’t say names, numbers or passwords.</p>}
             <div id="agent-end" />
           </div>
         </>

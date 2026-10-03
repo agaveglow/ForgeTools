@@ -204,7 +204,7 @@ const cmdLine = (c: CommandEntry) => `${c.name}: ${c.purpose}`;
 const cmdSource = (c: CommandEntry): Source => ({ label: c.name, route: `/commands/${c.id}` });
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-function kbCategoryFor(kind: TopicKind, category: LogCategory): KbCategory {
+export function kbCategoryFor(kind: TopicKind, category: LogCategory): KbCategory {
   if (kind === 'command') return 'Commands';
   if (category === 'Printers') return 'Printers';
   if (category === 'Networking') return 'Networking';

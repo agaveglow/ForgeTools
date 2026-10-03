@@ -15,6 +15,7 @@ import { store, useSettings, useVault } from './data/hooks';
 import { VoicePage } from './pages/VoicePage';
 import { FilesPage } from './pages/FilesPage';
 import { TasksPage } from './pages/TasksPage';
+import { ImportPage } from './pages/ImportPage';
 import { RequirementsPage } from './pages/RequirementsPage';
 import { ApprenticeshipPage } from './pages/ApprenticeshipPage';
 import { KbDetail, KbEditor, KbList } from './pages/KbPage';
@@ -28,6 +29,7 @@ const NAV: NavItem[] = [
   { to: '/logs', label: 'Work logs', short: 'Logs', icon: '☰', root: '/logs' },
   { to: '/requirements', label: 'Requirements', short: 'Goals', icon: '◎', root: '/requirements' },
   { to: '/apprenticeship', label: 'Apprenticeship', short: 'Learn', icon: '✎', root: '/apprenticeship' },
+  { to: '/import', label: 'Import documents', short: 'Import', icon: '⇪', root: '/import' },
   { to: '/voice', label: 'Voice notes', short: 'Voice', icon: '◉', root: '/voice' },
   { to: '/troubleshoot', label: 'Troubleshooting', short: 'Fix', icon: '⚒', root: '/troubleshoot' },
   { to: '/commands', label: 'Commands', short: 'Cmds', icon: '>_', root: '/commands' },
@@ -63,6 +65,7 @@ function route(path: string): ReactNode {
   if (path === '/agent') return <AgentPage />;
   if (path === '/voice') return <VoicePage />;
   if (path === '/files') return <FilesPage />;
+  if (path === '/import') return <ImportPage />;
   if (path === '/tasks') return <TasksPage />;
   if (path === '/requirements') return <RequirementsPage />;
   if (path === '/apprenticeship') return <ApprenticeshipPage />;
@@ -142,7 +145,7 @@ function Shell() {
   useEffect(() => { setMoreOpen(false); window.scrollTo({ top: 0 }); }, [path]);
 
   const editing = path === '/logs/new' || /^\/logs\/[^/]+\/edit$/.test(path) || path === '/kb/new' || /^\/kb\/[^/]+\/edit$/.test(path);
-  const showFab = ['/', '/logs', '/troubleshoot', '/commands', '/kb', '/skills', '/agent', '/files', '/requirements', '/apprenticeship'].includes(path);
+  const showFab = ['/', '/logs', '/troubleshoot', '/commands', '/kb', '/skills', '/agent', '/files', '/requirements', '/apprenticeship', '/import'].includes(path);
   const moreItems = NAV.filter((n) => !MOBILE_MAIN.includes(n.to));
   const moreActive = moreItems.some((n) => isActive(n, path));
 

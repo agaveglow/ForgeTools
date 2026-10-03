@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { VisualModel } from '../lib/visual';
 import { layoutDiagram, stepDuration } from '../lib/visual';
 import { Button } from './primitives';
+import { speak, speakFailMessage, speechSupported, stopSpeaking } from '../lib/speech';
 
 const reduced = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
@@ -74,15 +75,33 @@ export function GuidePlayer({ model, images }: { model: VisualModel; images?: Re
   const [i, setI] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
+  const [readAloud, setReadAloud] = useState(false);
+  const [voiceMsg, setVoiceMsg] = useState('');
   const noMotion = useMemo(reduced, []);
+  const canSpeak = useMemo(speechSupported, []);
+  const playingRef = useRef(false);
+  playingRef.current = playing;
+  const prevPlaying = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const s = steps[Math.min(i, steps.length - 1)];
 
   useEffect(() => {
-    if (!playing) return;
+    const pausedNow = prevPlaying.current && !playing;
+    prevPlaying.current = playing;
+    if (pausedNow) { stopSpeaking(); return; }
+    if (!readAloud || !steps[Math.min(i, steps.length - 1)]) return;
+    const st = steps[Math.min(i, steps.length - 1)];
+    const r = speak([`Step ${st.n}.`, st.text, ...st.commands.map((c) => `Command: ${c}`)].join(' '), { onEnd: () => { if (playingRef.current) setI((x) => (x < steps.length - 1 ? x + 1 : x)); } });
+    if (!r.ok) { setReadAloud(false); setVoiceMsg(speakFailMessage(r)); } else setVoiceMsg('');
+    return () => stopSpeaking();
+  }, [readAloud, playing, i, steps]);
+  useEffect(() => () => stopSpeaking(), []);
+
+  useEffect(() => {
+    if (!playing || readAloud) return;
     timer.current = setTimeout(() => { if (i >= steps.length - 1) setPlaying(false); else setI(i + 1); }, stepDuration(s) / speed);
     return () => { if (timer.current) clearTimeout(timer.current); };
-  }, [playing, i, speed, s, steps.length]);
+  }, [playing, readAloud, i, speed, s, steps.length]);
 
   if (!s) return null;
   const pics = [...(images?.[0] ?? []), ...(images?.[s.n] ?? [])];
@@ -104,12 +123,14 @@ export function GuidePlayer({ model, images }: { model: VisualModel; images?: Re
         <Button onClick={() => { setPlaying(false); setI(Math.max(0, i - 1)); }} disabled={i === 0} aria-label="Previous step">◀ Back</Button>
         <Button variant="primary" onClick={() => { if (atEnd && !playing) setI(0); setPlaying((p) => !p); }} aria-pressed={playing}>{playing ? '❚❚ Pause' : atEnd ? '↺ Replay' : '▶ Play'}</Button>
         <Button onClick={() => { setPlaying(false); setI(Math.min(steps.length - 1, i + 1)); }} disabled={atEnd} aria-label="Next step">Next ▶</Button>
+        {canSpeak && <Button onClick={() => { if (readAloud) stopSpeaking(); setReadAloud((r) => !r); }} aria-pressed={readAloud}>{readAloud ? '🔊 Reading aloud' : '🔈 Read aloud'}</Button>}
         <label className="text-sm inline-flex items-center gap-1.5 ml-auto">Speed
           <select className="min-h-11 rounded-sm border border-line bg-surface px-1.5" value={speed} onChange={(e: { target: { value: string } }) => setSpeed(Number(e.target.value))} aria-label="Playback speed">
             <option value="0.5">Slow</option><option value="1">Normal</option><option value="2">Fast</option>
           </select>
         </label>
       </div>
+      {voiceMsg && <p role="alert" className="text-sm text-warn">{voiceMsg}</p>}
       <p className="text-xs text-muted">This replays the guide’s own steps and commands. It is not a recording and does not run anything on your device.</p>
     </section>
   );

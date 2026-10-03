@@ -7,7 +7,10 @@ import { joinClauses, structureNotes } from '../lib/notes';
 import { dictationSupported, getTranscribeKey, isAudioFile, isTranscriptFile, parseTranscriptText, startDictation, transcribeAudio } from '../lib/transcribe';
 import type { Dictation } from '../lib/transcribe';
 import { buildWalkthrough, walkthroughBody, walkthroughToGuide } from '../lib/walkthrough';
-import { Badge, Button, Card, CopyButton, Field, PageHeader, SectionTitle, TextArea, TextInput } from '../ui/primitives';
+import { scrubText } from '../lib/scrub';
+import type { ScrubResult } from '../lib/scrub';
+import { mergeScrub, ScrubPanel } from '../ui/ScrubPanel';
+import { Badge, Button, Card, Checkbox, CopyButton, Field, PageHeader, SectionTitle, TextArea, TextInput } from '../ui/primitives';
 import { GuideView, Sources } from '../ui/GuideView';
 import { hasVisuals, modelFromGuide } from '../lib/visual';
 import { VisualGuide } from '../ui/VisualGuide';
@@ -32,6 +35,8 @@ export function VoicePage() {
   const [title, setTitle] = useState('');
   const [savedId, setSavedId] = useState<string | undefined>(undefined);
   const [notice, setNotice] = useState('');
+  const [scrub, setScrub] = useState<ScrubResult | null>(null);
+  const [keepTranscript, setKeepTranscript] = useState(false);
   const dict = useRef<Dictation | null>(null);
   const canDictate = useMemo(() => dictationSupported(), []);
   const fields = { transcript, title };
@@ -67,7 +72,7 @@ export function VoicePage() {
       } catch (ex) { setErr((ex as Error).message); }
     }
     setBusy('');
-    if (texts.length) { setTranscript((t) => [t.trim(), ...texts].filter(Boolean).join('\n\n')); setInfo('Transcript loaded. Check it, then make the walkthrough.'); }
+    if (texts.length) { const r = scrubText(texts.join('\n\n')); setTranscript((t) => [t.trim(), r.text].filter(Boolean).join('\n\n')); setScrub((o) => mergeScrub(o, r)); setInfo('Transcript loaded and cleaned of names and numbers. Check it, then make the walkthrough.'); }
   };
 
   const toggleDictation = () => {
@@ -77,7 +82,7 @@ export function VoicePage() {
       onFinal: (t) => setTranscript((x) => (x.trim() ? x.trimEnd() + ' ' : '') + t),
       onInterim: setInterim,
       onError: (m) => { setErr(m); setDictating(false); },
-      onEnd: () => { setDictating(false); setInterim(''); },
+      onEnd: () => { setDictating(false); setInterim(''); setTranscript((t) => { const r = scrubText(t); setScrub((o) => mergeScrub(o, r)); return r.text; }); },
     });
     if (d) { dict.current = d; setDictating(true); }
   };
@@ -88,13 +93,13 @@ export function VoicePage() {
     if (!guide) return;
     if (!guard.canSave) { flash(guard.blocked ? 'Remove the secret before saving.' : 'Confirm or redact the sensitive details first.'); return; }
     const text = guideToText(guide);
-    const body = walkthroughBody(text, transcript);
+    const body = keepTranscript ? walkthroughBody(text, transcript) : text;
     const rec = store.upsert('kbEntries', { ...(savedId ? { id: savedId } : {}), title: guide.title, category: guide.kbCategory, tags: guide.tags, body, pinned: false, demo: false });
     setSavedId(rec.id);
     try {
       await saveCreatedFile('guides', guide.title, 'md', `# ${guide.title}\n\n${body}\n`);
-      await saveCreatedFile('transcripts', guide.title, 'txt', transcript.trim() + '\n');
-      flash('Saved to Knowledge base and Files.');
+      if (keepTranscript) await saveCreatedFile('transcripts', guide.title, 'txt', transcript.trim() + '\n');
+      flash(keepTranscript ? 'Saved to Knowledge base and Files, with the transcript.' : 'Saved to Knowledge base and Files. The transcript was not kept.');
     } catch { flash('Saved to Knowledge base. The files could not be written.'); }
   };
   const toLog = () => {
@@ -132,9 +137,10 @@ export function VoicePage() {
         </div>
 
         <Field label="2. Transcript" htmlFor="vn-transcript" hint="Edit freely: fix mis-heard words and add “first”, “then”, “finally” where the order is unclear.">
-          <TextArea id="vn-transcript" rows={9} value={transcript} onChange={(e: { target: { value: string } }) => { setTranscript(e.target.value); setMade(false); }} placeholder="The transcript appears here. You can also paste or type notes." />
+          <TextArea id="vn-transcript" rows={9} onPaste={(e: { clipboardData: DataTransfer | null; preventDefault(): void }) => { const raw = e.clipboardData?.getData('text'); if (!raw) return; e.preventDefault(); const r = scrubText(raw); setTranscript((t) => (t.trim() ? t.trimEnd() + '\n\n' : '') + r.text); setScrub((o) => mergeScrub(o, r)); setMade(false); }} value={transcript} onChange={(e: { target: { value: string } }) => { setTranscript(e.target.value); setMade(false); }} placeholder="The transcript appears here. You can also paste or type notes." />
           {interim && <p className="text-xs text-muted mt-1" aria-live="polite">Hearing: {interim}</p>}
         </Field>
+        <ScrubPanel result={scrub} onRescrub={() => { const r = scrubText(transcript); setTranscript(r.text); setScrub((o) => mergeScrub(o, r)); setMade(false); }} onAddTerms={(t) => { const r = scrubText(transcript, t); setTranscript(r.text); setScrub((o) => mergeScrub(o, r)); setMade(false); }} />
         <SensitivePanel guard={guard} fieldLabels={{ transcript: 'Transcript', title: 'Title' }} onRedactAll={() => redact(guard.redactAll(fields))} onRedactKind={(k) => redact(guard.redactOneKind(fields, k))} />
         <Button variant="primary" disabled={!transcript.trim()} onClick={make}>{made ? 'Rebuild walkthrough' : '3. Make walkthrough'}</Button>
       </Card>
@@ -157,9 +163,10 @@ export function VoicePage() {
               <CopyButton text={guideToText(guide)} label="Copy guide" size="md" />
               <Button onClick={toLog}>Start a work log from this</Button>
               {savedId && <Link to={`/kb/${savedId}`} className="inline-flex items-center min-h-11 px-2 text-sm underline">Open in Knowledge base</Link>}
-              {notice && <Badge tone={notice.startsWith('Saved') ? 'ok' : 'warn'}>{notice}</Badge>}
+              {notice && <Badge tone={notice.startsWith('Saved') ? 'ok' : 'warn'} className="!whitespace-normal">{notice}</Badge>}
             </div>
-            <p className="text-xs text-muted">Saving keeps the guide and the original transcript together in the Knowledge base and as files in the app’s storage. The audio itself is not stored.</p>
+            <Checkbox checked={keepTranscript} onChange={setKeepTranscript} label="Also keep the cleaned transcript with the guide (may still contain names the cleaner missed)" />
+            <p className="text-xs text-muted">By default only the guide is saved. The audio is never stored.</p>
           </Card>
         </div>
       )}
