@@ -134,7 +134,7 @@ const PROBLEM_WORDS = /\b(?:not working|won'?t|can'?t|cannot|couldn'?t|unable|fa
 const HOWTO = /^\s*(?:how (?:do|to|can|should|would)|guide|steps? (?:to|for)|set ?up|configure|install|create|reset|add|enable|disable|process for|procedure for|walk me through|show me how)\b/i;
 const COMMAND_Q = /\b(?:what (?:does|is)|explain|syntax|meaning of|how (?:do i|to) (?:use|run)|what'?s)\b/i;
 
-function findCommand(text: string): CommandEntry | undefined {
+export function findCommand(text: string): CommandEntry | undefined {
   const t = ' ' + text.toLowerCase().replace(/\s+/g, ' ') + ' ';
   const full = COMMANDS.filter((c) => t.includes(c.name.toLowerCase())).sort((a, b) => b.name.length - a.name.length);
   if (full[0]) return full[0];

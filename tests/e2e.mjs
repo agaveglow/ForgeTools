@@ -197,6 +197,15 @@ async function run(label, viewport) {
     await p.getByText(/Step 1 of \d+/).waitFor({ state: 'visible', timeout: 3000 });
     await p.getByRole('button', { name: 'Next step' }).click();
     await p.getByText(/Step 2 of \d+/).waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('button', { name: /^Ask about step 2/ }).click();
+    await p.getByRole('button', { name: 'What could go wrong?' }).click();
+    await p.getByTestId('step-answer').waitFor({ state: 'visible', timeout: 3000 });
+    ok(/Step 2/.test(await p.getByTestId('step-answer').innerText()), 'step answer names the step');
+    await p.getByLabel(/Your question about step 2/).fill('Password is Hunter2!x');
+    ok(await p.getByTestId('step-ask').getByRole('button', { name: 'Ask', exact: true }).isDisabled(), 'secret in a step question is blocked');
+    await p.getByLabel(/Your question about step 2/).fill('Zorblax quuxification');
+    await p.getByTestId('step-ask').getByRole('button', { name: 'Ask', exact: true }).click();
+    await p.getByText(/won’t guess|only repeats the step|library and your notes/).first().waitFor({ state: 'visible', timeout: 3000 });
     await p.getByRole('button', { name: /^▶ Play/ }).click();
     await p.getByRole('button', { name: /Pause/ }).waitFor({ state: 'visible', timeout: 3000 });
     await p.getByRole('button', { name: /Pause/ }).click();

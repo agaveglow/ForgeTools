@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { VisualModel } from '../lib/visual';
 import { layoutDiagram, stepDuration } from '../lib/visual';
 import { Button } from './primitives';
+import { StepAsk } from './StepAsk';
 import { speak, speakFailMessage, speechSupported, stopSpeaking } from '../lib/speech';
 
 const reduced = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -131,6 +132,7 @@ export function GuidePlayer({ model, images }: { model: VisualModel; images?: Re
         </label>
       </div>
       {voiceMsg && <p role="alert" className="text-sm text-warn">{voiceMsg}</p>}
+      <StepAsk model={model} index={Math.min(i, steps.length - 1)} />
       <p className="text-xs text-muted">This replays the guide’s own steps and commands. It is not a recording and does not run anything on your device.</p>
     </section>
   );
@@ -142,6 +144,7 @@ export type VisualTab = 'diagram' | 'play' | 'photos';
 
 export function VisualGuide({ model, images, photos }: { model: VisualModel; images?: Record<number, Array<{ src: string; caption: string }>>; photos?: ReactNode }) {
   const [tab, setTab] = useState<VisualTab>('diagram');
+  const [askIdx, setAskIdx] = useState(0);
   const tabs: Array<[VisualTab, string]> = [['diagram', 'Diagram'], ['play', 'Play'], ...(photos ? [['photos', 'Photos'] as [VisualTab, string]] : [])];
   return (
     <div className="space-y-3" data-testid="visual-guide">
@@ -151,7 +154,7 @@ export function VisualGuide({ model, images, photos }: { model: VisualModel; ima
         ))}
       </div>
       <div role="tabpanel" id={`vg-panel-${tab}`} aria-labelledby={`vg-tab-${tab}`}>
-        {tab === 'diagram' && <GuideDiagram model={model} />}
+        {tab === 'diagram' && <div className="space-y-3"><GuideDiagram model={model} /><StepAsk model={model} index={Math.min(askIdx, model.steps.length - 1)} onIndex={setAskIdx} /></div>}
         {tab === 'play' && <GuidePlayer model={model} images={images} />}
         {tab === 'photos' && photos}
       </div>

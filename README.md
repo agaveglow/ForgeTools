@@ -104,6 +104,10 @@ Any guide with two or more steps gets a **Visual guide** (agent, voice notes, an
 
 There is no AI-generated imagery or video file export. Real footage and generated pictures would need a cloud service.
 
+### Ask about a step
+
+Under the diagram and the player, **Ask about step N** answers questions about one step: why it is there, what could go wrong, a plain-words version, what its command does, what to look for, and what to do if the result looks wrong. Answers come only from the step's own text, the command reference, the closest troubleshooting-library step and your saved notes, with sources. If none of those say anything useful it says so instead of guessing. It runs on this device, nothing is saved, and questions containing names, numbers or secrets are refused.
+
 ## Voice notes
 
 `src/lib/walkthrough.ts`, `transcribe.ts`, `src/pages/VoicePage.tsx`. Speech-to-text needs a speech service, so there are three routes:
