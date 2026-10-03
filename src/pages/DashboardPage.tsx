@@ -13,6 +13,8 @@ import { BarChart, Heatmap, Ring, StackBar } from '../ui/Charts';
 import { moveWidget, resolveLayout, toLayout, WIDGETS } from '../lib/widgets';
 import type { ResolvedWidget, WidgetSize } from '../lib/widgets';
 import type { ReactNode } from 'react';
+import type { CustomWidget } from '../data/types';
+import { blankWidget, CustomWidgetBody, CustomWidgetEditor, WIDGET_TYPES } from '../ui/CustomWidgets';
 import { Link, navigate } from '../ui/router';
 import { useTitle } from '../ui/hooks';
 import { LogRow } from './LogsPage';
@@ -73,7 +75,12 @@ export function Dashboard() {
   const pinned = kb.filter((k) => k.pinned).slice(0, 5);
   const statusCounts = (['not-started', 'in-progress', 'evidenced', 'signed-off'] as RequirementStatus[]).map((st) => ({ st, n: reqs.filter((r) => r.status === st).length }));
   const [editing, setEditing] = useState(false);
-  const list = resolveLayout(s.dashboard);
+  const customs = s.customWidgets ?? [];
+  const customById = new Map(customs.map((c) => [c.id, c]));
+  const list = resolveLayout(s.dashboard, customs);
+  const [editor, setEditor] = useState<{ w: CustomWidget; isNew: boolean } | null>(null);
+  const saveCustoms = (next: CustomWidget[]) => store.updateSettings({ customWidgets: next });
+  const upsertCustom = (w: CustomWidget) => saveCustoms(customById.has(w.id) ? customs.map((c) => (c.id === w.id ? w : c)) : [...customs, w]);
   const save = (l: ResolvedWidget[]) => store.updateSettings({ dashboard: toLayout(l) });
   const link = (to: string, text: string) => <Link to={to} className="text-sm underline inline-flex items-center min-h-9 px-1">{text}</Link>;
   const ringItems = [
@@ -257,17 +264,21 @@ export function Dashboard() {
 
       <div className="grid gap-5 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 grid-flow-row-dense" data-testid="widgets">
         {visible.map((w, i) => {
-          const content = body[w.id](w.title);
+          const cw = customById.get(w.id);
+          const content = cw
+            ? <><SectionTitle>{w.title}</SectionTitle><Card className="p-3"><CustomWidgetBody w={cw} now={now} onChange={upsertCustom} /></Card></>
+            : body[w.id](w.title);
           if (content === null && !editing) return null;
           return (
             <section key={w.id} aria-label={w.title} data-widget={w.id} className={'min-w-0 ' + span(w.size) + (editing ? ' rounded-md border-2 border-dashed border-accent/60 p-2 space-y-2' : '')}>
               {editing && (
                 <div className="flex flex-wrap items-end gap-2 pb-2 border-b border-line">
-                  <label className="text-xs flex-1 min-w-36">Title<TextInput aria-label={`Title for ${w.defaultTitle}`} maxLength={40} value={w.title} onChange={(e: { target: { value: string } }) => change(w.id, { title: e.target.value || w.defaultTitle })} /></label>
+                  <label className="text-xs flex-1 min-w-36">Title<TextInput aria-label={`Title for ${w.defaultTitle}`} maxLength={40} value={w.title} onChange={(e: { target: { value: string } }) => (cw ? upsertCustom({ ...cw, title: e.target.value || cw.title }) : change(w.id, { title: e.target.value || w.defaultTitle }))} /></label>
                   <div className="flex gap-1" role="group" aria-label={`Size of ${w.title}`}>{([1, 2, 3] as WidgetSize[]).map((z) => <Button key={z} size="sm" variant={w.size === z ? 'primary' : 'secondary'} aria-pressed={w.size === z} onClick={() => change(w.id, { size: z })}>{['Small', 'Wide', 'Full'][z - 1]}</Button>)}</div>
                   <div className="flex gap-1">
                     <Button size="sm" disabled={i === 0} aria-label={`Move ${w.title} earlier`} onClick={() => save(moveWidget(list, w.id, -1))}>↑</Button>
                     <Button size="sm" disabled={i === visible.length - 1} aria-label={`Move ${w.title} later`} onClick={() => save(moveWidget(list, w.id, 1))}>↓</Button>
+                    {cw && <Button size="sm" aria-label={`Edit ${w.title}`} onClick={() => setEditor({ w: cw, isNew: false })}>Edit</Button>}
                     <Button size="sm" aria-label={`Hide ${w.title}`} onClick={() => change(w.id, { hidden: true })}>Hide</Button>
                   </div>
                 </div>
@@ -277,6 +288,14 @@ export function Dashboard() {
           );
         })}
       </div>
+
+      {editing && (
+        <section aria-label="Add a card" className="rounded-md border border-line bg-surface p-3 space-y-2">
+          <SectionTitle>Add your own card</SectionTitle>
+          <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{WIDGET_TYPES.map((t) => <li key={t.type}><button type="button" onClick={() => setEditor({ w: blankWidget(t.type), isNew: true })} className="w-full text-left min-h-11 rounded-sm border border-line hover:bg-surface2 px-3 py-2"><span className="block text-sm font-medium">{t.label}</span><span className="block text-xs text-muted">{t.about}</span></button></li>)}</ul>
+        </section>
+      )}
+      {editor && <CustomWidgetEditor key={editor.w.id} initial={editor.w} isNew={editor.isNew} onClose={() => setEditor(null)} onSave={(w) => { upsertCustom(w); setEditor(null); }} onDelete={editor.isNew ? undefined : () => { saveCustoms(customs.filter((c) => c.id !== editor.w.id)); setEditor(null); }} />}
 
       {editing && (
         <section aria-label="Hidden cards" className="rounded-md border border-line bg-surface p-3 space-y-2">

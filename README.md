@@ -101,6 +101,7 @@ The dashboard is built for tracking your own progress: today's daily routine and
 ### Make it yours
 
 - **Dashboard cards:** press **Customise** on the dashboard to rename, move, resize (Small, Wide, Full) or hide each card, and bring hidden ones back. The layout is saved on the device and included in backups. New charts: progress rings, a 12-week activity heat map, weekly off-the-job hours, requirements by status, due-soon checks and a task board summary.
+- **Your own cards:** in Customise, **Add your own card** creates a note, checklist, counter, progress bar, countdown or row of shortcuts. Edit or delete them any time; ticks, counts and progress update straight from the dashboard. Card text is scanned for names, numbers and secrets before it is saved. **Reset layout** keeps your cards.
 - **Appearance** (Settings): accent colour (presets or custom), text size, font (from the fonts already on the device), corner style, app name and dashboard heading. A custom colour that would be too faint to read is nudged darker or lighter automatically. Names and headings are scanned like everything else, so keep them neutral.
 - **Guide diagrams** show an icon per step (picked from the step's wording) and any photos you attached to that step.
 

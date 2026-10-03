@@ -77,3 +77,27 @@ describe('visuals', () => {
     expect(weeklyHoursSeries([], now, 8).length).toBe(8);
   });
 });
+
+import { daysUntil, blankWidget } from '../../src/ui/CustomWidgets';
+describe('custom cards', () => {
+  test('appear in the layout, keep position, vanish when deleted', () => {
+    const customs = [{ id: 'c1', title: 'Mine' }];
+    const l = resolveLayout({ order: ['c1', 'today'] }, customs);
+    expect(l[0]).toMatchObject({ id: 'c1', title: 'Mine', size: 1 });
+    expect(l.length).toBe(WIDGETS.length + 1);
+    expect(resolveLayout({ order: ['c1', 'today'] }, []).find((w) => w.id === 'c1')).toBeUndefined();
+  });
+  test('layout does not store titles for custom cards', () => {
+    const l = resolveLayout(undefined, [{ id: 'c1', title: 'Mine' }]);
+    expect(toLayout(l).titles).toEqual({});
+  });
+  test('countdown', () => {
+    expect(daysUntil('2026-10-10', new Date(2026, 9, 3))).toBe(7);
+    expect(daysUntil('2026-10-01', new Date(2026, 9, 3))).toBe(-2);
+    expect(daysUntil('', new Date())).toBeUndefined();
+  });
+  test('blank cards have sensible defaults', () => {
+    expect(blankWidget('progress')).toMatchObject({ value: 0, target: 10 });
+    expect(blankWidget('checklist').items).toEqual([]);
+  });
+});

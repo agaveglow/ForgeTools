@@ -555,6 +555,43 @@ async function run(label, viewport) {
     await shot('live-notes');
   });
 
+  await step(S('dashboard: add, use, edit and delete your own cards'), async () => {
+    await go('/');
+    await p.getByRole('button', { name: 'Customise' }).click();
+    await p.getByRole('region', { name: 'Add a card' }).getByRole('button', { name: /^Checklist/ }).click();
+    await p.getByLabel('Title', { exact: true }).fill('Friday wrap-up');
+    await p.getByLabel('Items').fill('Check backups\nReview alerts\nUpdate log');
+    await p.getByRole('button', { name: 'Add card' }).click();
+    await p.getByRole('region', { name: 'Friday wrap-up' }).waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('region', { name: 'Add a card' }).getByRole('button', { name: /^Counter/ }).click();
+    await p.getByLabel('Title', { exact: true }).fill('Jobs closed');
+    await p.getByLabel('Items').count();
+    await p.getByRole('button', { name: 'Add card' }).click();
+    await p.getByRole('region', { name: 'Add a card' }).getByRole('button', { name: /^Note/ }).click();
+    await p.getByLabel('Title', { exact: true }).fill('Reminder');
+    await p.getByLabel('Text').fill('Email jo.bloggs@client.com');
+    ok(await p.getByRole('button', { name: 'Add card' }).isDisabled(), 'email in a card blocks saving');
+    await p.getByLabel('Text').fill('Check the toner stock');
+    await p.getByRole('button', { name: 'Add card' }).click();
+    await p.getByRole('button', { name: 'Done' }).click();
+    await p.getByRole('checkbox', { name: 'Check backups' }).click();
+    await p.getByRole('button', { name: 'Increase Jobs closed' }).click();
+    await p.getByRole('button', { name: 'Increase Jobs closed' }).click();
+    await p.reload();
+    ok((await p.getByRole('checkbox', { name: 'Check backups' }).getAttribute('aria-checked')) === 'true', 'tick persisted');
+    await p.getByRole('region', { name: 'Jobs closed' }).getByText('2', { exact: true }).waitFor({ state: 'visible', timeout: 4000 });
+    await p.getByRole('button', { name: 'Customise' }).click();
+    await p.getByRole('button', { name: 'Edit Friday wrap-up' }).click();
+    await p.getByLabel('Items').fill('Check backups\nReview alerts\nUpdate log\nTidy notes');
+    await p.getByRole('button', { name: 'Save card' }).click();
+    await p.getByRole('checkbox', { name: 'Tidy notes' }).waitFor({ state: 'visible', timeout: 3000 });
+    ok((await p.getByRole('checkbox', { name: 'Check backups' }).getAttribute('aria-checked')) === 'true', 'edit keeps ticks');
+    await p.getByRole('button', { name: 'Edit Reminder' }).click();
+    await p.getByRole('button', { name: 'Delete card' }).click();
+    ok((await p.getByRole('region', { name: 'Reminder' }).count()) === 0, 'card deleted');
+    await shot('custom-cards');
+  });
+
   await step(S('encryption: on, stored as ciphertext, locks, wrong passphrase refused, unlock, lock now'), async () => {
     await go('/kb/new');
     await p.getByLabel('Title').fill('Zebra quartz unique title');

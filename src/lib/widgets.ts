@@ -25,12 +25,13 @@ export const WIDGETS: WidgetDef[] = [
 
 export interface ResolvedWidget { id: string; title: string; size: WidgetSize; hidden: boolean; defaultTitle: string }
 
-const byId = new Map(WIDGETS.map((w) => [w.id, w]));
 
 /** Saved layout plus anything new: unknown ids are dropped, new widgets are appended in default order. */
-export function resolveLayout(layout: DashboardLayout | undefined): ResolvedWidget[] {
+export function resolveLayout(layout: DashboardLayout | undefined, customs: Array<{ id: string; title: string }> = []): ResolvedWidget[] {
+  const defs = [...WIDGETS, ...customs.map((c): WidgetDef => ({ id: c.id, title: c.title, size: 1, about: 'A card you made.' }))];
+  const byId = new Map(defs.map((w) => [w.id, w]));
   const order = [...new Set((layout?.order ?? []).filter((id) => byId.has(id)))];
-  for (const w of WIDGETS) if (!order.includes(w.id)) order.push(w.id);
+  for (const w of defs) if (!order.includes(w.id)) order.push(w.id);
   const hidden = new Set(layout?.hidden ?? []);
   return order.map((id) => {
     const d = byId.get(id)!;
@@ -43,10 +44,11 @@ export function resolveLayout(layout: DashboardLayout | undefined): ResolvedWidg
 /** Full layout from a resolved list, ready to save. Defaults are not stored. */
 export function toLayout(list: ResolvedWidget[]): DashboardLayout {
   const sizes: Record<string, WidgetSize> = {}, titles: Record<string, string> = {};
+  const builtin = new Map(WIDGETS.map((w) => [w.id, w]));
   for (const w of list) {
-    const d = byId.get(w.id)!;
-    if (w.size !== d.size) sizes[w.id] = w.size;
-    if (w.title !== d.title) titles[w.id] = w.title;
+    const d = builtin.get(w.id);
+    if (w.size !== (d?.size ?? 1)) sizes[w.id] = w.size;
+    if (d && w.title !== d.title) titles[w.id] = w.title;
   }
   return { order: list.map((w) => w.id), hidden: list.filter((w) => w.hidden).map((w) => w.id), sizes, titles };
 }

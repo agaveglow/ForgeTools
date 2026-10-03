@@ -248,6 +248,28 @@ export interface DashboardLayout {
   titles?: Record<string, string>;
 }
 
+/** A card the person made themselves. Content is scanned like everything else, so keep it free of customer details. */
+export type CustomWidgetType = 'note' | 'checklist' | 'counter' | 'progress' | 'countdown' | 'links';
+export interface CustomWidget {
+  id: string;
+  type: CustomWidgetType;
+  title: string;
+  /** note */
+  text?: string;
+  /** checklist */
+  items?: Array<{ id: string; text: string; done: boolean }>;
+  /** counter and progress: current value */
+  value?: number;
+  /** counter: amount per tap. progress: the goal. */
+  step?: number;
+  target?: number;
+  unit?: string;
+  /** countdown: YYYY-MM-DD and what it counts down to */
+  date?: string;
+  /** links: app routes such as /tasks */
+  links?: string[];
+}
+
 export interface Settings {
   theme: 'system' | 'light' | 'dark';
   /** Look: accent colour (#rrggbb), text size, font and corner style. */
@@ -260,6 +282,7 @@ export interface Settings {
   dashboardTitle?: string;
   /** Dashboard layout: widget order, hidden widgets, sizes (1 to 3 columns wide) and renamed titles. */
   dashboard?: DashboardLayout;
+  customWidgets?: CustomWidget[];
   /** Work-log editor mode. 'auto' = quick on phones, full on desktop. */
   logMode: 'auto' | 'quick' | 'full';
   lastExportAt?: string;
