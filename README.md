@@ -98,6 +98,8 @@ The dashboard is built for tracking your own progress: today's daily routine and
 
 **Tasks** now covers daily, weekly, monthly and quarterly routines. A monthly check stays ticked until the month ends, a quarterly one until the quarter ends, and both show the days left and when they were last done. **Add many at once** adds the starter monthly and quarterly checklists, or any list you paste (one per line, bullets and numbers removed). Pasted text is scanned, so names, emails and numbers are refused. The **Task board** holds one-off jobs in To do, Doing, Blocked and Done columns; cards move with buttons, so it works on a phone. There is no client-name field on purpose: describe the routine, not the customer.
 
+**Check guides** (menu: Check guides, or the *How to* link on a task row) give a step-by-step guide for each monthly and quarterly check: before you start, the steps as a diagram and player (with Ask about this step), commands used, how to monitor between checks, evidence to keep and cautions. They are general good practice to adapt to your own policies, with placeholders only. **Response times** holds the call-priority table from your Tasks checklist (target and contractual response, update frequency, definitions and examples) and a deadline clock that works out reply and update times in business hours (09:00 to 17:00, weekdays; public holidays are not allowed for).
+
 ### Make it yours
 
 - **Dashboard cards:** press **Customise** on the dashboard to rename, move, resize (Small, Wide, Full) or hide each card, and bring hidden ones back. The layout is saved on the device and included in backups. New charts: progress rings, a 12-week activity heat map, weekly off-the-job hours, requirements by status, due-soon checks and a task board summary.

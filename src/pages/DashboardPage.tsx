@@ -10,6 +10,7 @@ import { plural, timeAgo } from '../lib/util';
 import { Badge, Button, Card, Empty, SectionTitle, TextInput } from '../ui/primitives';
 import { Bar, Stat } from '../ui/Progress';
 import { BarChart, Heatmap, Ring, StackBar } from '../ui/Charts';
+import { PRIORITIES } from '../lib/sla';
 import { moveWidget, resolveLayout, toLayout, WIDGETS } from '../lib/widgets';
 import type { ResolvedWidget, WidgetSize } from '../lib/widgets';
 import type { ReactNode } from 'react';
@@ -175,6 +176,15 @@ export function Dashboard() {
         <SectionTitle action={link('/tasks', 'Tasks')}>{title}</SectionTitle>
         <Card className="p-3">
           {dueSoon.length === 0 ? <p className="text-sm text-muted">Nothing due this month or quarter.</p> : <ul className="space-y-1.5">{dueSoon.slice(0, 5).map(({ t, left }) => <li key={t.id} className="flex items-start gap-2 text-sm"><Badge tone={left <= 7 ? 'warn' : 'neutral'}>{left}d</Badge><span className="wrap-any flex-1">{t.title}</span></li>)}</ul>}
+        </Card>
+      </>
+    ),
+    sla: (title) => (
+      <>
+        <SectionTitle action={link('/sla', 'Deadline clock')}>{title}</SectionTitle>
+        <Card className="p-3">
+          <table className="w-full text-sm"><caption className="sr-only">Target response and update by priority</caption><thead className="text-xs text-muted text-left"><tr><th className="pb-1 font-normal">Priority</th><th className="pb-1 font-normal">Respond</th><th className="pb-1 font-normal">Update</th></tr></thead>
+            <tbody>{PRIORITIES.map((x) => <tr key={x.id} className="border-t border-line"><th scope="row" className="py-1 text-left font-medium">{x.label}</th><td className="py-1">{x.targetResponse < 60 ? `${x.targetResponse} min` : `${x.targetResponse / 60} h`}</td><td className="py-1">{x.updateEvery.minutes >= 1440 ? '24 h' : `${x.updateEvery.minutes / 60} h`}</td></tr>)}</tbody></table>
         </Card>
       </>
     ),

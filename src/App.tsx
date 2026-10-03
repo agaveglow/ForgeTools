@@ -16,6 +16,8 @@ import { VoicePage } from './pages/VoicePage';
 import { FilesPage } from './pages/FilesPage';
 import { applyLook } from './lib/look';
 import { LivePage } from './pages/LivePage';
+import { CheckGuidePage, ChecksPage } from './pages/ChecksPage';
+import { SlaPage } from './pages/SlaPage';
 import { BoardPage } from './pages/BoardPage';
 import { TasksPage } from './pages/TasksPage';
 import { ImportPage } from './pages/ImportPage';
@@ -30,6 +32,8 @@ const NAV: NavItem[] = [
   { to: '/', label: 'Dashboard', short: 'Home', icon: '⌂', root: '/' },
   { to: '/tasks', label: 'Tasks', short: 'Tasks', icon: '☑', root: '/tasks' },
   { to: '/live', label: 'Live notes', short: 'Notes', icon: '✎', root: '/live' },
+  { to: '/checks', label: 'Check guides', short: 'Checks', icon: '✔', root: '/checks' },
+  { to: '/sla', label: 'Response times', short: 'SLA', icon: '⏱', root: '/sla' },
   { to: '/board', label: 'Task board', short: 'Board', icon: '▥', root: '/board' },
   { to: '/logs', label: 'Work logs', short: 'Logs', icon: '☰', root: '/logs' },
   { to: '/requirements', label: 'Requirements', short: 'Goals', icon: '◎', root: '/requirements' },
@@ -74,6 +78,9 @@ function route(path: string): ReactNode {
   if (path === '/tasks') return <TasksPage />;
   if (path === '/board') return <BoardPage />;
   if (path === '/live') return <LivePage />;
+  if (path === '/checks') return <ChecksPage />;
+  if (path === '/sla') return <SlaPage />;
+  if ((p = match('/checks/:id', path))) return <CheckGuidePage id={p.id} />;
   if (path === '/requirements') return <RequirementsPage />;
   if (path === '/apprenticeship') return <ApprenticeshipPage />;
   if (path === '/kb') return <KbList />;

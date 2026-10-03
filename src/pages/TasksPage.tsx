@@ -10,6 +10,7 @@ import { Badge, Button, Card, Chip, Collapsible, Empty, Field, Modal, PageHeader
 import { PrivacyNote, SensitivePanel, useSaveGuard } from '../ui/SensitivePanel';
 import { useTitle } from '../ui/hooks';
 import { Link } from '../ui/router';
+import { guideForTitle } from '../content/checkGuides';
 
 export function TaskRow({ t, now }: { t: Task; now: Date }) {
   const done = taskDone(t, now);
@@ -21,6 +22,7 @@ export function TaskRow({ t, now }: { t: Task; now: Date }) {
         {done && <span aria-hidden>✓</span>}
       </button>
       <span className={'text-sm wrap-any flex-1 ' + (done ? 'line-through text-muted' : '')}>{t.title}</span>
+      {guideForTitle(t.title) && <Link to={`/checks/${guideForTitle(t.title)!.id}`} className="text-xs underline whitespace-nowrap inline-flex items-center min-h-9" aria-label={`How to do and monitor: ${t.title}`}>How to</Link>}
       {t.kind !== 'once' && t.kind !== 'daily' && !done && daysLeftInPeriod(t.kind, now) !== undefined && <Badge tone={(daysLeftInPeriod(t.kind, now) ?? 99) <= 7 ? 'warn' : 'neutral'}>{daysLeftInPeriod(t.kind, now)} days left</Badge>}
       {t.kind !== 'once' && lastDone(t) && <span className="text-xs text-muted whitespace-nowrap">Last {lastDone(t)}</span>}
       {st === 'overdue' && <Badge tone="bad">Overdue</Badge>}

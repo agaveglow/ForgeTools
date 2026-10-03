@@ -101,3 +101,20 @@ describe('custom cards', () => {
     expect(blankWidget('checklist').items).toEqual([]);
   });
 });
+
+import { CHECK_GUIDES, guideForTitle } from '../../src/content/checkGuides';
+import { STARTER_LISTS } from '../../src/content/routines';
+describe('check guides', () => {
+  test('every starter task has a guide, and ids are unique', () => {
+    for (const l of STARTER_LISTS) for (const item of l.items) expect(guideForTitle(item)?.frequency).toBe(l.kind);
+    expect(new Set(CHECK_GUIDES.map((g) => g.id)).size).toBe(CHECK_GUIDES.length);
+  });
+  test('each guide has steps, monitoring, evidence and cautions', () => {
+    for (const g of CHECK_GUIDES) { expect(g.steps.length).toBeGreaterThanOrEqual(5); expect(g.monitor.length).toBeGreaterThan(0); expect(g.evidence.length).toBeGreaterThan(0); expect(g.cautions.length).toBeGreaterThan(0); }
+  });
+  test('guides name no customer and use placeholder hosts only', () => {
+    const text = JSON.stringify(CHECK_GUIDES);
+    expect(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/.test(text)).toBe(false);
+    for (const m of text.matchAll(/[\w-]+\.(?:com|co\.uk|net|org)\b/g)) expect(m[0]).toMatch(/example\.com/);
+  });
+});

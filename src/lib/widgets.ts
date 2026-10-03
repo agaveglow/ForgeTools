@@ -13,6 +13,7 @@ export const WIDGETS: WidgetDef[] = [
   { id: 'requirements', title: 'Job and apprenticeship requirements', size: 2, about: 'Progress against each requirement.' },
   { id: 'hours', title: 'Off-the-job hours', size: 2, about: 'Hours logged per week as a chart.' },
   { id: 'due', title: 'Due soon', size: 1, about: 'Monthly and quarterly checks not yet done, soonest first.' },
+  { id: 'sla', title: 'Response times', size: 1, about: 'Target response and update times by call priority, with a deadline clock.' },
   { id: 'board', title: 'Task board', size: 1, about: 'One-off jobs split by column.' },
   { id: 'recent', title: 'Recent work', size: 2, about: 'Your latest work logs.' },
   { id: 'apprenticeship', title: 'Apprenticeship', size: 1, about: 'Hours this week and in total.' },

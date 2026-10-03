@@ -41,7 +41,7 @@ async function run(label, viewport) {
   });
 
   await step(S('no horizontal overflow on every page'), async () => {
-    for (const r of ['/', '/logs', '/logs/new', '/troubleshoot', '/commands', '/security', '/agent', '/voice', '/files', '/live', '/board', '/tasks', '/requirements', '/apprenticeship', '/import', '/kb', '/skills', '/settings']) {
+    for (const r of ['/', '/logs', '/logs/new', '/troubleshoot', '/commands', '/security', '/agent', '/voice', '/files', '/live', '/checks', '/checks/qbr', '/sla', '/board', '/tasks', '/requirements', '/apprenticeship', '/import', '/kb', '/skills', '/settings']) {
       await go(r); await noHScroll();
     }
   });
@@ -590,6 +590,32 @@ async function run(label, viewport) {
     await p.getByRole('button', { name: 'Delete card' }).click();
     ok((await p.getByRole('region', { name: 'Reminder' }).count()) === 0, 'card deleted');
     await shot('custom-cards');
+  });
+
+  await step(S('check guides and the response-time clock'), async () => {
+    await go('/checks');
+    await p.getByRole('link', { name: /User permissions audit/ }).click();
+    await p.waitForURL(/#\/checks\/permissions-audit/);
+    await p.getByTestId('visual-guide').waitFor({ state: 'visible', timeout: 3000 });
+    for (const h of ['Before you start', 'How to monitor', 'Evidence to keep', 'Cautions']) await p.getByRole('region', { name: h }).waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('region', { name: 'Commands' }).getByText('Get-ADGroupMember').first().waitFor({ state: 'visible', timeout: 3000 });
+    const mark = p.getByRole('checkbox', { name: /Mark User permissions audit done/ });
+    await mark.waitFor({ state: 'visible', timeout: 3000 });
+    const before = await mark.getAttribute('aria-checked');
+    await mark.click();
+    ok((await mark.getAttribute('aria-checked')) === (before === 'true' ? 'false' : 'true'), 'check toggles from its guide');
+    await go('/tasks');
+    await p.getByRole('link', { name: /How to do and monitor: Review conditional access rules/ }).waitFor({ state: 'visible', timeout: 3000 });
+    await go('/sla');
+    await p.getByRole('group', { name: 'Priority' }).getByRole('button', { name: 'Critical' }).click();
+    await p.getByLabel('Logged at').fill('2026-10-05T10:00');
+    ok(/10:15/.test(await p.getByTestId('respond-by').innerText()), 'critical target is 15 minutes: ' + await p.getByTestId('respond-by').innerText());
+    ok(/10:30/.test(await p.getByTestId('contract-by').innerText()), 'contractual is 30 minutes');
+    ok(/12:00/.test(await p.getByTestId('update-by').innerText()), 'update is 2 hours');
+    await p.getByLabel('Logged at').fill('2026-10-02T16:50');
+    await p.getByRole('group', { name: 'Priority' }).getByRole('button', { name: 'High' }).click();
+    ok(/09:20/.test(await p.getByTestId('respond-by').innerText()), 'rolls over the weekend');
+    await shot('sla');
   });
 
   await step(S('encryption: on, stored as ciphertext, locks, wrong passphrase refused, unlock, lock now'), async () => {
