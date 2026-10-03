@@ -14,6 +14,7 @@ import { LockScreen } from './ui/LockScreen';
 import { store, useSettings, useVault } from './data/hooks';
 import { VoicePage } from './pages/VoicePage';
 import { FilesPage } from './pages/FilesPage';
+import { applyLook } from './lib/look';
 import { BoardPage } from './pages/BoardPage';
 import { TasksPage } from './pages/TasksPage';
 import { ImportPage } from './pages/ImportPage';
@@ -88,11 +89,12 @@ function route(path: string): ReactNode {
 }
 
 function useTheme() {
-  const { theme } = useSettings();
+  const { theme, accent, textScale, fontStyle, corners } = useSettings();
   useEffect(() => {
     const apply = () => {
       const t = theme === 'system' ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : theme;
       document.documentElement.setAttribute('data-theme', t);
+      applyLook({ accent, textScale, fontStyle, corners }, t);
     };
     apply();
     try { if (theme === 'system') localStorage.removeItem('forgetools:theme'); else localStorage.setItem('forgetools:theme', theme); } catch { /* storage unavailable */ }
@@ -100,7 +102,7 @@ function useTheme() {
     const mq = window.matchMedia('(prefers-color-scheme: light)');
     mq.addEventListener('change', apply);
     return () => mq.removeEventListener('change', apply);
-  }, [theme]);
+  }, [theme, accent, textScale, fontStyle, corners]);
 }
 
 export function App() {
@@ -133,6 +135,7 @@ function useAutoLock() {
 }
 
 function Shell() {
+  const { appName } = useSettings();
   useAutoLock();
   const path = usePath();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -159,7 +162,7 @@ function Shell() {
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:flex-col w-60 shrink-0 border-r border-line bg-surface sticky top-0 h-dvh">
         <div className="px-4 py-4 border-b border-line">
-          <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight text-lg"><span className="inline-grid place-items-center size-7 rounded-sm bg-accent text-accent-ink font-mono text-sm">F</span>ForgeTools</Link>
+          <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight text-lg"><span className="inline-grid place-items-center size-7 rounded-sm bg-accent text-accent-ink font-mono text-sm">{(appName || 'ForgeTools')[0]?.toUpperCase()}</span><span className="wrap-any">{appName || 'ForgeTools'}</span></Link>
         </div>
         <nav aria-label="Main" className="flex-1 overflow-y-auto p-2 space-y-0.5">
           {NAV.map((n) => (
@@ -178,7 +181,7 @@ function Shell() {
         {/* Mobile top bar */}
         <header className="md:hidden sticky top-0 z-30 bg-surface border-b border-line pt-safe">
           <div className="flex items-center justify-between px-4 h-12">
-            <Link to="/" className="flex items-center gap-2 font-semibold min-h-11"><span className="inline-grid place-items-center size-6 rounded-sm bg-accent text-accent-ink font-mono text-xs">F</span>ForgeTools</Link>
+            <Link to="/" className="flex items-center gap-2 font-semibold min-h-11"><span className="inline-grid place-items-center size-6 rounded-sm bg-accent text-accent-ink font-mono text-xs">{(appName || 'ForgeTools')[0]?.toUpperCase()}</span>{appName || 'ForgeTools'}</Link>
             <button type="button" aria-label="Search" onClick={() => setSearchOpen(true)} className="min-h-11 px-3 rounded-sm border border-line text-sm hover:bg-surface2">Search</button>
           </div>
         </header>

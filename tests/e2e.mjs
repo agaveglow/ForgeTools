@@ -190,7 +190,7 @@ async function run(label, viewport) {
     await go('/agent');
     await p.getByLabel('What do you need?').fill('Ricoh printer jams when printing from tray 2');
     await p.getByRole('button', { name: 'Generate guide' }).click();
-    await p.getByTestId('diagram').locator('svg').waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByTestId('diagram').locator('svg').first().waitFor({ state: 'visible', timeout: 3000 });
     ok((await p.getByTestId('diagram').locator('text').count()) > 5, 'diagram has labelled nodes');
     await p.getByTestId('diagram').scrollIntoViewIfNeeded(); await shot('diagram');
     await p.getByRole('tab', { name: 'Play' }).click();
@@ -383,7 +383,7 @@ async function run(label, viewport) {
     ok(await p.getByTestId('scrub-panel').getByText(/Removed \d+ items?/).isVisible(), 'scrub summary shown');
     await p.getByRole('button', { name: /Make guide/ }).click();
     await p.getByTestId('import-guide').waitFor({ state: 'visible', timeout: 3000 });
-    ok(await p.getByTestId('diagram').locator('svg').isVisible(), 'diagram shown first');
+    ok(await p.getByTestId('diagram').locator('svg').first().isVisible(), 'diagram shown first');
     ok(await p.getByRole('button', { name: 'Save guide' }).isDisabled(), 'save needs the read-through confirmation');
     await p.getByRole('checkbox', { name: /I have read this guide/ }).check();
     await p.getByRole('button', { name: 'Save guide' }).click();
@@ -490,6 +490,44 @@ async function run(label, viewport) {
     await p.getByLabel('New card').fill('');
     await go('/');
     await p.getByText('Quarterly checks').first().waitFor({ state: 'visible', timeout: 4000 });
+  });
+
+  await step(S('dashboard: customise cards; appearance: colour, size, names'), async () => {
+    await go('/');
+    await p.getByRole('button', { name: 'Customise' }).click();
+    await p.getByLabel('Title for Today').fill('My day');
+    await p.getByRole('button', { name: 'Hide Learning' }).click();
+    await p.getByRole('region', { name: 'Hidden cards' }).getByRole('button', { name: 'Show Learning' }).waitFor({ state: 'visible', timeout: 3000 });
+    const orderBefore = await p.locator('[data-widget]').evaluateAll((els) => els.map((e) => e.getAttribute('data-widget')));
+    await p.getByRole('button', { name: 'Move Progress rings earlier' }).click();
+    const orderAfter = await p.locator('[data-widget]').evaluateAll((els) => els.map((e) => e.getAttribute('data-widget')));
+    ok(orderAfter.indexOf('rings') < orderBefore.indexOf('rings'), 'card moved earlier');
+    await p.getByRole('group', { name: 'Size of Progress rings' }).getByRole('button', { name: 'Full' }).click();
+    await p.getByRole('button', { name: 'Done' }).click();
+    await p.reload();
+    await p.getByRole('region', { name: 'My day' }).waitFor({ state: 'visible', timeout: 4000 });
+    ok((await p.locator('[data-widget="learning"]').count()) === 0, 'hidden card stays hidden after reload');
+    ok((await p.locator('[data-widget="activity"] svg').count()) > 0, 'heat map drawn');
+    await shot('dashboard-widgets');
+    await go('/settings');
+    await p.getByRole('button', { name: 'Blue', exact: true }).click();
+    const acc = await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--c-accent').trim());
+    ok(/^#/.test(acc) && acc !== '#d9531e', 'accent changed to ' + acc);
+    await p.getByRole('group', { name: 'Text size' }).getByRole('button', { name: 'Extra large' }).click();
+    ok((await p.evaluate(() => document.documentElement.style.fontSize)) === '19px', 'text size applied');
+    await p.getByLabel('App name').fill('My Toolkit');
+    await p.getByLabel('Dashboard heading').fill('Hello engineer');
+    await p.getByRole('button', { name: 'Save names' }).click();
+    await go('/');
+    await p.getByRole('heading', { name: 'Hello engineer' }).waitFor({ state: 'visible', timeout: 3000 });
+    await p.locator('text=My Toolkit >> visible=true').first().waitFor({ state: 'visible', timeout: 3000 });
+    await p.reload(); await p.getByRole('heading', { name: 'Hello engineer' }).waitFor({ state: 'visible', timeout: 4000 });
+    ok((await p.evaluate(() => document.documentElement.style.fontSize)) === '19px', 'look survives reload');
+    await go('/settings');
+    await p.getByLabel('App name').fill('jo.bloggs@client.com');
+    ok(await p.getByRole('button', { name: 'Save names' }).isDisabled(), 'email in a label is blocked');
+    await p.getByRole('button', { name: 'Reset appearance' }).click();
+    ok((await p.evaluate(() => document.documentElement.style.fontSize)) === '', 'reset clears text size');
   });
 
   await step(S('encryption: on, stored as ciphertext, locks, wrong passphrase refused, unlock, lock now'), async () => {

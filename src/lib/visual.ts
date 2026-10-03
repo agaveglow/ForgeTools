@@ -73,7 +73,31 @@ export const hasVisuals = (m: VisualModel) => m.steps.length >= 2;
 
 // ---------- diagram layout ----------
 
-export interface DiagramNode { id: string; kind: 'start' | 'step' | 'end'; y: number; h: number; lines: string[]; cmd?: string; n?: number; caution?: boolean }
+export type StepIcon = 'terminal' | 'warning' | 'settings' | 'printer' | 'network' | 'user' | 'power' | 'search' | 'file' | 'shield' | 'update' | 'check' | 'step';
+
+const ICON_RULES: Array<[StepIcon, RegExp]> = [
+  ['warning', /\b(?:caution|warning|careful|do not|don't|never|back ?up|data loss|hot)\b/i],
+  ['printer', /\b(?:print\w*|toner|drum|tray|jam\w*|paper|scan\w*|copier|mfp|spool\w*|queue)\b/i],
+  ['network', /\b(?:network|wi-?fi|ethernet|dns|dhcp|ip address|router|switch|firewall|vpn|port|ping|connect\w*|cable|link)\b/i],
+  ['shield', /\b(?:security|phish\w*|malware|virus|password|mfa|conditional access|permission\w*|access|encrypt\w*|certificate)\b/i],
+  ['update', /\b(?:update\w*|firmware|patch\w*|upgrade|install\w*|driver\w*|version)\b/i],
+  ['power', /\b(?:restart|reboot|power|shut ?down|turn off|turn on|switch off|switch on|reset)\b/i],
+  ['settings', /\b(?:settings?|configur\w*|option\w*|enable|disable|policy|register|setup|set up|menu|panel)\b/i],
+  ['user', /\b(?:user|account|profile|sign[- ]?in|log ?in|mailbox|customer|contact)\b/i],
+  ['file', /\b(?:file|folder|log|document|export|import|save|report|backup)\b/i],
+  ['search', /\b(?:check|look|find|review|verify|confirm|inspect|test|compare|identify|note)\b/i],
+];
+
+/** Picks an icon for a step from its wording. Purely cosmetic: it never changes what the step says. */
+export function iconFor(s: { text: string; commands: string[] }): StepIcon {
+  if (s.commands.length && !/\b(?:caution|warning|do not|never)\b/i.test(s.text)) return 'terminal';
+  for (const [icon, re] of ICON_RULES) if (re.test(s.text)) return icon;
+  return 'step';
+}
+
+export interface DiagramNode { id: string; kind: 'start' | 'step' | 'end'; y: number; h: number; lines: string[]; cmd?: string; n?: number; caution?: boolean; icon?: StepIcon; photo?: boolean }
+
+export const PHOTO_H = 76;
 
 export function wrapText(text: string, max: number): string[] {
   const out: string[] = []; let cur = '';
@@ -85,7 +109,7 @@ export function wrapText(text: string, max: number): string[] {
   return out;
 }
 
-export function layoutDiagram(m: VisualModel, perLine = 34, maxLines = 4): { nodes: DiagramNode[]; height: number } {
+export function layoutDiagram(m: VisualModel, perLine = 29, maxLines = 4, photoSteps: ReadonlySet<number> = new Set()): { nodes: DiagramNode[]; height: number } {
   const nodes: DiagramNode[] = [];
   let y = 8;
   const push = (n: Omit<DiagramNode, 'y'>) => { nodes.push({ ...n, y }); y += n.h + 22; };
@@ -94,7 +118,8 @@ export function layoutDiagram(m: VisualModel, perLine = 34, maxLines = 4): { nod
     let lines = wrapText(s.text, perLine);
     if (lines.length > maxLines) lines = [...lines.slice(0, maxLines - 1), lines[maxLines - 1].replace(/\s*\S{0,3}$/, '') + '…'];
     const cmd = s.commands[0] ? (s.commands[0].length > 36 ? s.commands[0].slice(0, 35) + '…' : s.commands[0]) : undefined;
-    push({ id: `s${s.n}`, kind: 'step', n: s.n, caution: s.caution, lines, cmd, h: 14 + lines.length * 17 + (cmd ? 24 : 0) });
+    const photo = photoSteps.has(s.n);
+    push({ id: `s${s.n}`, kind: 'step', n: s.n, caution: s.caution, lines, cmd, icon: iconFor(s), photo, h: 14 + lines.length * 17 + (cmd ? 24 : 0) + (photo ? PHOTO_H + 8 : 0) });
   }
   push({ id: 'end', kind: 'end', h: 28, lines: ['Done: check the result'] });
   return { nodes, height: y - 22 + 8 };

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { VisualModel } from '../lib/visual';
-import { layoutDiagram, stepDuration } from '../lib/visual';
+import { layoutDiagram, PHOTO_H, stepDuration } from '../lib/visual';
+import type { StepIcon } from '../lib/visual';
 import { Button } from './primitives';
 import { StepAsk } from './StepAsk';
 import { speak, speakFailMessage, speechSupported, stopSpeaking } from '../lib/speech';
@@ -10,8 +11,29 @@ const reduced = () => typeof window !== 'undefined' && !!window.matchMedia?.('(p
 
 // ---------- diagram ----------
 
-export function GuideDiagram({ model }: { model: VisualModel }) {
-  const { nodes, height } = useMemo(() => layoutDiagram(model), [model]);
+const ICON_PATHS: Record<StepIcon, ReactNode> = {
+  terminal: <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 9l3 3-3 3M12 15h5" /></>,
+  warning: <><path d="M12 3l10 18H2z" /><path d="M12 10v5M12 18v.5" /></>,
+  settings: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" /></>,
+  printer: <><path d="M7 9V3h10v6" /><rect x="3" y="9" width="18" height="8" rx="2" /><path d="M7 14h10v7H7z" /></>,
+  network: <><circle cx="12" cy="5" r="2.5" /><circle cx="5" cy="19" r="2.5" /><circle cx="19" cy="19" r="2.5" /><path d="M12 7.5v4M12 11.5L5 16.5M12 11.5l7 5" /></>,
+  user: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" /></>,
+  power: <><path d="M12 3v9" /><path d="M6.3 6.3a8 8 0 1 0 11.4 0" /></>,
+  search: <><circle cx="10.5" cy="10.5" r="6.5" /><path d="M16 16l5 5" /></>,
+  file: <><path d="M6 2h8l5 5v15H6z" /><path d="M14 2v5h5M9 13h7M9 17h7" /></>,
+  shield: <><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z" /><path d="M9 12l2 2 4-4" /></>,
+  update: <><path d="M20 12a8 8 0 1 1-2.4-5.7" /><path d="M20 3v5h-5" /></>,
+  check: <><circle cx="12" cy="12" r="9" /><path d="M8 12l3 3 5-6" /></>,
+  step: <><circle cx="12" cy="12" r="9" /><path d="M12 8v4l3 2" /></>,
+};
+
+export function StepGlyph({ icon, size = 22, color = 'var(--c-accent)' }: { icon: StepIcon; size?: number; color?: string }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICON_PATHS[icon]}</svg>;
+}
+
+export function GuideDiagram({ model, images }: { model: VisualModel; images?: Record<number, Array<{ src: string; caption: string }>> }) {
+  const photoSteps = useMemo(() => new Set(model.steps.filter((x) => (images?.[x.n]?.length ?? 0) > 0).map((x) => x.n)), [model, images]);
+  const { nodes, height } = useMemo(() => layoutDiagram(model, 29, 4, photoSteps), [model, photoSteps]);
   const W = 320;
   const desc = model.steps.map((s) => `Step ${s.n}: ${s.text}`).join(' ');
   return (
@@ -35,7 +57,9 @@ export function GuideDiagram({ model }: { model: VisualModel }) {
                   <rect x="8" y={n.y} width={W - 16} height={n.h} rx="8" fill="var(--c-surface)" stroke={n.caution ? 'var(--c-warn)' : 'var(--c-line)'} strokeWidth={n.caution ? 2 : 1.5} />
                   <circle cx="26" cy={n.y + 18} r="11" fill={n.caution ? 'var(--c-warn)' : 'var(--c-accent)'} />
                   <text x="26" y={n.y + 22.5} textAnchor="middle" fontSize="12" fontWeight="700" fill="var(--c-canvas)">{n.n}</text>
+                  {n.icon && <g transform={`translate(${W - 36} ${n.y + 8})`}><circle cx="11" cy="11" r="15" fill="var(--c-surface2)" /><svg x="0" y="0" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={n.caution ? 'var(--c-warn)' : 'var(--c-accent)'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICON_PATHS[n.icon]}</svg></g>}
                   {n.lines.map((l, j) => <text key={j} x="46" y={n.y + 22 + j * 17} fontSize="13" fill="var(--c-ink)">{l}</text>)}
+                  {n.photo && n.n !== undefined && images?.[n.n]?.[0] && <g><rect x="46" y={n.y + n.h - PHOTO_H - 8 - (n.cmd ? 24 : 0)} width="120" height={PHOTO_H} rx="5" fill="var(--c-surface2)" /><image href={images[n.n][0].src} x="46" y={n.y + n.h - PHOTO_H - 8 - (n.cmd ? 24 : 0)} width="120" height={PHOTO_H} preserveAspectRatio="xMidYMid slice" clipPath="inset(0 round 5px)"><title>{images[n.n][0].caption || `Photo for step ${n.n}`}</title></image></g>}
                   {n.cmd && (
                     <g>
                       <rect x="46" y={n.y + n.h - 28} width={W - 62} height="20" rx="4" fill="var(--c-surface2)" />
@@ -48,7 +72,7 @@ export function GuideDiagram({ model }: { model: VisualModel }) {
           );
         })}
       </svg>
-      <figcaption className="text-xs text-muted text-center mt-1">Drawn from the guide’s steps. Amber outline = a step that mentions a caution.</figcaption>
+      <figcaption className="text-xs text-muted text-center mt-1">Drawn from the guide’s steps. Amber outline = a step that mentions a caution. Your photos appear on the steps they are attached to.</figcaption>
     </figure>
   );
 }
@@ -154,7 +178,7 @@ export function VisualGuide({ model, images, photos }: { model: VisualModel; ima
         ))}
       </div>
       <div role="tabpanel" id={`vg-panel-${tab}`} aria-labelledby={`vg-tab-${tab}`}>
-        {tab === 'diagram' && <div className="space-y-3"><GuideDiagram model={model} /><StepAsk model={model} index={Math.min(askIdx, model.steps.length - 1)} onIndex={setAskIdx} /></div>}
+        {tab === 'diagram' && <div className="space-y-3"><GuideDiagram model={model} images={images} /><StepAsk model={model} index={Math.min(askIdx, model.steps.length - 1)} onIndex={setAskIdx} /></div>}
         {tab === 'play' && <GuidePlayer model={model} images={images} />}
         {tab === 'photos' && photos}
       </div>

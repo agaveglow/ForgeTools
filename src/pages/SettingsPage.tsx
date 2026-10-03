@@ -8,7 +8,9 @@ import { migrateFiles, saveCreatedFile } from '../data/files';
 import { CryptoError, cryptoAvailable, isEnvelope, openWithPassphrase, passphraseProblem, sealWithPassphrase } from '../lib/crypto';
 import type { Envelope } from '../lib/crypto';
 import { getTranscribeKey, setTranscribeKey } from '../lib/transcribe';
-import { REDACTION_EXAMPLES, NEVER_ENTER } from '../lib/sensitive';
+import { REDACTION_EXAMPLES, NEVER_ENTER, scanText } from '../lib/sensitive';
+import { ACCENT_PRESETS, CORNER_RADII, FONT_STACKS, TEXT_SCALES, accentFor, normalizeHex, readableInk } from '../lib/look';
+import type { Corners, FontStyle, TextScale } from '../lib/look';
 
 export function SettingsPage() {
   useTitle('Settings and data');
@@ -96,6 +98,7 @@ export function SettingsPage() {
             <p className="text-sm font-medium mb-1">Theme</p>
             <div className="flex gap-1.5" role="radiogroup" aria-label="Theme">{(['system', 'light', 'dark'] as const).map((t) => <Chip key={t} active={s.theme === t} onClick={() => store.updateSettings({ theme: t })}>{t[0].toUpperCase() + t.slice(1)}</Chip>)}</div>
           </div>
+          <LookControls />
           <div>
             <p className="text-sm font-medium mb-1">Work log form</p>
             <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Work log form">{([['auto', 'Automatic'], ['quick', 'Always quick'], ['full', 'Always full']] as const).map(([v, l]) => <Chip key={v} active={s.logMode === v} onClick={() => store.updateSettings({ logMode: v })}>{l}</Chip>)}</div>
@@ -198,6 +201,60 @@ export function SettingsPage() {
           <Field label="Type ERASE to confirm" htmlFor="erase"><TextInput id="erase" value={typed} onChange={(e: { target: { value: string } }) => setTyped(e.target.value)} /></Field>
         </Modal>
       )}
+    </div>
+  );
+}
+
+function LookControls() {
+  const s = useSettings();
+  const [name, setName] = useState(s.appName ?? '');
+  const [title, setTitle] = useState(s.dashboardTitle ?? '');
+  const hex = normalizeHex(s.accent);
+  const flagged = scanText(name + ' ' + title).length > 0;
+  const shown = hex ?? ACCENT_PRESETS[0].hex;
+  const resolved = (s.theme === 'system' ? (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : s.theme) as 'light' | 'dark';
+  const adj = hex ? accentFor(hex, resolved) : undefined;
+  const group = 'flex flex-wrap gap-1.5';
+  return (
+    <div className="space-y-4 border-b border-line pb-4">
+      <div>
+        <p className="text-sm font-medium mb-1">Accent colour</p>
+        <div className={group} role="group" aria-label="Accent colour">
+          {ACCENT_PRESETS.map((p) => (
+            <button key={p.id} type="button" aria-label={p.label} aria-pressed={hex === p.hex} title={p.label} onClick={() => store.updateSettings({ accent: p.hex })}
+              className={'size-11 rounded-full border-2 grid place-items-center ' + (hex === p.hex ? 'border-ink' : 'border-line')} style={{ background: p.hex }}>
+              {hex === p.hex && <span aria-hidden style={{ color: readableInk(p.hex) }}>✓</span>}
+            </button>
+          ))}
+          <label className="inline-flex items-center gap-2 min-h-11 px-2 rounded-sm border border-line text-sm">Custom
+            <input type="color" aria-label="Custom accent colour" value={shown} onChange={(e: { target: { value: string } }) => store.updateSettings({ accent: normalizeHex(e.target.value) })} className="size-8 bg-transparent border-0 p-0" />
+          </label>
+          <Button size="sm" onClick={() => store.updateSettings({ accent: undefined })}>Default</Button>
+        </div>
+        {adj?.adjusted && <p className="text-xs text-muted mt-1">That colour was a little too faint against the {resolved} background, so it is shown slightly {resolved === 'light' ? 'darker' : 'lighter'} to stay readable.</p>}
+      </div>
+      <div>
+        <p className="text-sm font-medium mb-1">Text size</p>
+        <div className={group} role="group" aria-label="Text size">{(Object.keys(TEXT_SCALES) as TextScale[]).map((k) => <Chip key={k} active={(s.textScale ?? 'md') === k} onClick={() => store.updateSettings({ textScale: k })}>{TEXT_SCALES[k].label}</Chip>)}</div>
+      </div>
+      <div>
+        <p className="text-sm font-medium mb-1">Font</p>
+        <div className={group} role="group" aria-label="Font">{(Object.keys(FONT_STACKS) as FontStyle[]).map((k) => <Chip key={k} active={(s.fontStyle ?? 'sans') === k} onClick={() => store.updateSettings({ fontStyle: k })}>{FONT_STACKS[k].label}</Chip>)}</div>
+        <p className="text-xs text-muted mt-1">Uses fonts already on your device, so nothing is downloaded.</p>
+      </div>
+      <div>
+        <p className="text-sm font-medium mb-1">Corners</p>
+        <div className={group} role="group" aria-label="Corners">{(Object.keys(CORNER_RADII) as Corners[]).map((k) => <Chip key={k} active={(s.corners ?? 'soft') === k} onClick={() => store.updateSettings({ corners: k })}>{CORNER_RADII[k].label}</Chip>)}</div>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="App name" htmlFor="look-name" hint="Shown at the top left. Leave empty for ForgeTools."><TextInput id="look-name" maxLength={24} value={name} onChange={(e: { target: { value: string } }) => setName(e.target.value)} /></Field>
+        <Field label="Dashboard heading" htmlFor="look-title" hint="Replaces the greeting. Leave empty for Good morning / afternoon / evening."><TextInput id="look-title" maxLength={40} value={title} onChange={(e: { target: { value: string } }) => setTitle(e.target.value)} /></Field>
+      </div>
+      {flagged && <p role="alert" className="text-sm text-warn">That looks like it has a name, number or secret in it. Use a neutral label.</p>}
+      <div className="flex flex-wrap gap-2">
+        <Button variant="primary" disabled={flagged || (name.trim() === (s.appName ?? '') && title.trim() === (s.dashboardTitle ?? ''))} onClick={() => store.updateSettings({ appName: name.trim() || undefined, dashboardTitle: title.trim() || undefined })}>Save names</Button>
+        <Button onClick={() => { setName(''); setTitle(''); store.updateSettings({ accent: undefined, textScale: undefined, fontStyle: undefined, corners: undefined, appName: undefined, dashboardTitle: undefined }); }}>Reset appearance</Button>
+      </div>
     </div>
   );
 }

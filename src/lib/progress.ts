@@ -126,3 +126,36 @@ export function boardStatus(t: Task): 'todo' | 'doing' | 'blocked' | 'done' {
 export function moveTask(t: Task, to: 'todo' | 'doing' | 'blocked' | 'done', now: Date): Task {
   return { ...t, status: to, doneOn: to === 'done' ? (t.doneOn.length ? t.doneOn : [ymd(now)]) : [] };
 }
+
+// ---------- Chart data ----------
+
+/** How many things happened on each day: work logs, learning entries and ticked tasks. */
+export function activityCounts(logs: WorkLog[], entries: ApprenticeEntry[], tasks: Task[]): Map<string, number> {
+  const m = new Map<string, number>();
+  const bump = (d: string) => m.set(d, (m.get(d) ?? 0) + 1);
+  for (const l of logs) bump(ymd(new Date(l.occurredAt)));
+  for (const e of entries) bump(e.date);
+  for (const t of tasks) for (const d of t.doneOn) bump(d);
+  return m;
+}
+
+export interface HeatCell { date: string; count: number; future: boolean }
+
+/** Columns of 7 days (Monday first), oldest week first, ending with the current week. */
+export function heatmapWeeks(counts: Map<string, number>, now: Date, weeks = 12): HeatCell[][] {
+  const start = addDays(weekStart(now), -7 * (weeks - 1));
+  const today = ymd(now);
+  return Array.from({ length: weeks }, (_, w) => Array.from({ length: 7 }, (_, d) => {
+    const date = ymd(addDays(start, w * 7 + d));
+    return { date, count: counts.get(date) ?? 0, future: date > today };
+  }));
+}
+
+/** Off-the-job hours for each of the last n weeks, oldest first. */
+export function weeklyHoursSeries(entries: ApprenticeEntry[], now: Date, n = 8): Array<{ start: string; hours: number }> {
+  return Array.from({ length: n }, (_, i) => {
+    const s = addDays(weekStart(now), -7 * (n - 1 - i));
+    const e = addDays(s, 6);
+    return { start: ymd(s), hours: hoursIn(entries, ymd(s), ymd(e), true) };
+  });
+}

@@ -224,8 +224,25 @@ export interface ApprenticeEntry extends BaseRecord {
 
 // ---------- Settings / meta ----------
 
+export interface DashboardLayout {
+  order?: string[];
+  hidden?: string[];
+  sizes?: Record<string, 1 | 2 | 3>;
+  titles?: Record<string, string>;
+}
+
 export interface Settings {
   theme: 'system' | 'light' | 'dark';
+  /** Look: accent colour (#rrggbb), text size, font and corner style. */
+  accent?: string;
+  textScale?: 'sm' | 'md' | 'lg' | 'xl';
+  fontStyle?: 'sans' | 'serif' | 'mono';
+  corners?: 'sharp' | 'soft' | 'round';
+  /** Replaces the app name in the header and the dashboard greeting. Never put customer details here. */
+  appName?: string;
+  dashboardTitle?: string;
+  /** Dashboard layout: widget order, hidden widgets, sizes (1 to 3 columns wide) and renamed titles. */
+  dashboard?: DashboardLayout;
   /** Work-log editor mode. 'auto' = quick on phones, full on desktop. */
   logMode: 'auto' | 'quick' | 'full';
   lastExportAt?: string;

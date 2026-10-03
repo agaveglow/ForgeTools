@@ -98,6 +98,12 @@ The dashboard is built for tracking your own progress: today's daily routine and
 
 **Tasks** now covers daily, weekly, monthly and quarterly routines. A monthly check stays ticked until the month ends, a quarterly one until the quarter ends, and both show the days left and when they were last done. **Add many at once** adds the starter monthly and quarterly checklists, or any list you paste (one per line, bullets and numbers removed). Pasted text is scanned, so names, emails and numbers are refused. The **Task board** holds one-off jobs in To do, Doing, Blocked and Done columns; cards move with buttons, so it works on a phone. There is no client-name field on purpose: describe the routine, not the customer.
 
+### Make it yours
+
+- **Dashboard cards:** press **Customise** on the dashboard to rename, move, resize (Small, Wide, Full) or hide each card, and bring hidden ones back. The layout is saved on the device and included in backups. New charts: progress rings, a 12-week activity heat map, weekly off-the-job hours, requirements by status, due-soon checks and a task board summary.
+- **Appearance** (Settings): accent colour (presets or custom), text size, font (from the fonts already on the device), corner style, app name and dashboard heading. A custom colour that would be too faint to read is nudged darker or lighter automatically. Names and headings are scanned like everything else, so keep them neutral.
+- **Guide diagrams** show an icon per step (picked from the step's wording) and any photos you attached to that step.
+
 ## Visual guides
 
 Any guide with two or more steps gets a **Visual guide** (agent, voice notes, and saved Knowledge base entries):
