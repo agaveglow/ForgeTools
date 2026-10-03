@@ -149,8 +149,8 @@ export function VoicePage() {
               <ul role="status" className="text-sm rounded-sm border border-warn/50 bg-warn/5 p-2 space-y-1">{wt.warnings.map((x) => <li key={x}>{x}</li>)}</ul>
             )}
             <div className="flex flex-wrap gap-1.5"><Badge tone="accent">{wt.steps.length} {wt.steps.length === 1 ? 'step' : 'steps'}</Badge>{wt.commands.length > 0 && <Badge>{wt.commands.length} {wt.commands.length === 1 ? 'command' : 'commands'}</Badge>}{wt.cautions.length > 0 && <Badge tone="warn">{wt.cautions.length} {wt.cautions.length === 1 ? 'caution' : 'cautions'}</Badge>}</div>
+            {hasVisuals(vmodel) && <section aria-label="Visual guide"><VisualGuide model={vmodel} /><p className="text-xs text-muted mt-2">Save the guide, then open it in the Knowledge base to attach photos or screenshots to steps.</p></section>}
             <GuideView guide={guide} />
-            {hasVisuals(vmodel) && <details className="border border-line rounded-md"><summary className="min-h-11 px-3 py-2.5 cursor-pointer text-sm font-medium">Visual guide: diagram and animated walkthrough</summary><div className="p-3 pt-1"><VisualGuide model={vmodel} /><p className="text-xs text-muted mt-2">Save the guide, then open it in the Knowledge base to attach photos or screenshots to steps.</p></div></details>}
             <Sources items={guide.sources} />
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <Button variant="primary" onClick={() => save()} disabled={!guard.canSave}>{savedId ? 'Update saved guide' : 'Save guide'}</Button>

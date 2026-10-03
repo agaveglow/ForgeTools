@@ -4,10 +4,10 @@ import { LOG_CATEGORIES, LOG_STATUS_LABEL } from '../data/types';
 import type { LogCategory, LogStatus, ResearchItem, WorkLog } from '../data/types';
 import { SKILLS, SKILL_BY_ID } from '../content/skills';
 import { CONCEPTS } from '../content/concepts';
-import { clsx, formatDateTime, fromLocalInput, toLocalInput, uid, nowIso } from '../lib/util';
+import { clsx, formatDateTime, fromLocalInput, toLocalInput, uid, nowIso, plural } from '../lib/util';
 import { takeLogDraft, workLogToText } from '../lib/handoff';
 import type { LogDraft } from '../lib/handoff';
-import { Badge, Button, Card, Chip, Collapsible, CopyButton, DemoBadge, Empty, Field, Modal, PageHeader, Select, TextArea, TextInput } from '../ui/primitives';
+import { Badge, Button, Card, Chip, Collapsible, CopyButton, Empty, Field, Modal, PageHeader, Select, TextArea, TextInput } from '../ui/primitives';
 import { Link, navigate } from '../ui/router';
 import { PrivacyNote, SensitivePanel, useSaveGuard } from '../ui/SensitivePanel';
 import { NoteAssistant } from '../ui/NoteAssistant';
@@ -21,14 +21,12 @@ const statusTone = (s: LogStatus) => (s === 'resolved' ? 'ok' : s === 'unresolve
 export function LogList() {
   useTitle('Work logs');
   const logs = useCollection('workLogs');
-  const settings = useSettings();
   const [q, setQ] = useState('');
   const [cat, setCat] = useState<'All' | LogCategory>('All');
   const [status, setStatus] = useState<'All' | LogStatus>('All');
   const rows = useMemo(() => {
     const words = q.toLowerCase().split(/\s+/).filter(Boolean);
     return logs
-      .filter((l) => settings.showDemo || !l.demo)
       .filter((l) => cat === 'All' || l.category === cat)
       .filter((l) => status === 'All' || l.status === status)
       .filter((l) => {
@@ -37,11 +35,11 @@ export function LogList() {
         return words.every((w) => hay.includes(w));
       })
       .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
-  }, [logs, q, cat, status, settings.showDemo]);
+  }, [logs, q, cat, status]);
 
   return (
     <div>
-      <PageHeader title="Work logs" sub={`${logs.filter((l) => !l.demo).length} of your own · ${logs.filter((l) => l.demo).length} demo`} actions={<Link to="/logs/new" className="inline-flex items-center justify-center min-h-11 px-3.5 rounded-sm bg-accent text-accent-ink font-medium text-sm">+ New work log</Link>} />
+      <PageHeader title="Work logs" sub={plural(logs.length, 'log')} actions={<Link to="/logs/new" className="inline-flex items-center justify-center min-h-11 px-3.5 rounded-sm bg-accent text-accent-ink font-medium text-sm">+ New work log</Link>} />
       <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto] mb-3">
         <TextInput type="search" aria-label="Search work logs" placeholder="Search logs…" value={q} onChange={(e: { target: { value: string } }) => setQ(e.target.value)} />
         <Select aria-label="Filter by category" value={cat} onChange={(e: { target: { value: string } }) => setCat(e.target.value as 'All' | LogCategory)}>
@@ -71,7 +69,6 @@ export function LogRow({ log: l }: { log: WorkLog }) {
         <span className="font-mono">{l.ref}</span>
         <span>·</span>
         <span>{formatDateTime(l.occurredAt)}</span>
-        {l.demo && <DemoBadge />}
       </div>
       <p className="font-medium mt-0.5 wrap-any">{l.problem || '(no problem recorded)'}</p>
       <div className="flex flex-wrap gap-1.5 mt-1.5">
@@ -106,7 +103,7 @@ export function LogDetail({ id }: { id: string }) {
     <div className="max-w-3xl">
       <PageHeader
         title={l.problem || l.ref}
-        sub={<span className="inline-flex flex-wrap items-center gap-1.5"><span className="font-mono">{l.ref}</span> · {formatDateTime(l.occurredAt)} {l.demo && <DemoBadge />}</span>}
+        sub={<span className="inline-flex flex-wrap items-center gap-1.5"><span className="font-mono">{l.ref}</span> · {formatDateTime(l.occurredAt)}</span>}
         actions={
           <>
             <Button onClick={() => navigate(`/logs/${l.id}/edit`)}>Edit</Button>
@@ -115,7 +112,6 @@ export function LogDetail({ id }: { id: string }) {
           </>
         }
       />
-      {l.demo && <p className="mb-3 text-sm rounded-sm border border-warn/50 bg-warn/5 p-2">This is a demo record with fictional data. It does not count towards your skills.</p>}
       <Card className="p-4 space-y-4">
         <div className="flex flex-wrap gap-1.5">
           <Badge>{l.category}</Badge>

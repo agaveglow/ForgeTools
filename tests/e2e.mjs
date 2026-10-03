@@ -10,7 +10,7 @@ let failures = 0;
 
 async function step(name, fn) {
   try { await fn(); results.push(['PASS', name]); }
-  catch (e) { failures++; results.push(['FAIL', name + ' :: ' + String(e.message).split('\n')[0]]); }
+  catch (e) { failures++; results.push(['FAIL', name + ' :: ' + String(e.message).split('\n').slice(0, 4).join(' | ')]); }
 }
 const eq = (a, b, m) => { if (a !== b) throw new Error(`${m ?? 'eq'}: expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`); };
 const until = async (fn, m, ms = 3000) => { const t = Date.now(); for (;;) { try { if (await fn()) return; } catch {} if (Date.now() - t > ms) throw new Error(typeof m === 'function' ? await m() : (m ?? 'timed out')); await new Promise((r) => setTimeout(r, 50)); } };
@@ -32,14 +32,16 @@ async function run(label, viewport) {
   await p.goto(BASE);
   await p.waitForSelector('h1');
 
-  await step(S('dashboard shows demo data and banner'), async () => {
-    ok(await p.getByText('Sample data is showing').isVisible());
-    ok((await p.getByText('DEMO').count()) > 0);
+  await step(S('dashboard starts empty with no sample data'), async () => {
+    eq(await p.getByText('DEMO', { exact: true }).count(), 0, 'no demo badges');
+    ok(!(await p.locator('body').innerText()).includes('Sample data'), 'no sample banner');
+    ok(await p.getByText('No tasks for today.').isVisible());
+    ok(await p.getByText('No requirements added.').isVisible());
     await shot('dashboard');
   });
 
   await step(S('no horizontal overflow on every page'), async () => {
-    for (const r of ['/', '/logs', '/logs/new', '/troubleshoot', '/commands', '/security', '/agent', '/voice', '/files', '/kb', '/skills', '/settings']) {
+    for (const r of ['/', '/logs', '/logs/new', '/troubleshoot', '/commands', '/security', '/agent', '/voice', '/files', '/tasks', '/requirements', '/apprenticeship', '/kb', '/skills', '/settings']) {
       await go(r); await noHScroll();
     }
   });
@@ -188,7 +190,6 @@ async function run(label, viewport) {
     await go('/agent');
     await p.getByLabel('What do you need?').fill('Ricoh printer jams when printing from tray 2');
     await p.getByRole('button', { name: 'Generate guide' }).click();
-    await p.getByText('Visual guide: diagram and animated walkthrough').click();
     await p.getByTestId('diagram').locator('svg').waitFor({ state: 'visible', timeout: 3000 });
     ok((await p.getByTestId('diagram').locator('text').count()) > 5, 'diagram has labelled nodes');
     await p.getByTestId('diagram').scrollIntoViewIfNeeded(); await shot('diagram');
@@ -296,10 +297,9 @@ async function run(label, viewport) {
     ok(await p.getByText('Reset print spooler').first().isVisible());
   });
 
-  await step(S('skills: demo logs never count; real logs do'), async () => {
+  await step(S('skills: real logs count'), async () => {
     await go('/skills');
     await p.getByText('How levels work').click();
-    await p.getByText(/Demo logs \(\d+\) are never counted/).waitFor({ state: 'visible', timeout: 3000 });
     await go('/logs/new');
     await p.getByLabel('What happened?').fill('DNS not resolving on laptop');
     const more = p.getByRole('button', { name: /More details/ });
@@ -336,25 +336,18 @@ async function run(label, viewport) {
     eq(await p.evaluate(() => document.documentElement.getAttribute('data-theme')), 'light');
   });
 
-  await step(S('export excludes demo; import roundtrip'), async () => {
+  await step(S('export; import roundtrip'), async () => {
     await go('/settings');
     const [dl] = await Promise.all([p.waitForEvent('download'), p.getByRole('button', { name: 'Export backup (JSON)' }).click()]);
     const path = await dl.path();
     const json = JSON.parse(fs.readFileSync(path, 'utf8'));
     eq(json.app, 'forgetools');
-    ok(json.data.collections.workLogs.length >= 3, 'own logs exported');
-    ok(json.data.collections.workLogs.every((l) => !l.demo), 'no demo in export');
+    ok(json.data.collections.workLogs.length >= 1, 'own logs exported');
+    ok(['tasks', 'requirements', 'apprenticeLogs'].every((k) => Array.isArray(json.data.collections[k])), 'progress data included');
     fs.copyFileSync(path, `${SHOTS}/${label}-backup.json`);
   });
 
-  await step(S('clear demo then reset requires ERASE'), async () => {
-    await go('/settings');
-    await p.getByRole('button', { name: 'Clear demo data' }).click();
-    await p.getByRole('dialog').getByRole('button', { name: 'Clear demo data' }).click();
-    ok(await p.getByText('No demo records present').isVisible());
-    await go('/logs');
-    eq(await p.getByText('DEMO', { exact: true }).count(), 0, 'demo gone from list');
-    ok(await p.getByText('Scanner would not scan to email').first().isVisible(), 'own data kept');
+  await step(S('erase requires typing ERASE'), async () => {
     await go('/settings');
     await p.getByRole('button', { name: 'Erase everything…' }).click();
     ok(await p.getByRole('button', { name: 'Erase all data' }).isDisabled());
@@ -362,6 +355,50 @@ async function run(label, viewport) {
     await p.getByRole('button', { name: 'Erase all data' }).click();
     await go('/logs');
     ok(await p.getByText('No work logs yet.').isVisible());
+  });
+
+  await step(S('tasks, requirements and apprenticeship feed the dashboard'), async () => {
+    await go('/tasks');
+    await p.getByLabel('New task').fill('Check print queue alerts');
+    await p.getByRole('button', { name: 'Add task' }).click();
+    await p.getByLabel('New task').fill('Weekly backup check');
+    await p.getByRole('button', { name: 'Every week' }).click();
+    await p.getByRole('button', { name: 'Add task' }).click();
+    await p.getByLabel('New task').fill('Admin password is Summer2024!x');
+    ok(await p.getByRole('button', { name: 'Add task' }).isDisabled(), 'secret blocks adding a task');
+    await p.getByLabel('New task').fill('');
+    await go('/requirements');
+    await p.getByLabel('New requirement').fill('Troubleshoot managed print issues');
+    await p.getByLabel('Group (optional)').fill('Print');
+    await p.getByRole('button', { name: 'Add requirement' }).click();
+    await p.getByText('Troubleshoot managed print issues').first().waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('button', { name: 'Apprenticeship', exact: true }).first().click();
+    await p.getByLabel('New requirement').fill('Explain network fundamentals');
+    await p.getByRole('button', { name: 'Add requirement' }).click();
+    await p.getByLabel('Status of Troubleshoot managed print issues').selectOption('evidenced');
+    await go('/apprenticeship');
+    await p.getByText('Targets and dates').click();
+    await p.getByLabel('Weekly off-the-job hours').fill('6');
+    await p.getByLabel('Title', { exact: true }).fill('Networking module');
+    await p.getByLabel('What I did').fill('Worked through subnetting exercises');
+    await p.getByLabel('Hours', { exact: true }).fill('2.5');
+    await p.getByRole('checkbox', { name: 'Explain network fundamentals' }).check();
+    await p.getByRole('button', { name: 'Add entry' }).click();
+    await p.getByText('Networking module').first().waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByLabel('Hours', { exact: true }).fill('1');
+    await p.getByLabel('What I did').fill('Password is Hunter2!x');
+    ok(await p.getByRole('button', { name: 'Add entry' }).isDisabled(), 'secret blocks the apprenticeship entry');
+    await p.getByLabel('What I did').fill('Read the module notes');
+    await go('/');
+    await p.getByRole('checkbox', { name: 'Check print queue alerts' }).click();
+    await p.getByRole('progressbar', { name: 'Daily tasks done' }).waitFor({ state: 'visible', timeout: 3000 });
+    eq(await p.getByRole('progressbar', { name: 'Daily tasks done' }).getAttribute('aria-valuenow'), '1');
+    ok(await p.getByText('2.5 / 6 h').isVisible(), 'hours against weekly target');
+    ok(await p.getByText(/1 day in a row/).isVisible(), 'streak counts today');
+    ok(await p.getByText('0 / 1').first().isVisible(), 'apprenticeship requirements progress shown');
+    await shot('dashboard-progress');
+    await p.reload(); await p.waitForTimeout(300);
+    eq(await p.getByRole('progressbar', { name: 'Daily tasks done' }).getAttribute('aria-valuenow'), '1', 'tick persists');
   });
 
   await step(S('encryption: on, stored as ciphertext, locks, wrong passphrase refused, unlock, lock now'), async () => {

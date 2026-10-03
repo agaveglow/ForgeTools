@@ -14,6 +14,9 @@ import { LockScreen } from './ui/LockScreen';
 import { store, useSettings, useVault } from './data/hooks';
 import { VoicePage } from './pages/VoicePage';
 import { FilesPage } from './pages/FilesPage';
+import { TasksPage } from './pages/TasksPage';
+import { RequirementsPage } from './pages/RequirementsPage';
+import { ApprenticeshipPage } from './pages/ApprenticeshipPage';
 import { KbDetail, KbEditor, KbList } from './pages/KbPage';
 import { SkillsPage } from './pages/SkillsPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -21,7 +24,10 @@ import { SettingsPage } from './pages/SettingsPage';
 interface NavItem { to: string; label: string; short: string; icon: string; root: string }
 const NAV: NavItem[] = [
   { to: '/', label: 'Dashboard', short: 'Home', icon: '⌂', root: '/' },
+  { to: '/tasks', label: 'Tasks', short: 'Tasks', icon: '☑', root: '/tasks' },
   { to: '/logs', label: 'Work logs', short: 'Logs', icon: '☰', root: '/logs' },
+  { to: '/requirements', label: 'Requirements', short: 'Goals', icon: '◎', root: '/requirements' },
+  { to: '/apprenticeship', label: 'Apprenticeship', short: 'Learn', icon: '✎', root: '/apprenticeship' },
   { to: '/voice', label: 'Voice notes', short: 'Voice', icon: '◉', root: '/voice' },
   { to: '/troubleshoot', label: 'Troubleshooting', short: 'Fix', icon: '⚒', root: '/troubleshoot' },
   { to: '/commands', label: 'Commands', short: 'Cmds', icon: '>_', root: '/commands' },
@@ -32,7 +38,7 @@ const NAV: NavItem[] = [
   { to: '/files', label: 'Files', short: 'Files', icon: '▤', root: '/files' },
   { to: '/settings', label: 'Settings and data', short: 'Settings', icon: '⚙', root: '/settings' },
 ];
-const MOBILE_MAIN = ['/', '/logs', '/agent', '/voice'];
+const MOBILE_MAIN = ['/', '/tasks', '/logs', '/agent'];
 
 function isActive(n: NavItem, path: string): boolean {
   if (n.root === '/') return path === '/';
@@ -57,6 +63,9 @@ function route(path: string): ReactNode {
   if (path === '/agent') return <AgentPage />;
   if (path === '/voice') return <VoicePage />;
   if (path === '/files') return <FilesPage />;
+  if (path === '/tasks') return <TasksPage />;
+  if (path === '/requirements') return <RequirementsPage />;
+  if (path === '/apprenticeship') return <ApprenticeshipPage />;
   if (path === '/kb') return <KbList />;
   if (path === '/kb/new') return <KbEditor />;
   if ((p = match('/kb/:id/edit', path))) return <KbEditor id={p.id} key={p.id} />;
@@ -133,7 +142,7 @@ function Shell() {
   useEffect(() => { setMoreOpen(false); window.scrollTo({ top: 0 }); }, [path]);
 
   const editing = path === '/logs/new' || /^\/logs\/[^/]+\/edit$/.test(path) || path === '/kb/new' || /^\/kb\/[^/]+\/edit$/.test(path);
-  const showFab = ['/', '/logs', '/troubleshoot', '/commands', '/kb', '/skills', '/agent', '/files'].includes(path);
+  const showFab = ['/', '/logs', '/troubleshoot', '/commands', '/kb', '/skills', '/agent', '/files', '/requirements', '/apprenticeship'].includes(path);
   const moreItems = NAV.filter((n) => !MOBILE_MAIN.includes(n.to));
   const moreActive = moreItems.some((n) => isActive(n, path));
 

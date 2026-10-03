@@ -2,10 +2,9 @@ import { COLLECTIONS, SCHEMA_VERSION } from './types';
 import type { BaseRecord, CollectionMap, CollectionName, Meta, Settings, UsageKind } from './types';
 import { LocalStorageAdapter } from './storage';
 import type { StorageAdapter } from './storage';
-import { buildSeed } from './seed';
 import { nowIso, uid } from '../lib/util';
 
-export const DEFAULT_SETTINGS: Settings = { theme: 'system', logMode: 'auto', showDemo: true };
+export const DEFAULT_SETTINGS: Settings = { theme: 'system', logMode: 'auto' };
 
 export interface ExportFile {
   app: 'forgetools';
@@ -36,16 +35,16 @@ export class Store {
 
   constructor(
     private adapter: StorageAdapter,
-    private opts: { seed?: boolean } = {},
+    _opts: { seed?: boolean } = {},
   ) {
     this.load();
-    if (opts.seed !== false) this.seedIfNeeded();
+    this.purgeDemo();
   }
 
   /** Re-read everything from the adapter (after unlock/lock). */
   reload(): void {
     this.load();
-    if (this.opts.seed !== false) this.seedIfNeeded();
+    this.purgeDemo();
     this.emit();
   }
 
@@ -89,15 +88,14 @@ export class Store {
     this.adapter.write('meta', this.meta);
   }
 
-  private seedIfNeeded(): void {
-    if (this.meta.seededAt) return;
-    const seed = buildSeed(new Date());
+  /** Sample data is no longer shipped. Remove any left over from earlier versions. */
+  private purgeDemo(): void {
+    let changed = false;
     for (const name of COLLECTIONS) {
-      (this.cols as Record<string, unknown[]>)[name] = [...(this.cols[name] as unknown[]), ...(seed[name] as unknown[])];
-      this.persist(name);
+      const list = this.cols[name] as BaseRecord[];
+      if (list.some((r) => r.demo)) { (this.cols as Record<string, unknown>)[name] = list.filter((r) => !r.demo); this.persist(name); changed = true; }
     }
-    this.meta.seededAt = nowIso();
-    this.persistMeta();
+    if (changed || !this.meta.seededAt) { this.meta.seededAt = this.meta.seededAt ?? nowIso(); this.persistMeta(); }
   }
 
   // ----- reads -----
@@ -178,46 +176,23 @@ export class Store {
   }
 
   // ----- data management -----
-  hasDemo(): boolean {
-    return COLLECTIONS.some((n) => (this.cols[n] as BaseRecord[]).some((r) => r.demo));
-  }
-
-  countDemo(): number {
-    return COLLECTIONS.reduce((n, c) => n + (this.cols[c] as BaseRecord[]).filter((r) => r.demo).length, 0);
-  }
-
-  clearDemo(): void {
-    for (const name of COLLECTIONS) {
-      const list = this.cols[name] as BaseRecord[];
-      (this.cols as Record<string, unknown>)[name] = list.filter((r) => !r.demo);
-      this.persist(name);
-    }
-    this.emit();
-  }
-
-  /** Erase everything, then optionally restore demo data. */
-  resetAll(opts: { withDemo: boolean }): void {
+  /** Erase everything. */
+  resetAll(): void {
     for (const name of COLLECTIONS) {
       (this.cols as Record<string, unknown>)[name] = [];
       this.persist(name);
     }
     this.meta = { schemaVersion: SCHEMA_VERSION, counters: { workLog: 0 } };
-    if (opts.withDemo) {
-      this.persistMeta();
-      this.seedIfNeeded();
-    } else {
-      this.meta.seededAt = nowIso(); // prevents reseeding
-      this.persistMeta();
-    }
+    this.meta.seededAt = nowIso();
+    this.persistMeta();
     this.emit();
   }
 
-  exportAll(opts: { includeDemo?: boolean } = {}): ExportFile {
-    const includeDemo = opts.includeDemo ?? false;
+  exportAll(): ExportFile {
     const collections = {} as Cols;
     for (const name of COLLECTIONS) {
       const list = this.cols[name] as BaseRecord[];
-      (collections as Record<string, unknown>)[name] = includeDemo ? list : list.filter((r) => !r.demo);
+      (collections as Record<string, unknown>)[name] = list.filter((r) => !r.demo);
     }
     return {
       app: 'forgetools',
@@ -246,7 +221,7 @@ export class Store {
       const incoming = ((cols as Record<string, unknown>)[name] as BaseRecord[] | undefined) ?? [];
       const current = mode === 'replace' ? [] : (this.cols[name] as BaseRecord[]);
       const byId = new Map(current.map((r) => [r.id, r]));
-      for (const r of incoming) {
+      for (const r of incoming.filter((x) => !x.demo)) {
         const ex = byId.get(r.id);
         if (!ex) added++;
         if (!ex || (r.updatedAt ?? '') > (ex.updatedAt ?? '')) byId.set(r.id, r);

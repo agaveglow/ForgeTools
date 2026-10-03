@@ -68,10 +68,6 @@ export function Badge({ children, tone = 'neutral', className, title }: { childr
   return <span title={title} className={clsx('inline-flex items-center rounded-xs border px-1.5 py-0.5 text-xs font-medium whitespace-nowrap', t, className)}>{children}</span>;
 }
 
-export function DemoBadge() {
-  return <Badge tone="warn" title="Sample record. Not counted as evidence.">DEMO</Badge>;
-}
-
 export function Empty({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <div className="border border-dashed border-line rounded-md p-6 text-center text-sm text-muted">

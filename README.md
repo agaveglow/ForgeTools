@@ -4,7 +4,7 @@ A personal IT engineering toolkit for an IT engineer / cybersecurity apprentice:
 
 It is a real working app (not a mock-up). Everything is stored on your device. There is no account and no server. The internet is used only for the optional web lookup and optional audio transcription.
 
-**What is in it:** Dashboard · Work logger with a rough-notes assistant · **Guide agent** (ask how to do something, get a guide, save it) · **Voice notes** (transcript or recording to a step-by-step walkthrough) · Troubleshooting toolkit (34 workflows) · CMD/PowerShell reference (70 commands) · Security checklist · Knowledge base · Skills profile · **Files** (guides, transcripts and backups you created) · Settings (backup, **encryption and app lock**, transcription service).
+**What is in it:** Progress dashboard (today, this week, requirements, apprenticeship) · Tasks (daily, weekly, one-off) · Requirements (job and apprenticeship) · Apprenticeship log (off-the-job hours) · Work logger with a rough-notes assistant · **Guide agent** (ask how to do something, get a guide, save it) · **Voice notes** (transcript or recording to a step-by-step walkthrough) · Troubleshooting toolkit (34 workflows) · CMD/PowerShell reference (70 commands) · Security checklist · Knowledge base · Skills profile · **Files** (guides, transcripts and backups you created) · Settings (backup, **encryption and app lock**, transcription service).
 
 ## Run it
 
@@ -70,8 +70,8 @@ Design decisions:
 - **Secrets are never saved.** Passwords, keys, tokens, BitLocker recovery keys, private keys and card numbers block the save button with no override. Offer to redact in one click.
 - **Personal details need confirmation.** Emails, IPs, MACs, phone numbers, postcodes, NI numbers, user paths, UNC paths and long token-like strings require ticking a confirmation or redacting. This applies to every free-text form (logs, questions, transcripts, sessions, checklist notes, KB).
 - **The assistant never invents.** `src/lib/notes.ts` re-organises *your* words into sections using verb and keyword rules. A missing result stays blank and is flagged; a lone "tested" is an action, not a result. "Areas you may also want to mention" and suggested skills are unticked until you tick them.
-- **Skills are not inflated.** Demo logs never count. Suggested level comes from distinct days of real work (1 → Exposure, 2–3 → Developing, 4–7 → Practised, 8+ → Confident). "Demonstrated" is only ever set by you and warns if fewer than 3 logs have evidence. You pick the level.
-- **Demo data is obvious.** Every sample record is badged DEMO, uses fictional names, and can be cleared in one click. Exports exclude it unless you ask.
+- **Skills are not inflated.** Suggested level comes from distinct days of real work (1 → Exposure, 2–3 → Developing, 4–7 → Practised, 8+ → Confident). "Demonstrated" is only ever set by you and warns if fewer than 3 logs have evidence. You pick the level.
+- **No sample data.** The app starts empty. Records left from earlier sample-data versions are removed on load and are never imported.
 - **No fake system access.** Nothing runs commands or touches a device. The app guides and records.
 
 ## Guide agent
@@ -79,6 +79,10 @@ Design decisions:
 `src/lib/agent.ts` + `src/pages/AgentPage.tsx`. Type a how-to, a command or a problem. It matches your troubleshooting library, command reference, Knowledge base notes and past logs and builds a guide with sources. You can ask follow-ups ("what should I check first?", "what are the risks?", "which commands?"); when nothing matches it says so instead of guessing. **Save guide** stores it in the Knowledge base (tag `generated`) and as a file in Files. **Look it up online** searches Microsoft Learn and can add a cited, dated section from a page, labelled as external and unchecked.
 
 It is local and rules-based, not a language model. To add a real model, implement `AgentProvider` and keep the save guard in front of anything sent off-device.
+
+## Progress tracking
+
+The dashboard is built for tracking your own progress: today's daily routine and due one-off tasks, a Monday-to-Sunday strip showing days with activity, weekly tasks, off-the-job hours against a weekly target, requirement progress, and a day-streak. It starts empty. No sample data is shipped (older sample records are removed automatically). ForgeTools does not supply a requirements list or any apprenticeship standard: you enter your own job requirements and apprenticeship criteria, and set your own hour targets from your plan. Every free-text field goes through the same secret and personal-data guard as the rest of the app.
 
 ## Visual guides
 

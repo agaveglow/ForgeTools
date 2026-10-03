@@ -176,8 +176,8 @@ export function AgentPage() {
                 <div className="flex flex-wrap gap-1.5 mb-1"><Badge tone="accent">{KIND_LABEL[guide.kind]}</Badge><Badge>{analysis.category}</Badge>{analysis.device && <Badge>{analysis.device}</Badge>}{analysis.securityIncident && <Badge tone="warn">Possible security incident</Badge>}</div>
                 <h2 className="text-lg font-semibold wrap-any">{guide.title}</h2>
               </div>
+              {hasVisuals(model) && <section aria-label="Visual guide"><VisualGuide model={model} /><p className="text-xs text-muted mt-2">Save the guide, then open it in the Knowledge base to attach photos or screenshots to steps.</p></section>}
               <GuideView guide={guide} />
-              {hasVisuals(model) && <details className="border border-line rounded-md"><summary className="min-h-11 px-3 py-2.5 cursor-pointer text-sm font-medium">Visual guide: diagram and animated walkthrough</summary><div className="p-3 pt-1"><VisualGuide model={model} /><p className="text-xs text-muted mt-2">Save the guide, then open it in the Knowledge base to attach photos or screenshots to steps.</p></div></details>}
               <Sources items={guide.sources} />
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <Button variant="primary" onClick={() => save()} disabled={!guard.canSave}>{savedId ? 'Update saved guide' : 'Save guide'}</Button>

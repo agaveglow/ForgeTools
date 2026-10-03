@@ -15,10 +15,9 @@ export function SettingsPage() {
   useStoreVersion();
   const s = useSettings();
   const fileRef = useRef<HTMLInputElement | null>(null);
-  const [includeDemo, setIncludeDemo] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, setPending] = useState<unknown>(null);
-  const [confirm, setConfirm] = useState<null | 'demo' | 'reset' | 'reset-demo'>(null);
+  const [confirm, setConfirm] = useState<null | 'reset'>(null);
   const [typed, setTyped] = useState('');
   const [tKey, setTKey] = useState(getTranscribeKey());
   const vault = useVault();
@@ -31,11 +30,11 @@ export function SettingsPage() {
   const [env, setEnv] = useState<Envelope | null>(null);
   const [impPass, setImpPass] = useState('');
 
-  const counts = COLLECTIONS.filter((c) => c !== 'usage' && c !== 'skillRatings').map((c) => [c, store.list(c).filter((r) => !r.demo).length] as const);
+  const counts = COLLECTIONS.filter((c) => c !== 'usage' && c !== 'skillRatings').map((c) => [c, store.list(c).length] as const);
   const total = counts.reduce((n, [, c]) => n + c, 0);
 
   const doExport = async () => {
-    const f = store.exportAll({ includeDemo });
+    const f = store.exportAll();
     let text = JSON.stringify(f, null, 2);
     if (encBackup) {
       const prob = passphraseProblem(bkPass);
@@ -102,7 +101,6 @@ export function SettingsPage() {
             <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Work log form">{([['auto', 'Automatic'], ['quick', 'Always quick'], ['full', 'Always full']] as const).map(([v, l]) => <Chip key={v} active={s.logMode === v} onClick={() => store.updateSettings({ logMode: v })}>{l}</Chip>)}</div>
             <p className="text-xs text-muted mt-1">Automatic uses the quick three-field form on phones and the full form on larger screens.</p>
           </div>
-          <Checkbox checked={s.showDemo} onChange={(v) => store.updateSettings({ showDemo: v })} label="Show demo records in lists" />
         </Card>
       </section>
 
@@ -144,7 +142,6 @@ export function SettingsPage() {
         <Card className="p-4 space-y-3">
           <p className="text-sm">{store.persistent ? 'Data is saved in this browser. Clearing site data, using a private window or switching browser will lose it, so export a backup regularly.' : <strong className="text-bad">This browser is not allowing storage. Changes will be lost when you close the tab. Export a backup before leaving.</strong>}</p>
           <p className="text-sm text-muted">Your records: {total === 0 ? 'none yet' : counts.filter(([, c]) => c).map(([n, c]) => `${c} ${n}`).join(', ')}. {s.lastExportAt ? `Last backup ${timeAgo(s.lastExportAt)}.` : 'No backup made yet.'}</p>
-          <Checkbox checked={includeDemo} onChange={setIncludeDemo} label="Include demo records in the backup" />
           <Checkbox checked={encBackup} onChange={setEncBackup} label="Protect the backup with a passphrase (recommended)" />
           {encBackup && <Field label="Backup passphrase" htmlFor="bk-pass" hint="Needed to restore this backup. It cannot be recovered."><TextInput id="bk-pass" type="password" autoComplete="new-password" value={bkPass} onChange={(e: { target: { value: string } }) => setBkPass(e.target.value)} /></Field>}
           <div className="flex flex-wrap gap-2">
@@ -167,14 +164,10 @@ export function SettingsPage() {
       </section>
 
       <section>
-        <SectionTitle>Demo and reset</SectionTitle>
+        <SectionTitle>Erase</SectionTitle>
         <Card className="p-4 space-y-3">
-          <p className="text-sm">{store.hasDemo() ? `${plural(store.countDemo(), 'demo record')} present. They are fictional examples.` : 'No demo records present.'}</p>
-          <div className="flex flex-wrap gap-2">
-            <Button disabled={!store.hasDemo()} onClick={() => setConfirm('demo')}>Clear demo data</Button>
-            <Button onClick={() => setConfirm('reset-demo')}>Restore demo data</Button>
-            <Button variant="danger" onClick={() => setConfirm('reset')}>Erase everything…</Button>
-          </div>
+          <p className="text-sm">Delete every record on this device. Files in the Files page and your encryption setting are not affected.</p>
+          <Button variant="danger" onClick={() => setConfirm('reset')}>Erase everything…</Button>
         </Card>
       </section>
 
@@ -199,11 +192,9 @@ export function SettingsPage() {
           <p className="text-sm"><strong>Merge</strong> keeps your current records and adds the backup's, with the newer copy winning on matches. <strong>Replace</strong> discards current records first.</p>
         </Modal>
       )}
-      {confirm === 'demo' && <Modal title="Clear demo data?" onClose={() => setConfirm(null)} footer={<><Button onClick={() => setConfirm(null)}>Cancel</Button><Button variant="primary" onClick={() => { store.clearDemo(); setConfirm(null); }}>Clear demo data</Button></>}><p className="text-sm">Only records marked DEMO are removed. Your own records are untouched.</p></Modal>}
-      {confirm === 'reset-demo' && <Modal title="Restore demo data?" onClose={() => setConfirm(null)} footer={<><Button onClick={() => setConfirm(null)}>Cancel</Button><Button variant="danger" onClick={() => { store.resetAll({ withDemo: true }); setConfirm(null); }}>Erase and restore demo</Button></>}><p className="text-sm">This erases <strong>all</strong> data, including your own, and reloads the sample records. Export a backup first.</p></Modal>}
       {confirm === 'reset' && (
-        <Modal title="Erase everything?" onClose={() => { setConfirm(null); setTyped(''); }} footer={<><Button onClick={() => { setConfirm(null); setTyped(''); }}>Cancel</Button><Button variant="danger" disabled={typed !== 'ERASE'} onClick={() => { store.resetAll({ withDemo: false }); setConfirm(null); setTyped(''); }}>Erase all data</Button></>}>
-          <p className="text-sm mb-2">This permanently deletes all records on this device, including demo data. Export a backup first if you might need anything.</p>
+        <Modal title="Erase everything?" onClose={() => { setConfirm(null); setTyped(''); }} footer={<><Button onClick={() => { setConfirm(null); setTyped(''); }}>Cancel</Button><Button variant="danger" disabled={typed !== 'ERASE'} onClick={() => { store.resetAll(); setConfirm(null); setTyped(''); }}>Erase all data</Button></>}>
+          <p className="text-sm mb-2">This permanently deletes all records on this device. Export a backup first if you might need anything.</p>
           <Field label="Type ERASE to confirm" htmlFor="erase"><TextInput id="erase" value={typed} onChange={(e: { target: { value: string } }) => setTyped(e.target.value)} /></Field>
         </Modal>
       )}

@@ -20,7 +20,6 @@ export function SkillsPage() {
     const cur = ratings.find((r) => r.skillId === skillId);
     store.upsert('skillRatings', { id: skillId, skillId, level, note: note ?? cur?.note ?? '', demo: false });
   };
-  const demoCount = logs.filter((l) => l.demo).length;
 
   return (
     <div className="max-w-4xl">
@@ -28,7 +27,7 @@ export function SkillsPage() {
       <details className="mb-4 text-sm bg-surface border border-line rounded-md p-3">
         <summary className="cursor-pointer min-h-8 flex items-center font-medium">How levels work</summary>
         <ul className="mt-2 space-y-1">{SKILL_LEVELS.map((l) => <li key={l}><strong>{l}</strong>: {SKILL_LEVEL_HELP[l]}</li>)}</ul>
-        <p className="mt-2 text-muted">A suggestion appears once you have real logs: 1 day of work = Exposure, 2–3 = Developing, 4–7 = Practised, 8+ = Confident. “Demonstrated” is always your decision and needs at least 3 logs with evidence. {demoCount > 0 && `Demo logs (${demoCount}) are never counted.`}</p>
+        <p className="mt-2 text-muted">A suggestion appears once you have real logs: 1 day of work = Exposure, 2–3 = Developing, 4–7 = Practised, 8+ = Confident. “Demonstrated” is always your decision and needs at least 3 logs with evidence.</p>
       </details>
       {GROUPS.map((g) => (
         <div key={g} className="mb-5">

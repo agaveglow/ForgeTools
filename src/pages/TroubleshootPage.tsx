@@ -6,7 +6,7 @@ import { store, useCollection, useRecord } from '../data/hooks';
 import type { SessionStep, StepState, TroubleshootSession } from '../data/types';
 import { setLogDraft } from '../lib/handoff';
 import { clsx, nowIso, timeAgo } from '../lib/util';
-import { Badge, Button, Card, Checkbox, Chip, Collapsible, DemoBadge, Empty, Field, Modal, PageHeader, SectionTitle, TextArea, TextInput } from '../ui/primitives';
+import { Badge, Button, Card, Checkbox, Chip, Collapsible, Empty, Field, Modal, PageHeader, SectionTitle, TextArea, TextInput } from '../ui/primitives';
 import { Link, navigate } from '../ui/router';
 import { PrivacyNote, SensitivePanel, useSaveGuard } from '../ui/SensitivePanel';
 import { useTitle } from '../ui/hooks';
@@ -38,7 +38,7 @@ export function TroubleshootPage() {
             {open.map((s) => (
               <li key={s.id}>
                 <Link to={`/session/${s.id}`} className="block bg-surface border border-accent/50 rounded-md p-3 hover:bg-surface2">
-                  <span className="font-medium">{s.title}</span> {s.demo && <DemoBadge />}
+                  <span className="font-medium">{s.title}</span>
                   <span className="block text-xs text-muted">Updated {timeAgo(s.updatedAt)}{s.ticket ? ` · ${s.ticket}` : ''}</span>
                 </Link>
               </li>
@@ -200,7 +200,7 @@ export function SessionRunner({ id }: { id: string }) {
 
   return (
     <div className="max-w-3xl pb-8">
-      <PageHeader title={sess.title} sub={<span>{wf.category} · {doneCount}/{wf.steps.length} steps · {closed ? 'Closed' : 'Open'} {sess.demo && <DemoBadge />}</span>} actions={<Link to={`/troubleshoot/${wf.id}`} className="inline-flex items-center min-h-11 px-3 rounded-sm border border-line text-sm hover:bg-surface2">Full guide</Link>} />
+      <PageHeader title={sess.title} sub={<span>{wf.category} · {doneCount}/{wf.steps.length} steps · {closed ? 'Closed' : 'Open'}</span>} actions={<Link to={`/troubleshoot/${wf.id}`} className="inline-flex items-center min-h-11 px-3 rounded-sm border border-line text-sm hover:bg-surface2">Full guide</Link>} />
       <Card className="p-3 mb-3 grid gap-3 sm:grid-cols-2">
         <Field label="Ticket" htmlFor="s-ticket"><TextInput id="s-ticket" value={local?.ticket ?? ''} onChange={(e: { target: { value: string } }) => setLocal((l) => (l ? { ...l, ticket: e.target.value } : l))} onBlur={saveMeta} /></Field>
         <Field label="Device" htmlFor="s-device" hint="Model or role only."><TextInput id="s-device" value={local?.device ?? ''} onChange={(e: { target: { value: string } }) => setLocal((l) => (l ? { ...l, device: e.target.value } : l))} onBlur={saveMeta} /></Field>

@@ -75,12 +75,19 @@ describe('skills evaluation', () => {
 });
 
 describe('store', () => {
-  test('seeds demo, clears demo, exports without demo', () => {
+  test('starts empty and removes leftover demo records from older versions', () => {
+    const ad = new MemoryAdapter();
+    ad.write('kbEntries', [{ id: 'd1', createdAt: '', updatedAt: '', title: 'old sample', category: 'Commands', tags: [], body: '', pinned: false, demo: true }, { id: 'k1', createdAt: '', updatedAt: '', title: 'mine', category: 'Commands', tags: [], body: '', pinned: false }]);
+    const s = createStore(ad);
+    expect(s.list('kbEntries').map((k) => k.id)).toEqual(['k1']);
+    expect(createStore(new MemoryAdapter()).list('workLogs')).toHaveLength(0);
+  });
+  test('importing a backup never brings demo records back', () => {
     const s = createStore(new MemoryAdapter());
-    expect(s.hasDemo()).toBe(true);
-    expect(s.exportAll().data.collections.workLogs.length).toBe(0);
-    s.clearDemo();
-    expect(s.hasDemo()).toBe(false);
+    const rec = { id: 'x', createdAt: '', updatedAt: '2026-01-01', title: 't', category: 'Commands', tags: [], body: '', pinned: false };
+    const r = s.importAll({ app: 'forgetools', schemaVersion: 1, data: { collections: { kbEntries: [{ ...rec, demo: true }, { ...rec, id: 'y' }] }, meta: {} } }, 'merge');
+    expect(r.ok).toBe(true);
+    expect(s.list('kbEntries').map((k) => k.id)).toEqual(['y']);
   });
   test('export / import roundtrip', () => {
     const a = createStore(new MemoryAdapter(), { seed: false });

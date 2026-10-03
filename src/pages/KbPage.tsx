@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { store, useCollection, useRecord, useSettings } from '../data/hooks';
+import { store, useCollection, useRecord } from '../data/hooks';
 import { KB_CATEGORIES } from '../data/types';
 import type { KbCategory, KbEntry } from '../data/types';
 import { parseTags, timeAgo } from '../lib/util';
-import { Badge, Button, Card, Chip, CodeBlock, DemoBadge, Empty, Field, Modal, PageHeader, SectionTitle, Select, TextArea, TextInput } from '../ui/primitives';
+import { Badge, Button, Card, Chip, CodeBlock, Empty, Field, Modal, PageHeader, SectionTitle, Select, TextArea, TextInput } from '../ui/primitives';
 import { files, notifyFilesChanged } from '../data/files';
 import { hasVisuals, modelFromText } from '../lib/visual';
 import { VisualGuide } from '../ui/VisualGuide';
@@ -24,11 +24,10 @@ export function KbBody({ text }: { text: string }) {
 export function KbList() {
   useTitle('Knowledge base');
   const entries = useCollection('kbEntries');
-  const settings = useSettings();
   const [q, setQ] = useState('');
   const [cat, setCat] = useState<'All' | KbCategory>('All');
   const [tag, setTag] = useState('');
-  const visible = entries.filter((e) => settings.showDemo || !e.demo);
+  const visible = entries;
   const tags = useMemo(() => [...new Set(visible.flatMap((e) => e.tags))].sort(), [visible]);
   const rows = useMemo(() => {
     const words = q.toLowerCase().split(/\s+/).filter(Boolean);
@@ -61,7 +60,7 @@ export function KbList() {
           {rows.map((e) => (
             <li key={e.id}>
               <Link to={`/kb/${e.id}`} className="block bg-surface border border-line rounded-md p-3 hover:bg-surface2">
-                <span className="flex items-center gap-2 flex-wrap">{e.pinned && <span aria-label="Pinned" title="Pinned">📌</span>}<span className="font-medium wrap-any">{e.title}</span>{e.demo && <DemoBadge />}</span>
+                <span className="flex items-center gap-2 flex-wrap">{e.pinned && <span aria-label="Pinned" title="Pinned">📌</span>}<span className="font-medium wrap-any">{e.title}</span></span>
                 <span className="flex flex-wrap gap-1.5 mt-1"><Badge>{e.category}</Badge>{e.tags.map((t) => <Badge key={t} tone="info">#{t}</Badge>)}</span>
               </Link>
             </li>
@@ -94,20 +93,21 @@ function KbDetailView({ en, confirmDel, setConfirmDel }: { en: KbEntry; confirmD
   const imgMap = useMemo(() => Object.fromEntries(Object.entries(imgs).map(([k, v]) => [Number(k), v.map(({ src, caption }) => ({ src, caption }))])), [imgs]);
   return (
     <div className="max-w-3xl">
-      <PageHeader title={en.title} sub={<span className="inline-flex flex-wrap gap-1.5 items-center"><Badge>{en.category}</Badge>{en.tags.map((t) => <Badge key={t} tone="info">#{t}</Badge>)}{en.demo && <DemoBadge />}<span>· {timeAgo(en.updatedAt)}</span></span>} actions={
+      <PageHeader title={en.title} sub={<span className="inline-flex flex-wrap gap-1.5 items-center"><Badge>{en.category}</Badge>{en.tags.map((t) => <Badge key={t} tone="info">#{t}</Badge>)}<span>· {timeAgo(en.updatedAt)}</span></span>} actions={
         <>
           <Button aria-pressed={en.pinned} onClick={() => store.upsert('kbEntries', { ...en, pinned: !en.pinned })}>{en.pinned ? 'Unpin' : 'Pin'}</Button>
           <Button onClick={() => navigate(`/kb/${en.id}/edit`)}>Edit</Button>
           <Button variant="danger" onClick={() => setConfirmDel(true)}>Delete</Button>
         </>
       } />
-      <Card className="p-4"><KbBody text={en.body} /></Card>
       {hasVisuals(model) && (
-        <section className="mt-4" aria-label="Visual guide">
+        <section className="mb-4" aria-label="Visual guide">
           <SectionTitle>Visual guide</SectionTitle>
           <Card className="p-4"><VisualGuide model={model} images={imgMap} photos={<StepPhotos entry={en} stepCount={model.steps.length} images={imgs} />} /></Card>
         </section>
       )}
+      <SectionTitle>Summary and steps</SectionTitle>
+      <Card className="p-4"><KbBody text={en.body} /></Card>
       {confirmDel && <Modal title="Delete this entry?" onClose={() => setConfirmDel(false)} footer={<><Button onClick={() => setConfirmDel(false)}>Cancel</Button><Button variant="danger" onClick={() => { (en.images ?? []).forEach((i) => files().remove(i.path).catch(() => undefined)); store.remove('kbEntries', en.id); notifyFilesChanged(); navigate('/kb'); }}>Delete</Button></>}><p>It will be removed from this device.</p></Modal>}
     </div>
   );

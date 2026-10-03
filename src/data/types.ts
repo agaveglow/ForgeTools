@@ -162,19 +162,78 @@ export interface UsageEvent extends BaseRecord {
   route: string;
 }
 
+// ---------- Progress: tasks, requirements, apprenticeship ----------
+
+export type TaskKind = 'daily' | 'weekly' | 'once';
+export const TASK_KIND_LABEL: Record<TaskKind, string> = { daily: 'Every day', weekly: 'Every week', once: 'One-off' };
+
+export interface Task extends BaseRecord {
+  title: string;
+  kind: TaskKind;
+  /** One-off tasks: optional due date, YYYY-MM-DD. */
+  due?: string;
+  /** Local dates (YYYY-MM-DD) on which it was ticked off. A one-off task is done when this is not empty. */
+  doneOn: string[];
+  /** Linked requirement id, if it works towards one. */
+  requirementId?: ID;
+  archived?: boolean;
+}
+
+export type RequirementKind = 'job' | 'apprenticeship';
+export const REQUIREMENT_KIND_LABEL: Record<RequirementKind, string> = { job: 'Job requirement', apprenticeship: 'Apprenticeship' };
+export type RequirementStatus = 'not-started' | 'in-progress' | 'evidenced' | 'signed-off';
+export const REQUIREMENT_STATUS_LABEL: Record<RequirementStatus, string> = {
+  'not-started': 'Not started',
+  'in-progress': 'In progress',
+  evidenced: 'Evidence gathered',
+  'signed-off': 'Signed off',
+};
+
+export interface Requirement extends BaseRecord {
+  title: string;
+  kind: RequirementKind;
+  /** Free grouping chosen by the user, e.g. "Knowledge", "Skills", "Behaviours", "Print", "Telecoms". */
+  group: string;
+  status: RequirementStatus;
+  /** Target date, YYYY-MM-DD. */
+  target?: string;
+  notes: string;
+}
+
+export const ACTIVITY_TYPES = ['Study', 'Course or training', 'Mentoring', 'Shadowing', 'Practical work', 'Assessment prep', 'Other'] as const;
+export type ActivityType = (typeof ACTIVITY_TYPES)[number];
+
+export interface ApprenticeEntry extends BaseRecord {
+  /** Local date, YYYY-MM-DD. */
+  date: string;
+  hours: number;
+  activity: ActivityType;
+  /** Counts as off-the-job training. */
+  offTheJob: boolean;
+  title: string;
+  whatIDid: string;
+  learned: string;
+  reflection: string;
+  requirementIds: ID[];
+}
+
 // ---------- Settings / meta ----------
 
 export interface Settings {
   theme: 'system' | 'light' | 'dark';
   /** Work-log editor mode. 'auto' = quick on phones, full on desktop. */
   logMode: 'auto' | 'quick' | 'full';
-  showDemo: boolean;
   lastExportAt?: string;
   /** Optional speech-to-text service for uploaded recordings. The API key is never stored. */
   transcribeUrl?: string;
   transcribeModel?: string;
   /** Minutes of inactivity before an encrypted app locks itself. 0 = only when you lock it. */
   autoLockMinutes?: number;
+  /** Apprenticeship targets, entered by the user from their own plan. */
+  otjWeeklyHours?: number;
+  otjTotalHours?: number;
+  apprenticeshipStart?: string;
+  apprenticeshipEnd?: string;
 }
 
 export interface Meta {
@@ -190,6 +249,9 @@ export const COLLECTIONS = [
   'kbEntries',
   'skillRatings',
   'usage',
+  'tasks',
+  'requirements',
+  'apprenticeLogs',
 ] as const;
 export type CollectionName = (typeof COLLECTIONS)[number];
 
@@ -200,6 +262,9 @@ export interface CollectionMap {
   kbEntries: KbEntry;
   skillRatings: SkillRating;
   usage: UsageEvent;
+  tasks: Task;
+  requirements: Requirement;
+  apprenticeLogs: ApprenticeEntry;
 }
 
 export const SCHEMA_VERSION = 1;

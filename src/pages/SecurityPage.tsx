@@ -5,7 +5,7 @@ import { CHECK_STATE_LABEL } from '../data/types';
 import type { CheckState, ChecklistRun } from '../data/types';
 import { setLogDraft } from '../lib/handoff';
 import { clsx, formatDateTime, nowIso, timeAgo } from '../lib/util';
-import { Badge, Button, Card, Chip, DemoBadge, Empty, Field, Modal, PageHeader, SectionTitle, TextInput } from '../ui/primitives';
+import { Badge, Button, Card, Chip, Empty, Field, Modal, PageHeader, SectionTitle, TextInput } from '../ui/primitives';
 import { Link, navigate } from '../ui/router';
 import { PrivacyNote, SensitivePanel, useSaveGuard } from '../ui/SensitivePanel';
 import { useTitle } from '../ui/hooks';
@@ -44,7 +44,7 @@ export function SecurityList() {
             return (
               <li key={r.id}>
                 <Link to={`/security/${r.id}`} className="block bg-surface border border-line rounded-md p-3 hover:bg-surface2">
-                  <span className="font-medium">{r.label}</span> {r.demo && <DemoBadge />}
+                  <span className="font-medium">{r.label}</span>
                   <span className="block text-xs text-muted">{r.status === 'complete' ? 'Complete' : 'In progress'} · updated {timeAgo(r.updatedAt)}{r.ticket ? ` · ${r.ticket}` : ''}</span>
                   <span className="flex flex-wrap gap-1.5 mt-1.5"><Badge tone="ok">{sm.pass} passed</Badge>{sm.fail > 0 && <Badge tone="bad">{sm.fail} failed</Badge>}<Badge>{sm.unchecked} not checked</Badge></span>
                 </Link>
@@ -87,7 +87,7 @@ export function SecurityRun({ id }: { id: string }) {
   const complete = r.status === 'complete';
   return (
     <div className="max-w-3xl pb-8">
-      <PageHeader title={r.label} sub={<span>{tpl.title} · {r.ticket || 'no ticket'} {r.demo && <DemoBadge />}</span>} actions={<Link to="/security" className="inline-flex items-center min-h-11 px-3 rounded-sm border border-line text-sm hover:bg-surface2">All checks</Link>} />
+      <PageHeader title={r.label} sub={<span>{tpl.title} · {r.ticket || 'no ticket'}</span>} actions={<Link to="/security" className="inline-flex items-center min-h-11 px-3 rounded-sm border border-line text-sm hover:bg-surface2">All checks</Link>} />
       <Card className="p-3 mb-3 sticky top-0 z-10">
         <div className="flex flex-wrap gap-1.5 items-center" aria-live="polite">
           <Badge tone="ok">{sm.pass} passed</Badge><Badge tone="bad">{sm.fail} failed</Badge><Badge>{sm.na} not applicable</Badge><Badge>{sm.unchecked} not checked</Badge>
