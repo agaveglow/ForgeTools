@@ -1,0 +1,33 @@
+name: Build Android APK
+on:
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+      - uses: oven-sh/setup-bun@v2
+      - run: npm install --no-audit --no-fund
+      - run: bun scripts/build.ts
+      - run: npx cap add android
+      - name: Harden Android manifest (no cloud auto-backup, no plain-http traffic)
+        run: |
+          f=android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:allowBackup="true"/android:allowBackup="false"/' $f
+          sed -i 's/<application/<application android:usesCleartextTraffic="false"/' $f
+          grep -n "allowBackup\|usesCleartextTraffic" $f
+      - run: npx cap sync android
+      - run: chmod +x gradlew && ./gradlew assembleDebug
+        working-directory: android
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: ForgeTools debug APK ${{ github.run_number }}
+          body: Debug build. Untested on a device. Install by opening the file on your phone and allowing installs from this source.
+          files: android/app/build/outputs/apk/debug/app-debug.apk

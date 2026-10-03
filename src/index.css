@@ -1,0 +1,128 @@
+@import 'tailwindcss';
+
+/* Theme switching: data-theme on <html> ("light" | "dark"), set before first paint in index.html. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+  --c-canvas: #f3f4f6;
+  --c-surface: #ffffff;
+  --c-surface2: #eceef1;
+  --c-line: #d3d8de;
+  --c-ink: #14171a;
+  --c-muted: #566170;
+  --c-accent: #b93c08;
+  --c-accent-ink: #ffffff;
+  --c-ok: #15803d;
+  --c-bad: #b91c1c;
+  --c-warn: #8a5a00;
+  --c-info: #1d4ed8;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --c-canvas: #0f1113;
+  --c-surface: #16181b;
+  --c-surface2: #1e2125;
+  --c-line: #2e3238;
+  --c-ink: #e7e9ec;
+  --c-muted: #9ba4af;
+  --c-accent: #fb923c;
+  --c-accent-ink: #1a0e04;
+  --c-ok: #4ade80;
+  --c-bad: #f87171;
+  --c-warn: #fbbf24;
+  --c-info: #7cb2ff;
+}
+
+@theme inline {
+  --color-canvas: var(--c-canvas);
+  --color-surface: var(--c-surface);
+  --color-surface2: var(--c-surface2);
+  --color-line: var(--c-line);
+  --color-ink: var(--c-ink);
+  --color-muted: var(--c-muted);
+  --color-accent: var(--c-accent);
+  --color-accent-ink: var(--c-accent-ink);
+  --color-ok: var(--c-ok);
+  --color-bad: var(--c-bad);
+  --color-warn: var(--c-warn);
+  --color-info: var(--c-info);
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Code', 'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+}
+
+html,
+body {
+  background: var(--c-canvas);
+  color: var(--c-ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100dvh;
+  overscroll-behavior-y: none;
+}
+
+/* Visible, consistent keyboard focus. */
+:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--c-accent) 35%, transparent);
+}
+
+/* Safe-area helpers for notched phones / Capacitor. */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Lightweight rendering of knowledge-base / runbook text. */
+.kb-body pre {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  background: var(--c-surface2);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.8rem;
+  overflow-x: auto;
+  margin: 0.6rem 0;
+  white-space: pre;
+}
+.kb-body p {
+  margin: 0.4rem 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.kb-body code.inline {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--c-surface2);
+  border-radius: var(--radius-xs);
+  padding: 0.05rem 0.3rem;
+}
+
+/* Stop long unbroken strings (commands, paths) from forcing horizontal scroll. */
+.wrap-any {
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -1,0 +1,10 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch();
+const page = await browser.newPage({ viewport: { width: 390, height: 700 } });
+await page.goto('http://localhost:4173/');
+await page.waitForSelector('h1');
+console.log(await page.textContent('h1'));
+const bg = await page.evaluate(() => getComputedStyle(document.querySelector('button')).backgroundColor);
+console.log('button bg', bg);
+await page.screenshot({ path: process.argv[2] || 'smoke.png' });
+await browser.close();

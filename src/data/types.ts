@@ -1,0 +1,196 @@
+import type { SkillLevel } from '../content/skills';
+import type { WorkflowCategory } from '../content/types';
+
+export type ID = string;
+
+export interface BaseRecord {
+  id: ID;
+  createdAt: string; // ISO
+  updatedAt: string; // ISO
+  /** True for built-in sample records. Demo records never count towards skill evidence. */
+  demo?: boolean;
+}
+
+// ---------- Work logs ----------
+
+export type LogCategory = WorkflowCategory | 'Other';
+export const LOG_CATEGORIES: LogCategory[] = ['Windows', 'Networking', 'Microsoft 365', 'Hardware', 'Printers', 'Cybersecurity', 'Other'];
+
+export type LogStatus = 'resolved' | 'follow-up' | 'unresolved' | 'info';
+export const LOG_STATUS_LABEL: Record<LogStatus, string> = {
+  resolved: 'Resolved',
+  'follow-up': 'Follow-up needed',
+  unresolved: 'Unresolved',
+  info: 'Information only',
+};
+
+export interface ResearchItem {
+  id: ID;
+  text: string;
+  done: boolean;
+}
+
+export interface Learning {
+  demonstrated: string;
+  learned: string;
+  concepts: string[];
+  toResearch: ResearchItem[];
+  nextActivity: string;
+}
+
+export interface WorkLog extends BaseRecord {
+  /** Human-friendly sequential reference, e.g. WL-2026-0007. */
+  ref: string;
+  occurredAt: string; // ISO date-time of the work
+  client: string;
+  device: string;
+  category: LogCategory;
+  problem: string;
+  investigation: string;
+  actions: string;
+  result: string;
+  followUp: string;
+  status: LogStatus;
+  /** Skill ids (see content/skills.ts). Only skills the user chose to claim. */
+  skills: string[];
+  learned: string;
+  /** Free-text evidence references (ticket link, screenshot filename, etc.). No files are stored. */
+  evidence: string;
+  ticket: string;
+  learning?: Learning;
+  sourceSessionId?: ID;
+  sourceRunId?: ID;
+}
+
+// ---------- Troubleshooting sessions ----------
+
+export type StepState = 'pending' | 'done' | 'skipped' | 'issue';
+
+export interface SessionStep {
+  state: StepState;
+  note: string;
+}
+
+export interface TroubleshootSession extends BaseRecord {
+  workflowId: string;
+  title: string;
+  ticket: string;
+  device: string;
+  status: 'open' | 'closed';
+  /** Keyed by workflow step id. */
+  steps: Record<string, SessionStep>;
+  /** Initial checks ticked, keyed by index. */
+  checks: Record<string, boolean>;
+  notes: string;
+  /** Decision-tree answers, as human-readable "Prompt → Answer" lines. */
+  treePath: string[];
+  closedAt?: string;
+  workLogId?: ID;
+}
+
+// ---------- Checklist runs ----------
+
+export type CheckState = 'unchecked' | 'pass' | 'fail' | 'na';
+export const CHECK_STATE_LABEL: Record<CheckState, string> = {
+  unchecked: 'Not checked',
+  pass: 'Passed',
+  fail: 'Failed',
+  na: 'Not applicable',
+};
+
+export interface ChecklistRun extends BaseRecord {
+  templateId: string;
+  /** Device label — avoid customer names/serials that are not needed. */
+  label: string;
+  ticket: string;
+  items: Record<string, { state: CheckState; note: string }>;
+  status: 'open' | 'complete';
+  completedAt?: string;
+  workLogId?: ID;
+}
+
+// ---------- Knowledge base ----------
+
+export const KB_CATEGORIES = [
+  'Commands',
+  'Procedures',
+  'Troubleshooting',
+  'Printers',
+  'Networking',
+  'Cybersecurity',
+  'Microsoft',
+  'Lessons learned',
+  'References',
+] as const;
+export type KbCategory = (typeof KB_CATEGORIES)[number];
+
+export interface KbEntry extends BaseRecord {
+  title: string;
+  category: KbCategory;
+  tags: string[];
+  /** Plain text. Triple-backtick fences are rendered as code blocks. */
+  body: string;
+  pinned: boolean;
+  lastUsedAt?: string;
+}
+
+// ---------- Skills ----------
+
+export interface SkillRating extends BaseRecord {
+  /** Same as skill id. */
+  skillId: string;
+  level: SkillLevel | null;
+  note: string;
+}
+
+// ---------- Usage ----------
+
+export type UsageKind = 'workflow' | 'command' | 'kb' | 'checklist' | 'tool';
+export interface UsageEvent extends BaseRecord {
+  kind: UsageKind;
+  refId: string;
+  label: string;
+  route: string;
+}
+
+// ---------- Settings / meta ----------
+
+export interface Settings {
+  theme: 'system' | 'light' | 'dark';
+  /** Work-log editor mode. 'auto' = quick on phones, full on desktop. */
+  logMode: 'auto' | 'quick' | 'full';
+  showDemo: boolean;
+  lastExportAt?: string;
+  /** Optional speech-to-text service for uploaded recordings. The API key is never stored. */
+  transcribeUrl?: string;
+  transcribeModel?: string;
+  /** Minutes of inactivity before an encrypted app locks itself. 0 = only when you lock it. */
+  autoLockMinutes?: number;
+}
+
+export interface Meta {
+  schemaVersion: number;
+  seededAt?: string;
+  counters: { workLog: number };
+}
+
+export const COLLECTIONS = [
+  'workLogs',
+  'sessions',
+  'checklistRuns',
+  'kbEntries',
+  'skillRatings',
+  'usage',
+] as const;
+export type CollectionName = (typeof COLLECTIONS)[number];
+
+export interface CollectionMap {
+  workLogs: WorkLog;
+  sessions: TroubleshootSession;
+  checklistRuns: ChecklistRun;
+  kbEntries: KbEntry;
+  skillRatings: SkillRating;
+  usage: UsageEvent;
+}
+
+export const SCHEMA_VERSION = 1;
