@@ -61,3 +61,49 @@ describe('requirements', () => {
     expect(requirementProgress([]).pct).toBe(0);
   });
 });
+
+import { periodKey, boardStatus, moveTask, daysLeftInPeriod } from '../../src/lib/progress';
+import { parseTaskLines, STARTER_LISTS } from '../../src/content/routines';
+
+describe('monthly, quarterly and board', () => {
+  const mk = (kind: Task['kind'], doneOn: string[] = [], extra: Partial<Task> = {}) => ({ id: 'x', createdAt: '', updatedAt: '', title: 't', kind, doneOn, ...extra }) as Task;
+  test('period keys', () => {
+    expect(periodKey('monthly', new Date(2026, 9, 3))).toBe('2026-10');
+    expect(periodKey('quarterly', new Date(2026, 9, 3))).toBe('2026-Q4');
+    expect(periodKey('quarterly', new Date(2026, 11, 31))).toBe('2026-Q4');
+  });
+  test('done lasts for the period then resets', () => {
+    const t = mk('quarterly', ['2026-10-02']);
+    expect(taskDone(t, new Date(2026, 11, 30))).toBe(true);
+    expect(taskDone(t, new Date(2027, 0, 1))).toBe(false);
+    const m = mk('monthly', ['2026-09-30']);
+    expect(taskDone(m, new Date(2026, 9, 1))).toBe(false);
+  });
+  test('toggle only affects this period', () => {
+    const t = mk('monthly', ['2026-09-10', '2026-10-02']);
+    expect(toggleTask(t, new Date(2026, 9, 5))).toEqual(['2026-09-10']);
+    expect(toggleTask(mk('monthly', ['2026-09-10']), new Date(2026, 9, 5))).toEqual(['2026-09-10', '2026-10-05']);
+  });
+  test('days left', () => {
+    expect(daysLeftInPeriod('monthly', new Date(2026, 9, 30))).toBe(1);
+    expect(daysLeftInPeriod('quarterly', new Date(2026, 9, 3))).toBe(89);
+    expect(daysLeftInPeriod('daily', new Date())).toBeUndefined();
+  });
+  test('board moves', () => {
+    const now = new Date(2026, 9, 3);
+    const t = mk('once');
+    expect(boardStatus(t)).toBe('todo');
+    const d = moveTask(t, 'done', now);
+    expect(d.doneOn).toEqual(['2026-10-03']);
+    expect(boardStatus(d)).toBe('done');
+    const back = moveTask(d, 'doing', now);
+    expect(back.doneOn).toEqual([]);
+    expect(boardStatus(back)).toBe('doing');
+    expect(boardStatus(mk('once', [], { status: 'done' }))).toBe('todo');
+  });
+  test('parse pasted lists', () => {
+    const l = parseTaskLines('📆 Quarterly tasks\n- Review backups\n2. Check licences\n[ ] Review backups\n\nx');
+    expect(l).toEqual(['Review backups', 'Check licences']);
+    expect(STARTER_LISTS.find((x) => x.kind === 'quarterly')?.items.length).toBe(9);
+  });
+});

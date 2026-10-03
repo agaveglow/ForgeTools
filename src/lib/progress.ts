@@ -10,11 +10,33 @@ export const weekDays = (d: Date): string[] => { const s = weekStart(d); return 
 
 export type TaskState = 'done' | 'due' | 'overdue' | 'upcoming';
 
+/** Key of the period a date falls in for a recurring task: the day, week (Monday), month or quarter. */
+export function periodKey(kind: Task['kind'], d: Date): string {
+  switch (kind) {
+    case 'daily': return ymd(d);
+    case 'weekly': return ymd(weekStart(d));
+    case 'monthly': return ymd(d).slice(0, 7);
+    case 'quarterly': return `${d.getFullYear()}-Q${Math.floor(d.getMonth() / 3) + 1}`;
+    default: return 'once';
+  }
+}
+
 export function taskDone(t: Task, now: Date): boolean {
   if (t.kind === 'once') return t.doneOn.length > 0;
-  if (t.kind === 'daily') return t.doneOn.includes(ymd(now));
-  const week = new Set(weekDays(now));
-  return t.doneOn.some((d) => week.has(d));
+  const key = periodKey(t.kind, now);
+  return t.doneOn.some((d) => periodKey(t.kind, parseYmd(d)) === key);
+}
+
+/** Last date the task was ticked off, if ever. */
+export const lastDone = (t: Task): string | undefined => [...t.doneOn].sort().pop();
+
+/** Days left in the current month or quarter (0 on the last day). Undefined for other kinds. */
+export function daysLeftInPeriod(kind: Task['kind'], now: Date): number | undefined {
+  if (kind !== 'monthly' && kind !== 'quarterly') return undefined;
+  const endMonth = kind === 'monthly' ? now.getMonth() : Math.floor(now.getMonth() / 3) * 3 + 2;
+  const end = new Date(now.getFullYear(), endMonth + 1, 0);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((end.getTime() - today.getTime()) / 86400000);
 }
 
 export function taskState(t: Task, now: Date): TaskState {
@@ -23,13 +45,13 @@ export function taskState(t: Task, now: Date): TaskState {
   return 'due';
 }
 
-/** Toggle today's completion. One-off tasks keep the date they were completed. */
+/** Toggle completion for the current period. One-off tasks keep the date they were completed. */
 export function toggleTask(t: Task, now: Date): string[] {
   const today = ymd(now);
   if (t.kind === 'once') return t.doneOn.length ? [] : [today];
   if (taskDone(t, now)) {
-    const week = new Set(t.kind === 'daily' ? [today] : weekDays(now));
-    return t.doneOn.filter((d) => !week.has(d));
+    const key = periodKey(t.kind, now);
+    return t.doneOn.filter((d) => periodKey(t.kind, parseYmd(d)) !== key);
   }
   return [...t.doneOn, today].slice(-400);
 }
@@ -40,11 +62,15 @@ export function taskSummary(tasks: Task[], now: Date) {
   const act = activeTasks(tasks);
   const daily = act.filter((t) => t.kind === 'daily');
   const weekly = act.filter((t) => t.kind === 'weekly');
+  const monthly = act.filter((t) => t.kind === 'monthly');
+  const quarterly = act.filter((t) => t.kind === 'quarterly');
   const once = act.filter((t) => t.kind === 'once' && !taskDone(t, now));
   const overdue = once.filter((t) => taskState(t, now) === 'overdue');
   return {
     dailyDone: daily.filter((t) => taskDone(t, now)).length, dailyTotal: daily.length,
     weeklyDone: weekly.filter((t) => taskDone(t, now)).length, weeklyTotal: weekly.length,
+    monthlyDone: monthly.filter((t) => taskDone(t, now)).length, monthlyTotal: monthly.length,
+    quarterlyDone: quarterly.filter((t) => taskDone(t, now)).length, quarterlyTotal: quarterly.length,
     onceOpen: once.length, overdue: overdue.length,
   };
 }
@@ -87,3 +113,16 @@ export function nextRequirements(reqs: Requirement[], limit = 5): Requirement[] 
 }
 
 export const clampHours = (v: number): number => Math.max(0, Math.min(24, Math.round((Number(v) || 0) * 4) / 4));
+
+// ---------- Task board ----------
+
+/** Board column for a one-off task. Ticking it off anywhere puts it in Done. */
+export function boardStatus(t: Task): 'todo' | 'doing' | 'blocked' | 'done' {
+  if (t.doneOn.length) return 'done';
+  return t.status && t.status !== 'done' ? t.status : 'todo';
+}
+
+/** The fields to change when a card moves to another column. */
+export function moveTask(t: Task, to: 'todo' | 'doing' | 'blocked' | 'done', now: Date): Task {
+  return { ...t, status: to, doneOn: to === 'done' ? (t.doneOn.length ? t.doneOn : [ymd(now)]) : [] };
+}

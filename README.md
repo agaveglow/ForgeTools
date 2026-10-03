@@ -94,6 +94,10 @@ Built for work where customer details must not be stored.
 
 The dashboard is built for tracking your own progress: today's daily routine and due one-off tasks, a Monday-to-Sunday strip showing days with activity, weekly tasks, off-the-job hours against a weekly target, requirement progress, and a day-streak. It starts empty. No sample data is shipped (older sample records are removed automatically). ForgeTools does not supply a requirements list or any apprenticeship standard: you enter your own job requirements and apprenticeship criteria, and set your own hour targets from your plan. Every free-text field goes through the same secret and personal-data guard as the rest of the app.
 
+### Recurring checks and the task board
+
+**Tasks** now covers daily, weekly, monthly and quarterly routines. A monthly check stays ticked until the month ends, a quarterly one until the quarter ends, and both show the days left and when they were last done. **Add many at once** adds the starter monthly and quarterly checklists, or any list you paste (one per line, bullets and numbers removed). Pasted text is scanned, so names, emails and numbers are refused. The **Task board** holds one-off jobs in To do, Doing, Blocked and Done columns; cards move with buttons, so it works on a phone. There is no client-name field on purpose: describe the routine, not the customer.
+
 ## Visual guides
 
 Any guide with two or more steps gets a **Visual guide** (agent, voice notes, and saved Knowledge base entries):

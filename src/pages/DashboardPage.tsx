@@ -36,6 +36,8 @@ export function Dashboard() {
   const ts = taskSummary(tasks, now);
   const daily = act.filter((t) => t.kind === 'daily');
   const weekly = act.filter((t) => t.kind === 'weekly');
+  const monthly = act.filter((t) => t.kind === 'monthly');
+  const quarterly = act.filter((t) => t.kind === 'quarterly');
   const once = act.filter((t) => t.kind === 'once' && (!taskDone(t, now) || t.doneOn.includes(today)));
   const dueOnce = once.filter((t) => taskState(t, now) !== 'upcoming' || t.doneOn.includes(today));
   const days = activityDays(logs, entries, tasks);
@@ -98,6 +100,8 @@ export function Dashboard() {
                 })}
               </ol>
               {weekly.length > 0 && <div><div className="flex justify-between text-xs text-muted mb-1"><span>Weekly tasks</span><span>{ts.weeklyDone} / {ts.weeklyTotal}</span></div><Bar value={ts.weeklyDone} max={ts.weeklyTotal} label="Weekly tasks done" tone="ok" /><ul className="divide-y divide-line mt-1">{weekly.map((t) => <li key={t.id}><TaskRow t={t} now={now} /></li>)}</ul></div>}
+              {monthly.length > 0 && <div><div className="flex justify-between text-xs text-muted mb-1"><span>Monthly checks</span><span>{ts.monthlyDone} / {ts.monthlyTotal}</span></div><Bar value={ts.monthlyDone} max={ts.monthlyTotal} label="Monthly checks done" tone="ok" /><ul className="divide-y divide-line mt-1">{monthly.map((t) => <li key={t.id}><TaskRow t={t} now={now} /></li>)}</ul></div>}
+              {quarterly.length > 0 && <div><div className="flex justify-between text-xs text-muted mb-1"><span>Quarterly checks</span><span>{ts.quarterlyDone} / {ts.quarterlyTotal}</span></div><Bar value={ts.quarterlyDone} max={ts.quarterlyTotal} label="Quarterly checks done" tone="ok" /><ul className="divide-y divide-line mt-1">{quarterly.map((t) => <li key={t.id}><TaskRow t={t} now={now} /></li>)}</ul></div>}
               {s.otjWeeklyHours ? <div><div className="flex justify-between text-xs text-muted mb-1"><span>Off-the-job hours</span><span>{wk} / {s.otjWeeklyHours} h</span></div><Bar value={wk} max={s.otjWeeklyHours} label="Off-the-job hours this week" /></div> : <p className="text-xs text-muted">{wk} off-the-job hours this week. <Link to="/apprenticeship" className="underline">Set a weekly target</Link></p>}
             </Card>
           </section>

@@ -458,6 +458,40 @@ async function run(label, viewport) {
     eq(await p.getByRole('progressbar', { name: 'Daily tasks done' }).getAttribute('aria-valuenow'), '1', 'tick persists');
   });
 
+  await step(S('monthly and quarterly checks, paste a list, and the task board'), async () => {
+    await go('/tasks');
+    await p.getByRole('button', { name: /Add many at once/ }).click();
+    await p.getByRole('button', { name: 'Add Quarterly checks' }).click();
+    await p.getByRole('status').filter({ hasText: 'Added 9' }).waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('button', { name: 'Add Quarterly checks' }).click();
+    await p.getByRole('status').filter({ hasText: 'already on your list' }).waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('button', { name: 'Add Monthly checks' }).click();
+    await p.getByLabel('Paste a list').fill('1. Check backup job status\n- Review patch compliance report\nContact jo.bloggs@client.com about it');
+    ok(await p.getByRole('button', { name: /^Add .* task/ }).last().isDisabled(), 'pasted list with an email is blocked');
+    await p.getByLabel('Paste a list').fill('1. Check backup job status\n- Review patch compliance report');
+    await p.getByRole('group', { name: 'How often for the pasted list' }).getByRole('button', { name: 'Every day' }).click();
+    await p.getByRole('button', { name: /^Add 2 every day tasks/ }).click();
+    const q = p.getByRole('checkbox', { name: /^User permissions audit/ });
+    await q.click();
+    ok((await q.getAttribute('aria-checked')) === 'true', 'quarterly check ticks');
+    await p.reload(); await p.getByRole('checkbox', { name: /^User permissions audit/ }).waitFor({ state: 'visible', timeout: 4000 });
+    ok((await p.getByRole('checkbox', { name: /^User permissions audit/ }).getAttribute('aria-checked')) === 'true', 'tick persists');
+    await go('/board');
+    await p.getByLabel('New card').fill('Plan firmware window');
+    await p.getByRole('button', { name: 'Add card' }).click();
+    await p.getByTestId('col-todo').getByText('Plan firmware window').waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('button', { name: 'Move Plan firmware window to Doing' }).click();
+    await p.getByTestId('col-doing').getByText('Plan firmware window').waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('button', { name: 'Move Plan firmware window to Blocked' }).click();
+    await p.getByRole('button', { name: 'Move Plan firmware window to Done' }).click();
+    await p.getByTestId('col-done').getByText('Plan firmware window').waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByLabel('New card').fill('Admin password is Summer2024!x');
+    ok(await p.getByRole('button', { name: 'Add card' }).isDisabled(), 'secret blocks a card');
+    await p.getByLabel('New card').fill('');
+    await go('/');
+    await p.getByText('Quarterly checks').first().waitFor({ state: 'visible', timeout: 4000 });
+  });
+
   await step(S('encryption: on, stored as ciphertext, locks, wrong passphrase refused, unlock, lock now'), async () => {
     await go('/kb/new');
     await p.getByLabel('Title').fill('Zebra quartz unique title');

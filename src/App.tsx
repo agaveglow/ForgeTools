@@ -14,6 +14,7 @@ import { LockScreen } from './ui/LockScreen';
 import { store, useSettings, useVault } from './data/hooks';
 import { VoicePage } from './pages/VoicePage';
 import { FilesPage } from './pages/FilesPage';
+import { BoardPage } from './pages/BoardPage';
 import { TasksPage } from './pages/TasksPage';
 import { ImportPage } from './pages/ImportPage';
 import { RequirementsPage } from './pages/RequirementsPage';
@@ -26,6 +27,7 @@ interface NavItem { to: string; label: string; short: string; icon: string; root
 const NAV: NavItem[] = [
   { to: '/', label: 'Dashboard', short: 'Home', icon: '⌂', root: '/' },
   { to: '/tasks', label: 'Tasks', short: 'Tasks', icon: '☑', root: '/tasks' },
+  { to: '/board', label: 'Task board', short: 'Board', icon: '▥', root: '/board' },
   { to: '/logs', label: 'Work logs', short: 'Logs', icon: '☰', root: '/logs' },
   { to: '/requirements', label: 'Requirements', short: 'Goals', icon: '◎', root: '/requirements' },
   { to: '/apprenticeship', label: 'Apprenticeship', short: 'Learn', icon: '✎', root: '/apprenticeship' },
@@ -67,6 +69,7 @@ function route(path: string): ReactNode {
   if (path === '/files') return <FilesPage />;
   if (path === '/import') return <ImportPage />;
   if (path === '/tasks') return <TasksPage />;
+  if (path === '/board') return <BoardPage />;
   if (path === '/requirements') return <RequirementsPage />;
   if (path === '/apprenticeship') return <ApprenticeshipPage />;
   if (path === '/kb') return <KbList />;

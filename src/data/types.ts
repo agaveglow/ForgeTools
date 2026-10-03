@@ -164,8 +164,11 @@ export interface UsageEvent extends BaseRecord {
 
 // ---------- Progress: tasks, requirements, apprenticeship ----------
 
-export type TaskKind = 'daily' | 'weekly' | 'once';
-export const TASK_KIND_LABEL: Record<TaskKind, string> = { daily: 'Every day', weekly: 'Every week', once: 'One-off' };
+export type TaskKind = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'once';
+export const TASK_KIND_LABEL: Record<TaskKind, string> = { daily: 'Every day', weekly: 'Every week', monthly: 'Every month', quarterly: 'Every quarter', once: 'One-off' };
+/** Columns on the task board. Only one-off tasks sit on the board. */
+export type BoardStatus = 'todo' | 'doing' | 'blocked' | 'done';
+export const BOARD_LABEL: Record<BoardStatus, string> = { todo: 'To do', doing: 'Doing', blocked: 'Blocked', done: 'Done' };
 
 export interface Task extends BaseRecord {
   title: string;
@@ -177,6 +180,8 @@ export interface Task extends BaseRecord {
   /** Linked requirement id, if it works towards one. */
   requirementId?: ID;
   archived?: boolean;
+  /** Board column for one-off tasks. Missing means to do (or done, once ticked). */
+  status?: BoardStatus;
 }
 
 export type RequirementKind = 'job' | 'apprenticeship';
