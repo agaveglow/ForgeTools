@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { store, useSettings, useStoreVersion, useVault } from '../data/hooks';
 import { COLLECTIONS } from '../data/types';
 import { downloadText, nowIso, plural, timeAgo } from '../lib/util';
@@ -10,6 +10,7 @@ import type { Envelope } from '../lib/crypto';
 import { getTranscribeKey, setTranscribeKey } from '../lib/transcribe';
 import { REDACTION_EXAMPLES, NEVER_ENTER, scanText } from '../lib/sensitive';
 import { ACCENT_PRESETS, CORNER_RADII, FONT_STACKS, TEXT_SCALES, accentFor, normalizeHex, readableInk } from '../lib/look';
+import { biometricSupported, bioReasonText, registerBiometric } from '../lib/biometric';
 import type { Corners, FontStyle, TextScale } from '../lib/look';
 
 export function SettingsPage() {
@@ -129,6 +130,7 @@ export function SettingsPage() {
                   <option value="1">1 minute</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="0">Never (only when I lock it)</option>
                 </select>
               </Field>
+              <BiometricControls />
               <div className="flex flex-wrap gap-2">
                 <Button onClick={() => { vault.lock().then(() => store.reload()); }}>Lock now</Button>
                 <Button variant="danger" disabled={secBusy} onClick={turnOff}>Turn off encryption</Button>
@@ -255,6 +257,43 @@ function LookControls() {
         <Button variant="primary" disabled={flagged || (name.trim() === (s.appName ?? '') && title.trim() === (s.dashboardTitle ?? ''))} onClick={() => store.updateSettings({ appName: name.trim() || undefined, dashboardTitle: title.trim() || undefined })}>Save names</Button>
         <Button onClick={() => { setName(''); setTitle(''); store.updateSettings({ accent: undefined, textScale: undefined, fontStyle: undefined, corners: undefined, appName: undefined, dashboardTitle: undefined }); }}>Reset appearance</Button>
       </div>
+    </div>
+  );
+}
+
+function BiometricControls() {
+  const vault = useVault();
+  const [supported, setSupported] = useState<boolean | undefined>(undefined);
+  const [pass, setPass] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  useEffect(() => { biometricSupported().then(setSupported); }, []);
+  const on = !!vault.bio;
+  const enable = async () => {
+    setBusy(true); setMsg(null);
+    const r = await registerBiometric();
+    if (!r.ok) { setMsg({ ok: false, text: bioReasonText(r.reason) }); setBusy(false); return; }
+    try {
+      await vault.addBiometric(pass, r.wrapKey, r.cred, r.salt);
+      setPass(''); setMsg({ ok: true, text: 'Fingerprint unlock is on. The passphrase still works as a backup.' });
+    } catch { setMsg({ ok: false, text: 'That passphrase is not right, so fingerprint unlock was not turned on.' }); }
+    setBusy(false);
+  };
+  return (
+    <div className="border-t border-line pt-3 space-y-2" aria-label="Fingerprint unlock">
+      <p className="text-sm font-medium">Fingerprint unlock {on && <span className="text-ok">(on)</span>}</p>
+      {on ? (
+        <Button onClick={() => { vault.removeBiometric(); setMsg({ ok: true, text: 'Fingerprint unlock is off. You will need the passphrase.' }); }}>Turn off fingerprint unlock</Button>
+      ) : supported === false ? (
+        <p className="text-sm text-muted">{bioReasonText('unsupported')}</p>
+      ) : (
+        <>
+          <p className="text-xs text-muted">Unlock with your phone’s fingerprint instead of typing the passphrase. It uses the same check as your phone’s lock screen, so a PIN or pattern may also work if your phone offers it as a backup, and anyone whose fingerprint is saved on the phone could unlock the app. Enter the passphrase once to turn it on.</p>
+          <Field label="Passphrase" htmlFor="bio-pass"><TextInput id="bio-pass" type="password" autoComplete="off" value={pass} onChange={(e: { target: { value: string } }) => setPass(e.target.value)} /></Field>
+          <Button disabled={busy || !pass || supported === undefined} onClick={enable}>{busy ? 'Waiting for fingerprint…' : 'Turn on fingerprint unlock'}</Button>
+        </>
+      )}
+      {msg && <p role="status" className={'text-sm ' + (msg.ok ? 'text-ok' : 'text-bad')}>{msg.text}</p>}
     </div>
   );
 }

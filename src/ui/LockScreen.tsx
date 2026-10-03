@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { store, vault } from '../data/hooks';
 import { wipeFiles } from '../data/files';
 import { Button, Card, Field, TextInput } from './primitives';
+import { readBiometric } from '../lib/biometric';
 
 /** Shown instead of the whole app while encrypted data is locked. */
 export function LockScreen() {
@@ -34,6 +35,18 @@ export function LockScreen() {
     setBusy(false);
   };
 
+  const bio = vault.bio;
+  const unlockBio = async () => {
+    if (busy || !bio) return;
+    setBusy(true); setErr('');
+    const r = await readBiometric(bio.cred, bio.salt);
+    if (r.ok) {
+      try { await vault.unlockWithBiometric(r.wrapKey); store.reload(); setBusy(false); return; } catch { /* fall through */ }
+    }
+    setErr(r.ok || r.reason === 'failed' ? 'Fingerprint did not unlock the data. Use your passphrase.' : 'Fingerprint cancelled. You can try again or use your passphrase.');
+    setBusy(false);
+  };
+
   const erase = async () => {
     vault.destroy();
     await wipeFiles().catch(() => undefined);
@@ -45,6 +58,7 @@ export function LockScreen() {
       <div className="w-full max-w-sm space-y-3">
         <div className="flex items-center gap-2 font-semibold text-lg"><span className="inline-grid place-items-center size-7 rounded-sm bg-accent text-accent-ink font-mono text-sm">F</span>ForgeTools is locked</div>
         <Card className="p-4 space-y-3">
+          {bio && <Button variant="primary" className="w-full" disabled={busy} onClick={unlockBio}>{busy ? 'Waiting…' : '☝ Unlock with fingerprint'}</Button>}
           <form className="space-y-3" onSubmit={(e: { preventDefault(): void }) => { e.preventDefault(); unlock(); }}>
             <Field label="Passphrase" htmlFor="lock-pass">
               <TextInput id="lock-pass" type="password" autoComplete="off" autoFocus value={pass} onChange={(e: { target: { value: string } }) => setPass(e.target.value)} />

@@ -559,6 +559,36 @@ async function run(label, viewport) {
     await shot('locked');
   });
 
+  await step(S('fingerprint unlock (simulated platform authenticator with PRF)'), async () => {
+    const cdp = await ctx.newCDPSession(p);
+    await cdp.send('WebAuthn.enable');
+    await cdp.send('WebAuthn.addVirtualAuthenticator', { options: { protocol: 'ctap2', ctap2Version: 'ctap2_1', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true, hasPrf: true } });
+    await p.getByLabel('Passphrase').fill('purple-tractor-lamp-9');
+    await p.getByRole('button', { name: 'Unlock' }).click();
+    await p.waitForSelector('h1', { timeout: 15000 });
+    await go('/settings');
+    await p.locator('#bio-pass').fill('not-the-passphrase');
+    await p.getByRole('button', { name: 'Turn on fingerprint unlock' }).click();
+    await p.getByText(/passphrase is not right/).waitFor({ state: 'visible', timeout: 15000 });
+    await p.locator('#bio-pass').fill('purple-tractor-lamp-9');
+    await p.getByRole('button', { name: 'Turn on fingerprint unlock' }).click();
+    await p.getByText(/Fingerprint unlock is on/).waitFor({ state: 'visible', timeout: 15000 });
+    ok(!(await p.evaluate(() => Object.values(localStorage).join('|'))).includes('purple-tractor'), 'passphrase is not in storage');
+    await p.getByRole('button', { name: 'Lock now' }).click();
+    await p.getByText('ForgeTools is locked').waitFor({ state: 'visible', timeout: 5000 });
+    await p.getByRole('button', { name: /Unlock with fingerprint/ }).click();
+    await p.waitForSelector('h1', { timeout: 15000 });
+    await go('/kb');
+    await p.getByText('Zebra quartz unique title').first().waitFor({ state: 'visible', timeout: 5000 });
+    await go('/settings');
+    await p.getByRole('button', { name: 'Turn off fingerprint unlock' }).click();
+    await p.getByRole('button', { name: 'Lock now' }).click();
+    await p.getByText('ForgeTools is locked').waitFor({ state: 'visible', timeout: 5000 });
+    ok((await p.getByRole('button', { name: /Unlock with fingerprint/ }).count()) === 0, 'no fingerprint button once turned off');
+    await cdp.send('WebAuthn.disable');
+  });
+
+
   await step(S('no console errors'), async () => { eq(JSON.stringify(errs), '[]'); });
   await browser.close();
 }

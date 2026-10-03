@@ -96,3 +96,46 @@ describe('vault', () => {
     expect(v.state).toBe('off');
   });
 });
+
+describe('fingerprint unlock key wrapping', () => {
+  const mk = () => { const inner = new LocalStorageAdapter('bio'); return { inner, v: new VaultAdapter(inner, IT) }; };
+  const aes = () => crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  test('unlock with the wrapping key, not the passphrase', async () => {
+    const { inner, v } = mk();
+    inner.write('workLogs', [{ id: 'a' }]);
+    await v.enable('correct horse battery');
+    const wrap = await aes();
+    await v.addBiometric('correct horse battery', wrap, 'cred', 'salt');
+    expect(v.bio?.cred).toBe('cred');
+    await v.lock();
+    expect(v.read('workLogs')).toBeUndefined();
+    await v.unlockWithBiometric(wrap);
+    expect(v.state).toBe('unlocked');
+    expect(v.read('workLogs')).toEqual([{ id: 'a' }]);
+  });
+  test('wrong key and wrong passphrase are refused; passphrase still works', async () => {
+    const { v } = mk();
+    await v.enable('correct horse battery');
+    await expect(v.addBiometric('not the passphrase', await aes(), 'c', 's')).rejects.toBeInstanceOf(CryptoError);
+    expect(v.bio).toBeUndefined();
+    const wrap = await aes();
+    await v.addBiometric('correct horse battery', wrap, 'c', 's');
+    await v.lock();
+    await expect(v.unlockWithBiometric(await aes())).rejects.toBeInstanceOf(CryptoError);
+    expect(v.state).toBe('locked');
+    await v.unlock('correct horse battery');
+    expect(v.state).toBe('unlocked');
+  });
+  test('removing it leaves the passphrase working; the wrapped key is not plain', async () => {
+    const { inner, v } = mk();
+    await v.enable('correct horse battery');
+    await v.addBiometric('correct horse battery', await aes(), 'c', 's');
+    expect(JSON.stringify(inner.read('vault'))).not.toContain('correct horse');
+    v.removeBiometric();
+    expect(v.bio).toBeUndefined();
+    await v.lock();
+    await expect(v.unlockWithBiometric(await aes())).rejects.toBeInstanceOf(CryptoError);
+    await v.unlock('correct horse battery');
+    expect(v.state).toBe('unlocked');
+  });
+});

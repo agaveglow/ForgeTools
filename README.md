@@ -137,6 +137,10 @@ The walkthrough builder reorganises what was said (what you need, ordered steps,
 - **Web lookup rules:** https only; private/local network addresses refused; page text only, no scripts or links are kept.
 - **Limits:** this does not protect against malware on the device, shoulder surfing, or a weak passphrase. Clearing site data deletes your data, so keep an (encrypted) backup. Check your employer's data rules before keeping work notes on a personal phone.
 
+### Fingerprint unlock
+
+Once encryption is on, **Settings > Security > Fingerprint unlock** lets you unlock with your phone's fingerprint instead of typing the passphrase. It uses a passkey (WebAuthn with the PRF extension): the phone's secure hardware produces a secret only after the fingerprint check, and that secret wraps the data key. The passphrase is never stored, and it keeps working as a backup. It is only offered where the phone supports PRF; otherwise it would only hide the screen, so it stays off. A phone's passkey check may also accept the screen PIN or pattern, and any fingerprint saved on the phone. Tested with a simulated authenticator, not yet on a real phone.
+
 ## Phone app
 
 Three routes, from quickest to most native. None have been tested on a real phone.

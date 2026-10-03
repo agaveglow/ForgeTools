@@ -10,7 +10,9 @@ import type { LocalStorageAdapter, StorageAdapter } from './storage';
 import { DEFAULT_ITERATIONS, CryptoError, b64, decryptText, deriveKey, encryptText, randomBytes, unb64 } from '../lib/crypto';
 
 export type VaultState = 'off' | 'locked' | 'unlocked';
-interface VaultMeta { v: 1; salt: string; iterations: number; check: string }
+/** Fingerprint unlock: the data key, encrypted with a key that only the phone's secure hardware can produce after a fingerprint. */
+export interface BioMeta { cred: string; salt: string; wrapped: string }
+interface VaultMeta { v: 1; salt: string; iterations: number; check: string; bio?: BioMeta }
 const CHECK_TEXT = 'forgetools-vault-ok';
 const ENC = 'enc.';
 
@@ -87,6 +89,44 @@ export class VaultAdapter implements StorageAdapter {
     const meta = this.inner.read('vault') as VaultMeta | undefined;
     if (!meta) throw new CryptoError('No encrypted data found.', 'corrupt');
     const key = await deriveKey(passphrase, unb64(meta.salt), meta.iterations);
+    await this.load(key, meta);
+  }
+
+  // ----- fingerprint unlock -----
+  get bio(): BioMeta | undefined { return (this.inner.read('vault') as VaultMeta | undefined)?.bio; }
+
+  /** Turn on fingerprint unlock. Needs the passphrase once, to prove it is you and to get the data key to wrap. */
+  async addBiometric(passphrase: string, wrapKey: CryptoKey, cred: string, salt: string): Promise<void> {
+    const meta = this.inner.read('vault') as VaultMeta | undefined;
+    if (!meta || this.state !== 'unlocked') throw new Error('Unlock first.');
+    const exportable = await deriveKey(passphrase, unb64(meta.salt), meta.iterations, true);
+    if ((await decryptText(exportable, meta.check)) !== CHECK_TEXT) throw new CryptoError('Wrong passphrase.', 'wrong-passphrase');
+    const raw = new Uint8Array(await globalThis.crypto.subtle.exportKey('raw', exportable));
+    const wrapped = await encryptText(wrapKey, b64(raw));
+    raw.fill(0);
+    this.inner.write('vault', { ...meta, bio: { cred, salt, wrapped } });
+    this.version++; this.listeners.forEach((l) => l());
+  }
+
+  removeBiometric(): void {
+    const meta = this.inner.read('vault') as VaultMeta | undefined;
+    if (!meta?.bio) return;
+    const { bio: _bio, ...rest } = meta; void _bio;
+    this.inner.write('vault', rest);
+    this.version++; this.listeners.forEach((l) => l());
+  }
+
+  /** Unlock with the key produced after a fingerprint. A wrong or missing key fails the same way a wrong passphrase does. */
+  async unlockWithBiometric(wrapKey: CryptoKey): Promise<void> {
+    const meta = this.inner.read('vault') as VaultMeta | undefined;
+    if (!meta?.bio) throw new CryptoError('Fingerprint unlock is not set up.', 'corrupt');
+    const raw = unb64(await decryptText(wrapKey, meta.bio.wrapped));
+    const key = await globalThis.crypto.subtle.importKey('raw', raw as BufferSource, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    raw.fill(0);
+    await this.load(key, meta);
+  }
+
+  private async load(key: CryptoKey, meta: VaultMeta): Promise<void> {
     if ((await decryptText(key, meta.check)) !== CHECK_TEXT) throw new CryptoError('Wrong passphrase.', 'wrong-passphrase');
     const next = new Map<string, unknown>();
     for (const full of this.inner.keys()) {

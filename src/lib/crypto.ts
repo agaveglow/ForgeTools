@@ -37,10 +37,10 @@ const subtle = (): SubtleCrypto => {
 export const cryptoAvailable = (): boolean => !!globalThis.crypto?.subtle;
 export const randomBytes = (n: number): Uint8Array => globalThis.crypto.getRandomValues(new Uint8Array(n));
 
-export async function deriveKey(passphrase: string, salt: Uint8Array, iterations = DEFAULT_ITERATIONS): Promise<CryptoKey> {
+export async function deriveKey(passphrase: string, salt: Uint8Array, iterations = DEFAULT_ITERATIONS, extractable = false): Promise<CryptoKey> {
   const s = subtle();
   const base = await s.importKey('raw', enc.encode(passphrase.normalize('NFKC')), 'PBKDF2', false, ['deriveKey']);
-  return s.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt: salt as BufferSource, iterations }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  return s.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt: salt as BufferSource, iterations }, base, { name: 'AES-GCM', length: 256 }, extractable, ['encrypt', 'decrypt']);
 }
 
 export async function encryptText(key: CryptoKey, text: string): Promise<string> {
