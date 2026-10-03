@@ -6,35 +6,17 @@ import type { TaskKind } from '../data/types';
 
 export interface StarterList { id: string; title: string; kind: TaskKind; note?: string; items: string[] }
 
+import { CHECK_GUIDES } from './checkGuides';
+import type { CheckGuide } from './checkGuides';
+
+const tasksFor = (f: CheckGuide['frequency'], optional = false): string[] => CHECK_GUIDES.filter((g) => g.frequency === f && g.id.startsWith('o-') === optional).map((g) => g.task ?? g.title);
+
 export const STARTER_LISTS: StarterList[] = [
-  {
-    id: 'monthly-core',
-    title: 'Monthly checks',
-    kind: 'monthly',
-    note: 'The three monthly items you sent. Add the rest of your monthly list with “Paste a list”.',
-    items: [
-      'Review conditional access rules',
-      'Test DR plan: run a tabletop exercise or partial failover test',
-      'Review vendor portals: warranty status, firmware updates for switches, firewalls, etc.',
-    ],
-  },
-  {
-    id: 'quarterly-core',
-    title: 'Quarterly checks',
-    kind: 'quarterly',
-    note: 'Strategic, capacity and risk-focused.',
-    items: [
-      'Full disaster recovery test: restore key systems from backup or fail over to DR',
-      'Vulnerability assessment / penetration test (internal or external)',
-      'Review and apply firmware updates: servers, switches, firewalls, wireless APs',
-      'Capacity planning and performance review: recommend upgrades if needed',
-      'Security policy review: password policy, conditional access, device management',
-      'Review external exposure: public DNS, SSL certificate expirations, open ports',
-      'User permissions audit: validate access based on least privilege',
-      'Review and clean up inactive devices and accounts',
-      'Quarterly business review (QBR) with client: report on health, risks, recommendations',
-    ],
-  },
+  { id: 'daily-core', title: 'Daily checks', kind: 'daily', note: 'Usually automated where possible, but reviewed every day. From your Tasks checklist. The end of the patch deployment line was cut off in the screenshot, so check its wording.', items: tasksFor('daily') },
+  { id: 'weekly-core', title: 'Weekly checks', kind: 'weekly', note: 'Deeper review or small maintenance.', items: tasksFor('weekly') },
+  { id: 'monthly-core', title: 'Monthly checks', kind: 'monthly', note: 'Deeper, proactive maintenance.', items: tasksFor('monthly') },
+  { id: 'quarterly-core', title: 'Quarterly checks', kind: 'quarterly', note: 'Strategic, capacity and risk-focused.', items: tasksFor('quarterly') },
+  { id: 'optional', title: 'Optional but recommended', kind: 'quarterly', note: 'Added as quarterly reminders: change how often they repeat if you prefer.', items: tasksFor('quarterly', true) },
 ];
 
 /** Turn pasted lines into task titles: strips bullets, numbers and emoji-only headings, drops blanks and repeats. */

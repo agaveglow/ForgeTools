@@ -15,7 +15,8 @@ export const modelFromCheck = (g: CheckGuide): VisualModel => ({
   cautions: g.cautions,
 });
 
-const FREQ = { monthly: 'Every month', quarterly: 'Every quarter' } as const;
+const FREQ = { daily: 'Every day', weekly: 'Every week', monthly: 'Every month', quarterly: 'Every quarter' } as const;
+const PERIOD = { daily: 'today', weekly: 'this week', monthly: 'this month', quarterly: 'this quarter' } as const;
 
 export function ChecksPage() {
   useTitle('Check guides');
@@ -25,16 +26,16 @@ export function ChecksPage() {
   const stateOf = (g: CheckGuide) => { const t = act.find((x) => guideForTitle(x.title)?.id === g.id); return t ? (taskDone(t, now) ? 'done' : 'due') : 'none'; };
   return (
     <div className="max-w-3xl pb-10 space-y-5">
-      <PageHeader title="Check guides" sub="How to complete and monitor each monthly and quarterly check." actions={<Link to="/sla"><Button>Response times</Button></Link>} />
+      <PageHeader title="Check guides" sub="How to complete and monitor each daily, weekly, monthly and quarterly check." actions={<Link to="/sla"><Button>Response times</Button></Link>} />
       <p className="text-xs text-muted" role="note">General good practice as a starting point. Adapt each guide to your own policies and procedures, and only run checks on systems you are authorised to check.</p>
-      {(['monthly', 'quarterly'] as const).map((f) => (
+      {(['daily', 'weekly', 'monthly', 'quarterly'] as const).map((f) => (
         <section key={f} aria-label={FREQ[f]}>
           <SectionTitle>{FREQ[f]}</SectionTitle>
           <ul className="space-y-2">{CHECK_GUIDES.filter((g) => g.frequency === f).map((g) => {
             const st = stateOf(g);
             return (
               <li key={g.id}><Link to={`/checks/${g.id}`} className="block bg-surface border border-line rounded-md p-3 hover:bg-surface2">
-                <span className="flex items-start justify-between gap-2"><span className="text-sm font-medium wrap-any">{g.title}</span>{st === 'done' && <Badge tone="ok">Done this {f === 'monthly' ? 'month' : 'quarter'}</Badge>}{st === 'due' && <Badge tone="warn">Due</Badge>}</span>
+                <span className="flex items-start justify-between gap-2"><span className="text-sm font-medium wrap-any">{g.title}</span>{st === 'done' && <Badge tone="ok">Done {PERIOD[f]}</Badge>}{st === 'due' && <Badge tone="warn">Due</Badge>}</span>
                 <span className="block text-xs text-muted mt-0.5">{g.summary}</span>
               </Link></li>
             );
@@ -72,13 +73,13 @@ export function CheckGuidePage({ id }: { id: string }) {
       <Card className="p-3 flex flex-wrap items-center gap-3">
         {task ? (
           <>
-            <button type="button" role="checkbox" aria-checked={done} aria-label={`Mark ${g.title} done for this ${g.frequency === 'monthly' ? 'month' : 'quarter'}`} onClick={() => store.upsert('tasks', { ...task, doneOn: toggleTask(task, now) })} className={'shrink-0 size-8 rounded-sm border-2 grid place-items-center ' + (done ? 'bg-ok border-ok text-canvas' : 'border-line bg-surface hover:border-accent')}>{done && <span aria-hidden>✓</span>}</button>
-            <span className="text-sm flex-1 min-w-40">{done ? 'Done this ' + (g.frequency === 'monthly' ? 'month' : 'quarter') : 'Mark this check done'}{lastDone(task) ? <span className="text-muted"> · last done {lastDone(task)}</span> : null}</span>
+            <button type="button" role="checkbox" aria-checked={done} aria-label={`Mark ${g.title} done for ${PERIOD[g.frequency]}`} onClick={() => store.upsert('tasks', { ...task, doneOn: toggleTask(task, now) })} className={'shrink-0 size-8 rounded-sm border-2 grid place-items-center ' + (done ? 'bg-ok border-ok text-canvas' : 'border-line bg-surface hover:border-accent')}>{done && <span aria-hidden>✓</span>}</button>
+            <span className="text-sm flex-1 min-w-40">{done ? 'Done ' + PERIOD[g.frequency] : 'Mark this check done'}{lastDone(task) ? <span className="text-muted"> · last done {lastDone(task)}</span> : null}</span>
           </>
         ) : (
           <>
             <span className="text-sm flex-1 min-w-40">This check is not on your task list yet.</span>
-            <Button variant="primary" onClick={() => store.upsert('tasks', { title: g.title, kind: g.frequency, doneOn: [] })}>Add to my tasks</Button>
+            <Button variant="primary" onClick={() => store.upsert('tasks', { title: g.task ?? g.title, kind: g.frequency, doneOn: [] })}>Add to my tasks</Button>
           </>
         )}
       </Card>

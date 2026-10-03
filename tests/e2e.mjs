@@ -605,7 +605,7 @@ async function run(label, viewport) {
     await mark.click();
     ok((await mark.getAttribute('aria-checked')) === (before === 'true' ? 'false' : 'true'), 'check toggles from its guide');
     await go('/tasks');
-    await p.getByRole('link', { name: /How to do and monitor: Review conditional access rules/ }).waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('link', { name: /How to do and monitor: .*conditional access rules/ }).waitFor({ state: 'visible', timeout: 3000 });
     await go('/sla');
     await p.getByRole('group', { name: 'Priority' }).getByRole('button', { name: 'Critical' }).click();
     await p.getByLabel('Logged at').fill('2026-10-05T10:00');
@@ -616,6 +616,28 @@ async function run(label, viewport) {
     await p.getByRole('group', { name: 'Priority' }).getByRole('button', { name: 'High' }).click();
     ok(/09:20/.test(await p.getByTestId('respond-by').innerText()), 'rolls over the weekend');
     await shot('sla');
+  });
+
+  await step(S('daily and weekly checklists add once, skip repeats and link to guides'), async () => {
+    await go('/tasks');
+    await p.getByRole('button', { name: /Add many at once/ }).click();
+    await p.getByRole('button', { name: 'Add Daily checks' }).click();
+    await p.getByRole('status').filter({ hasText: 'Added 7' }).waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('button', { name: 'Add Weekly checks' }).click();
+    await p.getByRole('status').filter({ hasText: 'Added 9' }).waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('button', { name: 'Add Daily checks' }).click();
+    await p.getByRole('status').filter({ hasText: 'already on your list' }).waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('link', { name: /How to do and monitor: Check backup status/ }).first().waitFor({ state: 'visible', timeout: 3000 });
+    await go('/checks');
+    ok((await p.getByRole('region', { name: 'Every day' }).getByRole('link').count()) === 7, 'seven daily guides');
+    ok((await p.getByRole('region', { name: 'Every week' }).getByRole('link').count()) === 9, 'nine weekly guides');
+    await p.getByRole('link', { name: /Check backup status/ }).click();
+    await p.getByTestId('visual-guide').waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('checkbox', { name: /Mark Check backup status.* done for today/ }).click();
+    await go('/');
+    const bk = p.locator('[data-widget="today"]').getByRole('checkbox', { name: /Check backup status/ });
+    await bk.waitFor({ state: 'visible', timeout: 4000 });
+    ok((await bk.getAttribute('aria-checked')) === 'true', 'ticking the guide ticks the dashboard task');
   });
 
   await step(S('encryption: on, stored as ciphertext, locks, wrong passphrase refused, unlock, lock now'), async () => {

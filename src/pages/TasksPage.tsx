@@ -118,9 +118,11 @@ function BulkAdd({ existing }: { existing: string[] }) {
   const lines = parseTaskLines(text);
   const flagged = scanText(text).length > 0;
   const have = new Set(existing);
-  const fresh = lines.filter((l) => !have.has(l.toLowerCase()));
+  const haveGuides = new Set(existing.map((t) => guideForTitle(t)?.id).filter(Boolean));
+  const isNew = (t: string) => !have.has(t.toLowerCase()) && !(guideForTitle(t) && haveGuides.has(guideForTitle(t)!.id));
+  const fresh = lines.filter(isNew);
   const addMany = (titles: string[], k: TaskKind) => {
-    const todo = titles.filter((t) => !have.has(t.toLowerCase()));
+    const todo = titles.filter(isNew);
     for (const title of todo) store.upsert('tasks', { title, kind: k, doneOn: [] });
     setMsg(todo.length ? `Added ${todo.length} ${TASK_KIND_LABEL[k].toLowerCase()} task${todo.length === 1 ? '' : 's'}.` : 'Those are already on your list.');
   };

@@ -3,7 +3,7 @@
  * a starting point: adapt each one to your own policies and procedures. Nothing here names a customer, and
  * commands use placeholders. Run commands only on systems you are authorised to check.
  */
-export type CheckFrequency = 'monthly' | 'quarterly';
+export type CheckFrequency = 'daily' | 'weekly' | 'monthly' | 'quarterly';
 
 export interface CheckStep { text: string; command?: string }
 export interface CheckGuide {
@@ -12,6 +12,8 @@ export interface CheckGuide {
   title: string;
   /** Matches the task title it belongs to. */
   match: RegExp;
+  /** The task wording used when this check is added to the task list. Defaults to the title. */
+  task?: string;
   summary: string;
   before: string[];
   steps: CheckStep[];
@@ -20,9 +22,10 @@ export interface CheckGuide {
   cautions: string[];
 }
 
-export const CHECK_GUIDES: CheckGuide[] = [
+const CORE_GUIDES: CheckGuide[] = [
   {
     id: 'ca-review', frequency: 'monthly', title: 'Review conditional access rules', match: /conditional access rules/i,
+    task: 'Security check: ensure MFA is enforced, review conditional access rules',
     summary: 'Confirm the sign-in rules still protect accounts the way the security policy says, with no gaps and no surprises.',
     before: ['Read-only access to the Microsoft Entra admin center (Security Reader or similar).', 'Last review’s notes and the written security policy.', 'The list of emergency (break-glass) accounts.'],
     steps: [
@@ -41,6 +44,7 @@ export const CHECK_GUIDES: CheckGuide[] = [
   },
   {
     id: 'dr-tabletop', frequency: 'monthly', title: 'Test DR plan: tabletop exercise or partial failover', match: /test dr plan/i,
+    task: 'Test DR plan: run tabletop exercise or partial failover test',
     summary: 'Prove the disaster recovery plan works, either by talking through a scenario or by recovering one non-critical system.',
     before: ['The current DR plan, contact list and recovery targets (how long recovery may take, how much data may be lost).', 'Agreement on the scenario and the time slot.', 'For a partial failover: approval and a way to isolate what you restore.'],
     steps: [
@@ -58,6 +62,7 @@ export const CHECK_GUIDES: CheckGuide[] = [
   },
   {
     id: 'vendor-portals', frequency: 'monthly', title: 'Review vendor portals: warranty status and firmware updates', match: /vendor portals/i,
+    task: 'Review vendor portals: warranty status, firmware updates for switches, firewalls, etc',
     summary: 'Catch expiring warranties and important firmware or security notices before they become a problem.',
     before: ['A list of vendor portals and your access to each.', 'The asset list: models, serial references held in your own records, and support end dates.'],
     steps: [
@@ -74,6 +79,7 @@ export const CHECK_GUIDES: CheckGuide[] = [
   },
   {
     id: 'full-dr-test', frequency: 'quarterly', title: 'Full disaster recovery test', match: /full disaster recovery test/i,
+    task: 'Full disaster recovery test: test restoring key systems from backup or failover to DR',
     summary: 'Show that key systems really can be restored from backup or brought up at the DR site, within the agreed times.',
     before: ['Written scope, success criteria and approval for the test window.', 'The DR plan, recovery targets and runbooks.', 'Recent backup reports showing the backups you will use exist and completed.', 'An isolated network to restore into.'],
     steps: [
@@ -92,6 +98,7 @@ export const CHECK_GUIDES: CheckGuide[] = [
   },
   {
     id: 'vuln-assessment', frequency: 'quarterly', title: 'Vulnerability assessment or penetration test', match: /vulnerability assessment/i,
+    task: 'Vulnerability assessment / penetration test (internal or external)',
     summary: 'Find known weaknesses before someone else does, rank them, and track each one to a fix.',
     before: ['Written authorisation naming what may be scanned and when.', 'An approved scanner and, for an internal scan, an account for it to use.', 'An asset list so you know what should and should not appear.'],
     steps: [
@@ -110,6 +117,7 @@ export const CHECK_GUIDES: CheckGuide[] = [
   },
   {
     id: 'firmware-quarterly', frequency: 'quarterly', title: 'Review and apply firmware updates', match: /firmware updates: servers/i,
+    task: 'Review and apply firmware updates: servers, switches, firewalls, wireless APs',
     summary: 'Keep servers, switches, firewalls and wireless access points on supported, patched firmware without causing an outage.',
     before: ['Current firmware versions for each device.', 'Vendor release notes and advisories.', 'A change record and an agreed maintenance window.', 'A current configuration backup for each device.'],
     steps: [
@@ -128,6 +136,7 @@ export const CHECK_GUIDES: CheckGuide[] = [
   },
   {
     id: 'capacity-review', frequency: 'quarterly', title: 'Capacity planning and performance review', match: /capacity planning/i,
+    task: 'Capacity planning & performance review: recommend upgrades if needed',
     summary: 'Spot the resources that will run out before they do, and recommend upgrades with evidence.',
     before: ['Monitoring or reporting that holds at least the last 90 days of usage.', 'Thresholds from your policy or the client’s agreement.', 'Any planned growth: new staff, new sites, new systems.'],
     steps: [
@@ -145,6 +154,7 @@ export const CHECK_GUIDES: CheckGuide[] = [
   },
   {
     id: 'security-policy-review', frequency: 'quarterly', title: 'Security policy review', match: /security policy review/i,
+    task: 'Security policy review: password policy, conditional access, device management',
     summary: 'Check that the written rules for passwords, sign-in and devices match what is actually enforced.',
     before: ['The written security policy.', 'Read access to identity and device management settings.', 'Any standard you work to (for example Cyber Essentials) and its current requirements.'],
     steps: [
@@ -162,6 +172,7 @@ export const CHECK_GUIDES: CheckGuide[] = [
   },
   {
     id: 'external-exposure', frequency: 'quarterly', title: 'Review external exposure', match: /external exposure/i,
+    task: 'Review external exposure: public DNS, SSL certificate expirations, open ports',
     summary: 'See what the internet can see: DNS records, certificate expiry dates and open ports, and remove what should not be there.',
     before: ['The list of public domains and public IP addresses you are authorised to check.', 'The list of services that are meant to be reachable from outside.'],
     steps: [
@@ -178,6 +189,7 @@ export const CHECK_GUIDES: CheckGuide[] = [
   },
   {
     id: 'permissions-audit', frequency: 'quarterly', title: 'User permissions audit', match: /user permissions audit/i,
+    task: 'User permissions audit: validate access based on least privilege',
     summary: 'Make sure people have the access their job needs and no more.',
     before: ['Read access to the directory, groups and shared resources.', 'A way to confirm roles with managers (a list of job roles or a manager contact).'],
     steps: [
@@ -195,6 +207,7 @@ export const CHECK_GUIDES: CheckGuide[] = [
   },
   {
     id: 'inactive-cleanup', frequency: 'quarterly', title: 'Review and clean up inactive devices and accounts', match: /inactive devices/i,
+    task: 'Review and clean up inactive devices / accounts',
     summary: 'Remove the unused accounts and devices that attackers like best, safely and in stages.',
     before: ['The inactivity period in your policy (commonly 60 to 90 days).', 'A leavers list or a way to check with the business.', 'Approval for disabling and deleting.'],
     steps: [
@@ -212,6 +225,7 @@ export const CHECK_GUIDES: CheckGuide[] = [
   },
   {
     id: 'qbr', frequency: 'quarterly', title: 'Quarterly business review with the client', match: /quarterly business review|QBR/i,
+    task: 'Quarterly business review (QBR) with client: report on health, risks, recommendations',
     summary: 'Show the client how their IT is doing, what the risks are, and what you recommend.',
     before: ['The last review’s actions.', 'Reports: service performance, backups, patching, security, assets and projects.', 'The capacity and risk findings from the other quarterly checks.'],
     steps: [
@@ -228,6 +242,10 @@ export const CHECK_GUIDES: CheckGuide[] = [
     cautions: ['Keep client names and details in your own business systems, not in this app.', 'Present facts and options. Do not promise work or costs that have not been agreed.'],
   },
 ];
+
+import { ROUTINE_GUIDES } from './checkGuidesRoutine';
+
+export const CHECK_GUIDES: CheckGuide[] = [...ROUTINE_GUIDES.filter((g) => g.frequency === 'daily'), ...ROUTINE_GUIDES.filter((g) => g.frequency === 'weekly'), ...CORE_GUIDES.filter((g) => g.frequency === 'monthly'), ...ROUTINE_GUIDES.filter((g) => g.frequency === 'monthly'), ...CORE_GUIDES.filter((g) => g.frequency === 'quarterly'), ...ROUTINE_GUIDES.filter((g) => g.frequency === 'quarterly')];
 
 export const CHECK_GUIDE_BY_ID: Record<string, CheckGuide> = Object.fromEntries(CHECK_GUIDES.map((g) => [g.id, g]));
 

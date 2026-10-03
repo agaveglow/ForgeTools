@@ -118,3 +118,18 @@ describe('check guides', () => {
     for (const m of text.matchAll(/[\w-]+\.(?:com|co\.uk|net|org)\b/g)) expect(m[0]).toMatch(/example\.com/);
   });
 });
+
+describe('starter lists match the checklist', () => {
+  const count = (id: string) => STARTER_LISTS.find((l) => l.id === id)!.items.length;
+  test('counts', () => {
+    expect([count('daily-core'), count('weekly-core'), count('monthly-core'), count('quarterly-core'), count('optional')]).toEqual([7, 9, 9, 9, 3]);
+  });
+  test('each task has exactly one guide and no two tasks share one', () => {
+    const ids = STARTER_LISTS.flatMap((l) => l.items.map((i) => guideForTitle(i)?.id));
+    expect(ids.every(Boolean)).toBe(true);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+  test('the old monthly wording still finds its guide', () => {
+    expect(guideForTitle('Review conditional access rules')?.id).toBe(guideForTitle('Security check: ensure MFA is enforced, review conditional access rules')?.id);
+  });
+});
