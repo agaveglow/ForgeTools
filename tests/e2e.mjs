@@ -705,7 +705,7 @@ async function run(label, viewport) {
     await p.goto(BASE + '#/__blank'); await p.goto(BASE + '#/');
     await p.locator('[data-testid=glance]').waitFor({ state: 'visible', timeout: 5000 });
     ok(/\d{1,2}:\d\d/.test((await p.locator('[data-testid=glance-time]').textContent()) ?? ''), 'the time is the watch face');
-    eq(await p.locator('[data-testid=glance-apps] a').count(), 14, 'fourteen app bubbles');
+    eq(await p.locator('[data-testid=glance-apps] a').count(), 7, 'seven app bubbles');
     eq(await p.locator('[data-testid=glance-legend] li').count(), 3, 'three ring counts');
     for (const a of await p.locator('[data-testid=glance-apps] a').all()) ok(((await a.boundingBox())?.width ?? 0) >= 44, 'bubble is at least 44px wide');
     await noHScroll();
@@ -766,6 +766,45 @@ async function run(label, viewport) {
     // the weekly summary carries the link
     await noHScroll();
     await shot('apprenticeship-video');
+  });
+
+  await step(S('navigation: home hub, area screens, tabs, back, all apps'), async () => {
+    await p.goto(BASE + '#/__blank'); await p.goto(BASE + '#/');
+    await p.locator('[data-testid=glance]').waitFor({ state: 'visible', timeout: 5000 });
+    eq(await p.locator('aside').count(), 0, 'no side menu');
+    eq(await p.getByRole('link', { name: 'Back', exact: true }).count(), 0, 'no Back on home');
+    await p.locator('[data-testid=glance-apps]').getByRole('link', { name: 'Today', exact: true }).click();
+    await p.locator('[data-testid=area-today]').waitFor({ state: 'visible', timeout: 5000 });
+    eq(await p.locator('[data-testid=area-today] li').count(), 5, 'five Today pages');
+    await p.locator('[data-testid=area-today]').getByRole('link', { name: /Tasks/ }).click();
+    await p.getByRole('heading', { name: 'Tasks', exact: true }).first().waitFor({ state: 'visible', timeout: 5000 });
+    const tabs = await p.locator('[data-testid=area-tabs] a').allInnerTexts();
+    eq(tabs.join('|'), 'Daily jobs|Daily workflow|Tasks|Task board|Check guides', 'sibling tabs');
+    eq(await p.locator('[data-testid=area-tabs] a[aria-current=page]').innerText(), 'Tasks');
+    await p.locator('[data-testid=area-tabs]').getByRole('link', { name: 'Check guides' }).click();
+    await p.getByRole('heading', { name: 'Check guides' }).waitFor({ state: 'visible', timeout: 5000 });
+    // a detail page goes Back to its list, then the area, then home
+    await go('/checks/qbr');
+    await p.getByRole('link', { name: 'Back', exact: true }).click();
+    await p.getByRole('heading', { name: 'Check guides' }).waitFor({ state: 'visible', timeout: 5000 });
+    await p.getByRole('link', { name: 'Back', exact: true }).click();
+    await p.locator('[data-testid=area-today]').waitFor({ state: 'visible', timeout: 5000 });
+    await p.getByRole('link', { name: 'Back', exact: true }).click();
+    await p.locator('[data-testid=glance]').waitFor({ state: 'visible', timeout: 5000 });
+    // every area opens, and the old addresses still work
+    for (const id of ['fix', 'notes', 'learn']) { await go('/a/' + id); await p.locator(`[data-testid=area-${id}]`).waitFor({ state: 'visible', timeout: 5000 }); }
+    for (const r of ['/tasks', '/logs', '/troubleshoot', '/commands', '/kb', '/agent', '/voice', '/files', '/import', '/requirements', '/apprenticeship', '/skills', '/security', '/sla', '/board', '/live', '/manuals', '/settings']) {
+      await go(r); ok((await p.locator('h1').count()) > 0, r + ' opens');
+    }
+    // all apps lists every page
+    await p.getByRole('link', { name: 'All apps', exact: true }).click();
+    await p.locator('[data-testid=all-apps]').waitFor({ state: 'visible', timeout: 5000 });
+    eq(await p.locator('[data-testid=all-apps] li').count(), 21, 'twenty-one pages');
+    await noHScroll();
+    await shot('all-apps');
+    await go('/a/today'); await noHScroll(); await shot('area-today');
+    await go('/settings');
+    eq(await p.getByRole('link', { name: 'Back', exact: true }).getAttribute('href'), '#/', 'settings goes back home');
   });
 
   await step(S('daily workflow: sections, ticks persist for today, clear'), async () => {

@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { clsx } from './lib/util';
 import { Link, match, usePath } from './ui/router';
-import { Modal } from './ui/primitives';
 import { SearchPalette } from './ui/SearchPalette';
 import { Dashboard } from './pages/DashboardPage';
 import { LogDetail, LogEditor, LogList } from './pages/LogsPage';
@@ -18,6 +17,9 @@ import { applyLook } from './lib/look';
 import { LivePage } from './pages/LivePage';
 import { CheckGuidePage, ChecksPage } from './pages/ChecksPage';
 import { TodayPage } from './pages/TodayPage';
+import { AllAppsPage, AreaHub } from './pages/AreasPage';
+import { Icon } from './ui/Bubble';
+import { areaOfPath, parentPath } from './lib/areas';
 import { WorkflowPage } from './pages/WorkflowPage';
 import { ManualReaderPage, ManualsPage } from './pages/ManualsPage';
 import { SlaPage } from './pages/SlaPage';
@@ -30,42 +32,11 @@ import { KbDetail, KbEditor, KbList } from './pages/KbPage';
 import { SkillsPage } from './pages/SkillsPage';
 import { SettingsPage } from './pages/SettingsPage';
 
-interface NavItem { to: string; label: string; short: string; icon: string; root: string }
-const NAV: NavItem[] = [
-  { to: '/', label: 'Dashboard', short: 'Home', icon: '⌂', root: '/' },
-  { to: '/today', label: 'Daily jobs', short: 'Today', icon: '◷', root: '/today' },
-  { to: '/workflow', label: 'Daily workflow', short: 'Day', icon: '↻', root: '/workflow' },
-  { to: '/tasks', label: 'Tasks', short: 'Tasks', icon: '☑', root: '/tasks' },
-  { to: '/live', label: 'Live notes', short: 'Notes', icon: '✎', root: '/live' },
-  { to: '/checks', label: 'Check guides', short: 'Checks', icon: '✔', root: '/checks' },
-  { to: '/manuals', label: 'Printer guides', short: 'Manuals', icon: '▤', root: '/manuals' },
-  { to: '/sla', label: 'Response times', short: 'SLA', icon: '⏱', root: '/sla' },
-  { to: '/board', label: 'Task board', short: 'Board', icon: '▥', root: '/board' },
-  { to: '/logs', label: 'Work logs', short: 'Logs', icon: '☰', root: '/logs' },
-  { to: '/requirements', label: 'Requirements', short: 'Goals', icon: '◎', root: '/requirements' },
-  { to: '/apprenticeship', label: 'Apprenticeship', short: 'Learn', icon: '✎', root: '/apprenticeship' },
-  { to: '/import', label: 'Import documents', short: 'Import', icon: '⇪', root: '/import' },
-  { to: '/voice', label: 'Voice notes', short: 'Voice', icon: '◉', root: '/voice' },
-  { to: '/troubleshoot', label: 'Troubleshooting', short: 'Fix', icon: '⚒', root: '/troubleshoot' },
-  { to: '/commands', label: 'Commands', short: 'Cmds', icon: '>_', root: '/commands' },
-  { to: '/security', label: 'Security checklist', short: 'Security', icon: '⛨', root: '/security' },
-  { to: '/agent', label: 'Guide agent', short: 'Agent', icon: '✦', root: '/agent' },
-  { to: '/kb', label: 'Knowledge base', short: 'Notes', icon: '❒', root: '/kb' },
-  { to: '/skills', label: 'Skills profile', short: 'Skills', icon: '◆', root: '/skills' },
-  { to: '/files', label: 'Files', short: 'Files', icon: '▤', root: '/files' },
-  { to: '/settings', label: 'Settings and data', short: 'Settings', icon: '⚙', root: '/settings' },
-];
-const MOBILE_MAIN = ['/', '/tasks', '/logs', '/agent'];
-
-function isActive(n: NavItem, path: string): boolean {
-  if (n.root === '/') return path === '/';
-  if (n.root === '/troubleshoot') return path.startsWith('/troubleshoot') || path.startsWith('/session');
-  return path === n.root || path.startsWith(n.root + '/');
-}
-
 function route(path: string): ReactNode {
   let p: Record<string, string> | null;
   if (path === '/') return <Dashboard />;
+  if (path === '/apps') return <AllAppsPage />;
+  if ((p = match('/a/:id', path))) return <AreaHub id={p.id} key={p.id} />;
   if (path === '/logs') return <LogList />;
   if (path === '/logs/new') return <LogEditor />;
   if ((p = match('/logs/:id/edit', path))) return <LogEditor id={p.id} key={p.id} />;
@@ -160,7 +131,6 @@ function Shell() {
   useAutoLock();
   const path = usePath();
   const [searchOpen, setSearchOpen] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
     const on = (e: KeyboardEvent) => {
@@ -169,72 +139,42 @@ function Shell() {
     document.addEventListener('keydown', on);
     return () => document.removeEventListener('keydown', on);
   }, []);
-  useEffect(() => { setMoreOpen(false); window.scrollTo({ top: 0 }); }, [path]);
+  useEffect(() => { window.scrollTo({ top: 0 }); }, [path]);
 
   const editing = path === '/logs/new' || /^\/logs\/[^/]+\/edit$/.test(path) || path === '/kb/new' || /^\/kb\/[^/]+\/edit$/.test(path);
-  const showFab = ['/', '/logs', '/troubleshoot', '/commands', '/kb', '/skills', '/agent', '/files', '/requirements', '/apprenticeship', '/import'].includes(path);
-  const moreItems = NAV.filter((n) => !MOBILE_MAIN.includes(n.to));
-  const moreActive = moreItems.some((n) => isActive(n, path));
+  const parent = parentPath(path);
+  const area = areaOfPath(path);
+  const pill = 'min-h-11 px-4 inline-flex items-center gap-1.5 rounded-full border border-line bg-surface text-sm hover:bg-surface2 focus-visible:outline-2 focus-visible:outline-accent';
 
   return (
-    <div className="min-h-dvh md:flex">
-      <a href="#main" onClick={(e: { preventDefault(): void }) => { e.preventDefault(); document.getElementById('main')?.focus(); }} className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:bg-accent focus:text-accent-ink focus:px-3 focus:py-2 focus:rounded-sm">Skip to content</a>
+    <div className="min-h-dvh flex flex-col">
+      <a href="#main" onClick={(e: { preventDefault(): void }) => { e.preventDefault(); document.getElementById('main')?.focus(); }} className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-surface focus:border focus:border-line focus:rounded-sm focus:px-3 focus:py-2">Skip to content</a>
 
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:flex-col w-60 shrink-0 border-r border-line bg-surface sticky top-0 h-dvh">
-        <div className="px-4 py-4 border-b border-line">
-          <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight text-lg"><span className="inline-grid place-items-center size-7 rounded-sm bg-accent text-accent-ink font-mono text-sm">{(appName || 'ForgeTools')[0]?.toUpperCase()}</span><span className="wrap-any">{appName || 'ForgeTools'}</span></Link>
-        </div>
-        <nav aria-label="Main" className="flex-1 overflow-y-auto p-2 space-y-0.5">
-          {NAV.map((n) => (
-            <Link key={n.to} to={n.to} aria-current={isActive(n, path) ? 'page' : undefined} className={clsx('flex items-center gap-3 px-3 min-h-10 rounded-sm text-sm', isActive(n, path) ? 'bg-accent/10 text-accent font-medium' : 'hover:bg-surface2')}>
-              <span aria-hidden className="w-5 text-center font-mono">{n.icon}</span>{n.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="p-2 border-t border-line space-y-1">
-          <button type="button" onClick={() => setSearchOpen(true)} className="w-full min-h-10 px-3 rounded-sm border border-line text-sm text-muted flex items-center justify-between hover:bg-surface2"><span>Search…</span><kbd className="font-mono text-xs">Ctrl K</kbd></button>
-          <Link to="/logs/new" className="flex items-center justify-center min-h-10 rounded-sm bg-accent text-accent-ink font-medium text-sm">+ New work log</Link>
-        </div>
-      </aside>
-
-      <div className="flex-1 min-w-0 flex flex-col">
-        {/* Mobile top bar */}
-        <header className="md:hidden sticky top-0 z-30 bg-surface border-b border-line pt-safe">
-          <div className="flex items-center justify-between px-4 h-12">
-            <Link to="/" className="flex items-center gap-2 font-semibold min-h-11"><span className="inline-grid place-items-center size-6 rounded-sm bg-accent text-accent-ink font-mono text-xs">{(appName || 'ForgeTools')[0]?.toUpperCase()}</span>{appName || 'ForgeTools'}</Link>
-            <Link to="/live" aria-label={hasOpenNote ? 'Live note, one is open' : 'Live notes'} className={clsx('min-h-11 px-3 inline-flex items-center gap-1 rounded-sm border text-sm ml-auto mr-2', hasOpenNote ? 'border-accent text-accent font-medium' : 'border-line hover:bg-surface2')}>{hasOpenNote && <span aria-hidden className="size-2 rounded-full bg-accent" />}Note</Link>
-            <button type="button" aria-label="Search" onClick={() => setSearchOpen(true)} className="min-h-11 px-3 rounded-sm border border-line text-sm hover:bg-surface2">Search</button>
+      <header className="sticky top-0 z-30 bg-surface/95 backdrop-blur border-b border-line pt-safe">
+        <div className="mx-auto max-w-5xl flex items-center gap-2 px-3 h-14">
+          {parent !== null && <Link to={parent} aria-label="Back" className="grid place-items-center size-11 rounded-full border border-line bg-surface hover:bg-surface2 shrink-0"><Icon name="back" size={20} /></Link>}
+          <Link to="/" className="flex items-center gap-2 font-semibold min-h-11 min-w-0"><span className="inline-grid place-items-center size-8 rounded-full bg-accent text-accent-ink font-mono text-sm shrink-0">{(appName || 'F').charAt(0).toUpperCase()}</span><span className={clsx('truncate', parent !== null && 'hidden sm:inline')}>{appName || 'ForgeTools'}</span>{parent !== null && <span className="sr-only sm:hidden">Home</span>}</Link>
+          <div className="ml-auto flex items-center gap-2">
+            <Link to="/live" aria-label={hasOpenNote ? 'Live note, one is open' : 'Live notes'} className={clsx(pill, hasOpenNote && 'border-accent text-accent')}>{hasOpenNote && <span aria-hidden className="size-2 rounded-full bg-accent" />}Note</Link>
+            <button type="button" aria-label="Search" onClick={() => setSearchOpen(true)} className={pill}>Search</button>
+            <Link to="/apps" aria-label="All apps" className="grid place-items-center size-11 rounded-full border border-line bg-surface hover:bg-surface2"><Icon name="grid" size={20} /></Link>
           </div>
-        </header>
-
-        <main id="main" tabIndex={-1} className={clsx('flex-1 px-4 py-4 md:px-8 md:py-6 outline-none', !editing && 'pb-28 md:pb-8')}>
-          {route(path)}
-        </main>
-
-        {/* Mobile quick-log FAB + bottom nav */}
-        {!editing && showFab && (
-          <Link to="/logs/new" aria-label="New work log" className="md:hidden fixed right-4 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-40 min-h-12 px-4 rounded-full bg-accent text-accent-ink font-semibold shadow-lg inline-flex items-center gap-1">+ Log</Link>
-        )}
-        {!editing && (
-          <nav aria-label="Main" className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-surface border-t border-line pb-safe grid grid-cols-5">
-            {NAV.filter((n) => MOBILE_MAIN.includes(n.to)).map((n) => (
-              <Link key={n.to} to={n.to} aria-current={isActive(n, path) ? 'page' : undefined} className={clsx('flex flex-col items-center justify-center min-h-14 text-[11px] gap-0.5', isActive(n, path) ? 'text-accent font-semibold' : 'text-muted')}>
-                <span aria-hidden className="text-base leading-none font-mono">{n.icon}</span>{n.short}
-              </Link>
-            ))}
-            <button type="button" onClick={() => setMoreOpen(true)} aria-haspopup="dialog" className={clsx('flex flex-col items-center justify-center min-h-14 text-[11px] gap-0.5', moreActive ? 'text-accent font-semibold' : 'text-muted')}>
-              <span aria-hidden className="text-base leading-none">⋯</span>More
-            </button>
+        </div>
+        {area && area.pages.length > 1 && !editing && !path.startsWith('/a/') && (
+          <nav aria-label={area.label} className="mx-auto max-w-5xl px-3 pb-2 -mt-0.5">
+            <ul className="flex gap-1.5 overflow-x-auto" data-testid="area-tabs">
+              {area.pages.map((pg) => {
+                const on = path === pg.to || path.startsWith(pg.to + '/') || (pg.to === '/troubleshoot' && path.startsWith('/session'));
+                return <li key={pg.to} className="shrink-0"><Link to={pg.to} aria-current={on ? 'page' : undefined} className={clsx('inline-flex items-center min-h-9 px-3.5 rounded-full text-sm border', on ? 'bg-accent text-accent-ink border-accent font-medium' : 'border-line bg-surface text-muted hover:text-ink')}>{pg.label}</Link></li>;
+              })}
+            </ul>
           </nav>
         )}
-      </div>
+      </header>
 
-      {moreOpen && (
-        <Modal title="More" onClose={() => setMoreOpen(false)}>
-          <ul className="space-y-1">{moreItems.map((n) => <li key={n.to}><Link to={n.to} className="flex items-center gap-3 min-h-12 px-2 rounded-sm hover:bg-surface2"><span aria-hidden className="w-6 text-center font-mono">{n.icon}</span>{n.label}</Link></li>)}</ul>
-        </Modal>
-      )}
+      <main id="main" tabIndex={-1} className="flex-1 px-4 py-5 md:px-8 md:py-7 pb-16 outline-none">
+        <div id="page" className="mx-auto w-full max-w-5xl">{route(path)}</div>
+      </main>
       {searchOpen && <SearchPalette onClose={() => setSearchOpen(false)} />}
     </div>
   );

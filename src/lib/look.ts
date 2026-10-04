@@ -29,8 +29,8 @@ export const FONT_STACKS: Record<FontStyle, { label: string; stack: string }> = 
 };
 export const CORNER_RADII: Record<Corners, { label: string; xs: string; sm: string; md: string }> = {
   sharp: { label: 'Sharp', xs: '0px', sm: '0px', md: '0px' },
-  soft: { label: 'Soft', xs: '2px', sm: '4px', md: '6px' },
-  round: { label: 'Round', xs: '6px', sm: '10px', md: '16px' },
+  soft: { label: 'Soft', xs: '6px', sm: '10px', md: '18px' },
+  round: { label: 'Round', xs: '10px', sm: '16px', md: '28px' },
 };
 
 export const normalizeHex = (s: string | undefined): string | undefined => {

@@ -54,7 +54,7 @@
 }
 
 /* Corner radii read from variables so the look can change them. */
-:root { --r-xs: 2px; --r-sm: 4px; --r-md: 6px; }
+:root { --r-xs: 6px; --r-sm: 10px; --r-md: 18px; }
 @theme {
   --radius-xs: var(--r-xs);
   --radius-sm: var(--r-sm);
@@ -135,3 +135,6 @@ body {
 @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 .fade-in { animation: fadein .35s ease; }
 @media (prefers-reduced-motion: reduce) { .fade-in { animation: none; } }
+
+/* Narrow pages sit in the middle of the screen now that there is no side menu. */
+#page > [class*="max-w-"] { margin-inline: auto; }

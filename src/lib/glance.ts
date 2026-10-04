@@ -3,19 +3,12 @@
 export interface GlanceApp { id: string; label: string; to: string; icon: string; hue: 'accent' | 'ok' | 'info' | 'warn' | 'bad' }
 
 export const GLANCE_APPS: GlanceApp[] = [
-  { id: 'today', label: 'Daily jobs', to: '/today', icon: 'clock', hue: 'accent' },
-  { id: 'checks', label: 'Checks', to: '/checks', icon: 'check', hue: 'ok' },
-  { id: 'tasks', label: 'Tasks', to: '/tasks', icon: 'list', hue: 'info' },
-  { id: 'live', label: 'Live notes', to: '/live', icon: 'mic', hue: 'bad' },
+  { id: 'today', label: 'Today', to: '/a/today', icon: 'clock', hue: 'accent' },
+  { id: 'fix', label: 'Fix & guides', to: '/a/fix', icon: 'tools', hue: 'warn' },
+  { id: 'notes', label: 'Notes', to: '/a/notes', icon: 'file', hue: 'info' },
+  { id: 'live', label: 'Live note', to: '/live', icon: 'mic', hue: 'bad' },
+  { id: 'learn', label: 'Learning', to: '/a/learn', icon: 'cap', hue: 'ok' },
   { id: 'manuals', label: 'Printer guides', to: '/manuals', icon: 'book', hue: 'warn' },
-  { id: 'agent', label: 'Guide agent', to: '/agent', icon: 'spark', hue: 'accent' },
-  { id: 'workflow', label: 'Workflow', to: '/workflow', icon: 'loop', hue: 'ok' },
-  { id: 'sla', label: 'Response times', to: '/sla', icon: 'timer', hue: 'info' },
-  { id: 'fix', label: 'Fix it', to: '/troubleshoot', icon: 'search', hue: 'warn' },
-  { id: 'commands', label: 'Commands', to: '/commands', icon: 'terminal', hue: 'accent' },
-  { id: 'logs', label: 'Work logs', to: '/logs', icon: 'file', hue: 'info' },
-  { id: 'kb', label: 'Knowledge', to: '/kb', icon: 'mark', hue: 'ok' },
-  { id: 'security', label: 'Security', to: '/security', icon: 'shield', hue: 'bad' },
   { id: 'settings', label: 'Settings', to: '/settings', icon: 'sliders', hue: 'info' },
 ];
 
@@ -36,6 +29,15 @@ export const GLANCE_ICONS: Record<string, string[]> = {
   shield: ['M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z'],
   board: ['M4 4h4v16H4zM10 4h4v10h-4zM16 4h4v13h-4z'],
   sliders: ['M4 7h10M18 7h2M4 17h2M10 17h10', 'M16 5v4M8 15v4'],
+  wave: ['M4 12h.01M8 8v8M12 5v14M16 8v8M20 12h.01'],
+  upload: ['M12 16V4M7 9l5-5 5 5M5 20h14'],
+  folder: ['M3 6h6l2 2h10v11H3z'],
+  cap: ['M3 9l9-5 9 5-9 5z', 'M7 11v5c0 1.5 2.2 3 5 3s5-1.5 5-3v-5'],
+  target: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z', 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z'],
+  star: ['M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z'],
+  tools: ['M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.4 2.4-2.6-.6-.6-2.6z'],
+  grid: ['M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z'],
+  back: ['M15 5l-7 7 7 7'],
 };
 
 /** Splits items into alternating rows (3, 4, 3, 4...) so the bubbles stagger like a watch app screen. */

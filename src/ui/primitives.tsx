@@ -12,7 +12,7 @@ type BtnProps = {
 };
 
 export function Button({ variant = 'secondary', size = 'md', className, children, ...rest }: BtnProps) {
-  const base = 'inline-flex items-center justify-center gap-1.5 rounded-sm font-medium border transition-colors disabled:opacity-50 disabled:cursor-not-allowed select-none';
+  const base = 'inline-flex items-center justify-center gap-1.5 rounded-md font-medium border transition-colors disabled:opacity-50 disabled:cursor-not-allowed select-none';
   const sz = size === 'sm' ? 'min-h-9 px-2.5 text-sm' : 'min-h-11 px-3.5 text-sm';
   const v = {
     primary: 'bg-accent text-accent-ink border-accent hover:opacity-90',
@@ -46,9 +46,9 @@ export function SectionTitle({ children, action }: { children?: ReactNode; actio
 
 export function PageHeader({ title, sub, actions }: { title: string; sub?: ReactNode; actions?: ReactNode }) {
   return (
-    <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
+    <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">
-        <h1 className="text-xl md:text-2xl font-semibold tracking-tight wrap-any">{title}</h1>
+        <h1 className="text-2xl md:text-3xl font-semibold tracking-tight wrap-any">{title}</h1>
         {sub && <p className="text-sm text-muted mt-0.5">{sub}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
@@ -116,7 +116,7 @@ export function Chip({ active, onClick, children }: { active?: boolean; onClick?
       type="button"
       aria-pressed={!!active}
       onClick={onClick}
-      className={clsx('min-h-9 px-3 rounded-sm border text-sm whitespace-nowrap', active ? 'bg-accent text-accent-ink border-accent' : 'bg-surface border-line hover:bg-surface2')}
+      className={clsx('min-h-9 px-3.5 rounded-md border text-sm whitespace-nowrap', active ? 'bg-accent text-accent-ink border-accent' : 'bg-surface border-line hover:bg-surface2')}
     >
       {children}
     </button>

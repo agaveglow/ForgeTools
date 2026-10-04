@@ -68,8 +68,8 @@ describe('local administrator how-to', () => {
 
 import { GLANCE_APPS, GLANCE_ICONS, honeycombRows, ringDash, ringFraction } from '../../src/lib/glance';
 describe('glance home', () => {
-  test('bubbles stagger 3,4,3,4 and every app has an icon and a unique route', () => {
-    expect(honeycombRows(GLANCE_APPS).map((r) => r.length)).toEqual([3, 4, 3, 4]);
+  test('bubbles stagger 3,4 and every app has an icon and a unique route', () => {
+    expect(honeycombRows(GLANCE_APPS).map((r) => r.length)).toEqual([3, 4]);
     expect(GLANCE_APPS.every((a) => GLANCE_ICONS[a.icon]?.length > 0)).toBe(true);
     expect(new Set(GLANCE_APPS.map((a) => a.to)).size).toBe(GLANCE_APPS.length);
     expect(honeycombRows([1, 2, 3, 4, 5], [2])).toEqual([[1, 2], [3, 4], [5]]);
@@ -81,5 +81,34 @@ describe('glance home', () => {
     expect(ringFraction(-2, 4)).toBe(0);
     const c = 2 * Math.PI * 50;
     expect(ringDash(50, 0.5)).toBe(`${(c / 2).toFixed(2)} ${c.toFixed(2)}`);
+  });
+});
+
+import { AREAS, areaOfPath, parentPath } from '../../src/lib/areas';
+describe('areas and navigation', () => {
+  test('every page is in exactly one area, with an icon', () => {
+    const all = AREAS.flatMap((a) => a.pages.map((p) => p.to));
+    expect(new Set(all).size).toBe(all.length);
+    expect(all.length).toBe(21);
+    for (const a of AREAS) for (const p of a.pages) expect(GLANCE_ICONS[p.icon]?.length).toBeGreaterThan(0);
+  });
+  test('paths belong to the right area', () => {
+    expect(areaOfPath('/tasks')?.id).toBe('today');
+    expect(areaOfPath('/checks/qbr')?.id).toBe('today');
+    expect(areaOfPath('/session/abc')?.id).toBe('fix');
+    expect(areaOfPath('/kb/xyz/edit')?.id).toBe('fix');
+    expect(areaOfPath('/logs/new')?.id).toBe('notes');
+    expect(areaOfPath('/nowhere')).toBeUndefined();
+  });
+  test('back goes up one level, then to the area, then home', () => {
+    expect(parentPath('/')).toBeNull();
+    expect(parentPath('/a/today')).toBe('/');
+    expect(parentPath('/apps')).toBe('/');
+    expect(parentPath('/settings')).toBe('/');
+    expect(parentPath('/tasks')).toBe('/a/today');
+    expect(parentPath('/checks/qbr')).toBe('/checks');
+    expect(parentPath('/logs/abc/edit')).toBe('/logs/abc');
+    expect(parentPath('/session/abc')).toBe('/troubleshoot');
+    expect(parentPath('/unknown')).toBe('/');
   });
 });

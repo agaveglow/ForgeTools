@@ -4,7 +4,7 @@ const b = await chromium.launch();
 let problems = 0;
 for (const [name, vp] of [['desktop', { width: 1280, height: 850 }], ['phone', { width: 390, height: 844 }]]) {
   const p = await (await b.newContext({ viewport: vp })).newPage();
-  const routes = ['/', '/logs', '/logs/new', '/troubleshoot', '/troubleshoot/net-no-internet', '/commands', '/security', '/kb', '/kb/new', '/skills', '/settings', '/workflow', '/manuals', '/today'];
+  const routes = ['/', '/logs', '/logs/new', '/troubleshoot', '/troubleshoot/net-no-internet', '/commands', '/security', '/kb', '/kb/new', '/skills', '/settings', '/workflow', '/manuals', '/today', '/a/today', '/a/fix', '/apps'];
   for (const r of routes) {
     await p.goto('http://localhost:4173/#' + r); await p.waitForTimeout(250);
     const res = await p.evaluate(() => {

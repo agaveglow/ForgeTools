@@ -11,9 +11,9 @@ export function Bar({ value, max, label, tone = 'accent' }: { value: number; max
 
 export function Stat({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {
   return (
-    <div className="rounded-md border border-line bg-surface p-3">
+    <div className="rounded-md border border-line bg-surface p-4">
       <p className="text-xs text-muted">{label}</p>
-      <p className="text-xl font-semibold leading-tight">{value}</p>
+      <p className="text-3xl font-semibold leading-tight tracking-tight">{value}</p>
       {sub && <p className="text-xs text-muted mt-0.5">{sub}</p>}
     </div>
   );

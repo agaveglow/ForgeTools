@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useCollection, useSettings } from '../data/hooks';
 import { DEFAULT_DAILY_JOBS, dayProgress, parseDay, watchState } from '../lib/dailyJobs';
-import { GLANCE_APPS, GLANCE_ICONS, honeycombRows, ringDash, ringFraction } from '../lib/glance';
+import { GLANCE_APPS, honeycombRows, ringDash, ringFraction } from '../lib/glance';
+import { HUE, Icon } from './Bubble';
 import { activeTasks, taskDone } from '../lib/progress';
 import { clsx } from '../lib/util';
 import { Link } from './router';
-
-const HUE = { accent: 'var(--c-accent)', ok: 'var(--c-ok)', info: 'var(--c-info)', warn: 'var(--c-warn)', bad: 'var(--c-bad)' } as const;
 
 export function Glance() {
   const settings = useSettings();
@@ -69,7 +68,7 @@ export function Glance() {
             {row.map((a) => (
               <Link key={a.id} to={a.to} aria-label={a.label} className="group flex flex-col items-center w-[22vw] max-w-[88px] min-w-[68px] outline-none">
                 <span className="grid place-items-center rounded-full size-[18vw] max-size-[72px] min-w-[56px] min-h-[56px] max-w-[72px] max-h-[72px] border border-line transition-transform duration-150 group-active:scale-90 group-hover:scale-105 group-focus-visible:outline-2 group-focus-visible:outline-accent" style={{ color: HUE[a.hue], background: `color-mix(in srgb, ${HUE[a.hue]} 20%, var(--c-surface))` }}>
-                  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{GLANCE_ICONS[a.icon].map((d) => <path key={d} d={d} />)}</svg>
+                  <Icon name={a.icon} size={28} />
                 </span>
                 <span className="mt-1 text-[11px] leading-tight text-muted">{a.label}</span>
               </Link>
