@@ -26,6 +26,7 @@ const TOOL_GROUPS: Array<{ id: string; title: string; blurb: string; tools: Tool
     { to: '/tools/cable', title: 'Cable guide', blurb: 'RJ45 wiring diagram, straight and crossover, faults, limits, PoE' },
     { to: '/tools/calc', title: 'Calculators', blurb: 'Subnets, number converter, transfer time, cost per page' },
     { to: '/tools/ports', title: 'Ports and services', blurb: 'What common ports are for and which need care' },
+    { to: '/tools/lab', title: 'Network lab', blurb: 'A practice command prompt and network diagram: break it, test it, fix it' },
     { to: '/tools/dns', title: 'DNS and mail records', blurb: 'Record types, plus an SPF and DMARC checker' },
   ] },
   { id: 'security', title: 'Security', blurb: 'Events, files, mail and settings', tools: [

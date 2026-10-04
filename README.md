@@ -259,3 +259,12 @@ With encryption on, Settings > Folder copy lets you choose a folder on the devic
 ## Toolbox sections and Print and scan
 
 The Toolbox is grouped into six sections (print, network, security, desk, data, assist) with search and jump chips. "Print and scan" is a generic original reference: first checks, protocols, and intake/queue/scan-to-folder/scan-to-email/close checklists. It holds no customer or company-specific data.
+
+## Network lab (simulation)
+
+Toolbox > Networking > Network lab. A practice command prompt and a visual network diagram for learning and rehearsing a fault-finding flow before touching a customer's PC.
+
+- It is a **simulation**. The prompt (ipconfig, ping, tracert, nslookup, arp, netstat, route print, getmac, hostname, Test-NetConnection) answers from a small made-up network in `src/lib/netsim.ts`. It never runs a real command or touches a real device or network, and real output differs in detail.
+- Seven practice scenarios (wrong printer address, unplugged cable, bad gateway, DNS, DHCP, blocked port, plus free play). A "Fixed" badge shows when the goal check passes.
+- The diagram lets you power devices off, unplug cables, edit addresses, masks, gateway, DNS, VLAN and blocked ports, and add or remove devices.
+- Nothing is saved or sent, and the lab resets when you leave the page. Use made-up addresses only; do not enter customer details.

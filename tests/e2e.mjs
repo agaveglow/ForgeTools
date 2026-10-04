@@ -1063,9 +1063,41 @@ async function run(label, viewport) {
     ok(await p.getByRole('button', { name: /All suggested goals are on your list/ }).isDisabled(), 'second add is disabled');
   });
 
+  await step(S('network lab: simulated prompt, diagram edits fix the fault'), async () => {
+    const out = async () => await p.locator('[data-testid=lab-out]').innerText();
+    const run = async (c) => { await p.locator('#lab-cmd').fill(c); await p.locator('[data-testid=lab-run]').click(); };
+    await go('/tools/lab');
+    await p.locator('[data-testid=lab]').waitFor({ state: 'visible', timeout: 5000 });
+    ok((await p.locator('[data-testid=lab]').innerText()).includes('This is a simulation'), 'simulation notice');
+    ok((await p.locator('[data-testid=lab-goal]').innerText()).includes('Not fixed yet'), 'starts broken');
+    await run('ping prn-01.lab.test');
+    ok((await out()).includes('Destination host unreachable'), 'unreachable shown');
+    await run('frobnicate');
+    ok((await out()).includes('is not recognized'), 'unknown command message');
+    await p.locator('[data-testid=dev-prn]').click();
+    await p.locator('#ed-ip-0').fill('192.168.10.50');
+    await p.locator('[data-testid=lab-goal]').getByText('Fixed').waitFor({ state: 'visible', timeout: 3000 });
+    await run('ping prn-01.lab.test');
+    ok((await out()).includes('Reply from 192.168.10.50'), 'reply after fix');
+    await p.locator('#lab-scenario').selectOption('cable');
+    ok((await p.locator('[data-testid=lab-goal]').innerText()).includes('Not fixed yet'), 'cable scenario broken');
+    await p.locator('[data-testid=cable-btn-l-sw1-prn]').click();
+    await p.locator('[data-testid=lab-goal]').getByText('Fixed').waitFor({ state: 'visible', timeout: 3000 });
+    await p.locator('#lab-scenario').selectOption('dhcp');
+    await run('ipconfig');
+    ok((await out()).includes('169.254.'), 'apipa shown');
+    await p.locator('#ed-power').check();
+    await run('ipconfig /renew');
+    await p.locator('[data-testid=lab-goal]').getByText('Fixed').waitFor({ state: 'visible', timeout: 3000 });
+    await p.locator('[data-testid=add-pc]').click();
+    ok((await p.locator('[data-testid=editor]').innerText()).includes('PC-0'), 'added device is editable');
+    await p.getByText('Show the answer').click();
+    ok((await p.locator('[data-testid=lab-solution]').innerText()).length > 20, 'answer shown');
+  });
+
   await step(S('toolbox: cable pinout, subnet maths, note builder guard, kit ticks persist'), async () => {
     await go('/tools');
-    eq(await p.locator('[data-testid^=tool-section-] a').count(), 20, 'twenty tool cards');
+    eq(await p.locator('[data-testid^=tool-section-] a').count(), 21, 'twenty-one tool cards');
     eq(await p.locator('[data-testid^=tool-section-]').count(), 6, 'six sections');
     await p.getByLabel('Search the toolbox').fill('hash');
     eq(await p.locator('[data-testid^=tool-section-] a').count(), 1, 'search narrows to one card');
