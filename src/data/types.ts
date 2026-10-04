@@ -220,6 +220,8 @@ export interface ApprenticeEntry extends BaseRecord {
   learned: string;
   reflection: string;
   requirementIds: ID[];
+  /** Optional evidence link, for example the video that was watched. */
+  link?: string;
 }
 
 // ---------- Live notes (paper trail) ----------

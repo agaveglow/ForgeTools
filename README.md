@@ -198,3 +198,7 @@ The PDF reader is Mozilla PDF.js 3.2.146 (Apache-2.0), pre-built, in `public/ven
 ## Home screen: Glance
 
 The home page opens in **Glance**, a calm watch-style view: three nested rings around the time (daily jobs, daily checks, weekly checks), the three counts under it, amber pills when something needs checking, and a staggered grid of round app bubbles. Tap the rings for Daily jobs, or any bubble to open that part of the app. The switch at the top right changes to **All widgets**, the full customisable dashboard, and remembers your choice.
+
+## Apprenticeship: log from a video link, copy for Aptem
+
+On the Apprenticeship page, **Log from a video link** takes a YouTube link, reads only the public title and channel name (YouTube oEmbed), and starts an entry: title, a factual "Watched the video…" line, the time you enter in minutes (rounded to quarter hours), the link as evidence, and suggested requirements matched by shared words. It cannot watch or summarise the video, so **what you learned** is left blank for you to write, with prompts to help. If the title cannot be looked up from a browser, type it in. **Copy for Aptem** lays the entry out field by field with a Copy button on each, for pasting into your provider's log by hand. The app does not connect to Aptem, sign in, or submit anything. Only log time you really spent.

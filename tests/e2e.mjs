@@ -731,6 +731,43 @@ async function run(label, viewport) {
     await p.locator('[data-testid=glance]').waitFor({ state: 'visible', timeout: 5000 });
   });
 
+  await step(S('apprenticeship: log from a YouTube link, copy for Aptem'), async () => {
+    await p.route('https://www.youtube.com/oembed**', (r) => r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ title: 'Subnetting made simple', author_name: 'Net Channel' }) }));
+    await go('/apprenticeship');
+    await p.getByRole('button', { name: /Log from a video link/ }).click();
+    await p.getByLabel('YouTube link').fill('https://evil.example/watch?v=dQw4w9WgXcQ');
+    await p.getByText('does not look like a YouTube video link').waitFor({ state: 'visible', timeout: 3000 });
+    ok(await p.getByRole('button', { name: 'Look up title' }).isDisabled(), 'lookup disabled for a bad link');
+    await p.getByLabel('YouTube link').fill('https://youtu.be/dQw4w9WgXcQ?t=5');
+    await p.getByRole('button', { name: 'Look up title' }).click();
+    await until(async () => (await p.locator('#vd-title').inputValue()) === 'Subnetting made simple', 'title filled from lookup', 5000);
+    eq(await p.locator('#vd-ch').inputValue(), 'Net Channel');
+    await p.locator('#vd-min').fill('35');
+    await p.getByRole('button', { name: 'Start an entry from this video' }).click();
+    eq(await p.locator('#ap-title').inputValue(), 'Video: Subnetting made simple');
+    eq(await p.locator('#ap-hours').inputValue(), '0.5', '35 minutes is half an hour (nearest quarter hour)');
+    ok((await p.locator('#ap-did').inputValue()).includes('Watched the video “Subnetting made simple” by Net Channel (35 min).'), 'factual what I did');
+    eq(await p.locator('#ap-learned').inputValue(), '', 'what I learned is left for the person to write');
+    eq(await p.locator('#ap-link').inputValue(), 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+    // the Aptem block mirrors the form and leaves out empty fields
+    await p.getByRole('button', { name: /Copy for Aptem/ }).click();
+    const txt = await p.locator('[data-testid=aptem-fields]').innerText();
+    ok(txt.includes('Subnetting made simple') && txt.includes('0.5 h (30 min)'), 'fields shown');
+    ok(!txt.includes('What I learned'), 'empty learned is not invented');
+    await p.locator('#ap-learned').fill('Learned how to split a /24 into four /26 subnets.');
+    ok((await p.locator('[data-testid=aptem-fields]').innerText()).includes('four /26 subnets'), 'learned appears once written');
+    // a non-https link is refused
+    await p.locator('#ap-link').fill('javascript:alert(1)');
+    await p.getByRole('button', { name: 'Add entry' }).click();
+    await p.getByText('The link must start with https://').waitFor({ state: 'visible', timeout: 3000 });
+    await p.locator('#ap-link').fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+    await p.getByRole('button', { name: 'Add entry' }).click();
+    await p.getByRole('link', { name: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' }).waitFor({ state: 'visible', timeout: 5000 });
+    // the weekly summary carries the link
+    await noHScroll();
+    await shot('apprenticeship-video');
+  });
+
   await step(S('daily workflow: sections, ticks persist for today, clear'), async () => {
     await go('/workflow');
     await p.getByText('Remain available for incidents').waitFor({ state: 'visible', timeout: 5000 });

@@ -8,9 +8,10 @@ import { Badge, Button, Card, Checkbox, CopyButton, Empty, Field, Modal, PageHea
 import { Bar, Stat } from '../ui/Progress';
 import { PrivacyNote, SensitivePanel, useSaveGuard } from '../ui/SensitivePanel';
 import { useTitle } from '../ui/hooks';
+import { aptemFields, aptemText, fetchVideoInfo, LEARNING_PROMPTS, minutesToHours, parseVideoId, suggestRequirements, watchUrl, whatIDidFor } from '../lib/video';
 
-interface Form { date: string; hours: string; activity: ActivityType; offTheJob: boolean; title: string; whatIDid: string; learned: string; reflection: string; requirementIds: string[] }
-const blank = (): Form => ({ date: ymd(new Date()), hours: '1', activity: 'Study', offTheJob: true, title: '', whatIDid: '', learned: '', reflection: '', requirementIds: [] });
+interface Form { date: string; hours: string; activity: ActivityType; offTheJob: boolean; title: string; whatIDid: string; learned: string; reflection: string; requirementIds: string[]; link: string }
+const blank = (): Form => ({ date: ymd(new Date()), hours: '1', activity: 'Study', offTheJob: true, title: '', whatIDid: '', learned: '', reflection: '', requirementIds: [], link: '' });
 
 export function weeklySummary(entries: ApprenticeEntry[], now: Date, reqTitle: (id: string) => string | undefined): string {
   const w = weekDays(now);
@@ -22,6 +23,7 @@ export function weeklySummary(entries: ApprenticeEntry[], now: Date, reqTitle: (
     if (e.whatIDid) lines.push(`  Did: ${e.whatIDid}`);
     if (e.learned) lines.push(`  Learned: ${e.learned}`);
     if (e.reflection) lines.push(`  Reflection: ${e.reflection}`);
+    if (e.link) lines.push(`  Link: ${e.link}`);
     const rt = e.requirementIds.map(reqTitle).filter(Boolean);
     if (rt.length) lines.push(`  Relates to: ${rt.join('; ')}`);
   }
@@ -39,9 +41,34 @@ export function ApprenticeshipPage() {
   const [del, setDel] = useState<ApprenticeEntry | null>(null);
   const [all, setAll] = useState(false);
   const [err, setErr] = useState('');
-  const fields = { title: f.title, whatIDid: f.whatIDid, learned: f.learned, reflection: f.reflection };
+  const fields = { title: f.title, whatIDid: f.whatIDid, learned: f.learned, reflection: f.reflection, link: f.link };
   const guard = useSaveGuard(fields);
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((x) => ({ ...x, [k]: v }));
+  const [vUrl, setVUrl] = useState('');
+  const [vTitle, setVTitle] = useState('');
+  const [vChannel, setVChannel] = useState('');
+  const [vMin, setVMin] = useState('');
+  const [vMsg, setVMsg] = useState('');
+  const [vBusy, setVBusy] = useState(false);
+  const vId = parseVideoId(vUrl);
+  const vGuard = useSaveGuard({ vTitle, vChannel });
+  const lookUp = async () => {
+    setVMsg(''); setVBusy(true);
+    try { const v = await fetchVideoInfo(vUrl); setVTitle(v.title); setVChannel(v.channel); setVMsg('Found the title and channel. Check them, then add how long you watched.'); }
+    catch (x) { setVMsg(x instanceof Error ? x.message : 'The title could not be looked up.'); }
+    setVBusy(false);
+  };
+  const startFromVideo = () => {
+    if (!vId || !vTitle.trim() || !vGuard.canSave) return;
+    const mins = Number(vMin);
+    const hours = mins > 0 ? minutesToHours(mins) : 1;
+    const link = watchUrl(vId);
+    const guess = suggestRequirements(`${vTitle} ${vChannel}`, reqs).map((r) => r.id);
+    setEditing(null);
+    setF({ ...blank(), hours: String(hours), title: `Video: ${vTitle.trim()}`.slice(0, 150), whatIDid: whatIDidFor({ title: vTitle.trim(), channel: vChannel.trim() }, mins > 0 ? mins : undefined), requirementIds: guess, link });
+    setErr(''); setVMsg('Entry started below. Now write what you learned in your own words, then save it.');
+    setTimeout(() => document.getElementById('ap-learned')?.focus(), 50);
+  };
 
   const sorted = [...entries].sort((a, b) => b.date.localeCompare(a.date) || b.updatedAt.localeCompare(a.updatedAt));
   const shown = all ? sorted : sorted.slice(0, 15);
@@ -54,13 +81,14 @@ export function ApprenticeshipPage() {
     const hours = clampHours(Number(f.hours));
     if (!hours) { setErr('Enter the hours, in quarter-hour steps (for example 1.5).'); return; }
     if (!f.title.trim() && !f.whatIDid.trim()) { setErr('Add a short title or say what you did.'); return; }
+    if (f.link.trim() && !/^https:\/\//i.test(f.link.trim())) { setErr('The link must start with https://'); return; }
     if (!guard.canSave) { setErr(guard.blocked ? 'Remove the secret above before saving.' : 'Confirm or redact the sensitive details above.'); return; }
-    const data = { date: f.date, hours, activity: f.activity, offTheJob: f.offTheJob, title: f.title.trim(), whatIDid: f.whatIDid.trim(), learned: f.learned.trim(), reflection: f.reflection.trim(), requirementIds: f.requirementIds };
+    const data = { date: f.date, hours, activity: f.activity, offTheJob: f.offTheJob, title: f.title.trim(), whatIDid: f.whatIDid.trim(), learned: f.learned.trim(), reflection: f.reflection.trim(), requirementIds: f.requirementIds, link: f.link.trim() || undefined };
     store.upsert('apprenticeLogs', editing ? { ...editing, ...data } : data);
     setErr(''); setEditing(null); setF(blank()); guard.setConfirmed(false);
   };
-  const edit = (e: ApprenticeEntry) => { setEditing(e); setF({ date: e.date, hours: String(e.hours), activity: e.activity, offTheJob: e.offTheJob, title: e.title, whatIDid: e.whatIDid, learned: e.learned, reflection: e.reflection, requirementIds: e.requirementIds }); window.scrollTo({ top: 0 }); };
-  const redact = (r: Record<string, string>) => { setF((x) => ({ ...x, title: r.title, whatIDid: r.whatIDid, learned: r.learned, reflection: r.reflection })); guard.setConfirmed(false); };
+  const edit = (e: ApprenticeEntry) => { setEditing(e); setF({ date: e.date, hours: String(e.hours), activity: e.activity, offTheJob: e.offTheJob, title: e.title, whatIDid: e.whatIDid, learned: e.learned, reflection: e.reflection, requirementIds: e.requirementIds, link: e.link ?? '' }); window.scrollTo({ top: 0 }); };
+  const redact = (r: Record<string, string>) => { setF((x) => ({ ...x, title: r.title, whatIDid: r.whatIDid, learned: r.learned, reflection: r.reflection, link: r.link })); guard.setConfirmed(false); };
   const num = (v: string) => { const n = Number(v); return v === '' || !Number.isFinite(n) || n < 0 ? undefined : n; };
 
   return (
@@ -89,6 +117,23 @@ export function ApprenticeshipPage() {
         </div>
       </Collapsible>
 
+      <Collapsible title="Log from a video link (YouTube)">
+        <div className="space-y-3">
+          <p className="text-xs text-muted">Paste a YouTube link. ForgeTools reads only the public title and channel name, then starts an entry for you. It can’t watch the video, so what you learned is yours to write. Nothing is saved until you press Add entry.</p>
+          <Field label="YouTube link" htmlFor="vd-url"><TextInput id="vd-url" inputMode="url" placeholder="https://www.youtube.com/watch?v=…" value={vUrl} onChange={(e: { target: { value: string } }) => { setVUrl(e.target.value); setVMsg(''); }} /></Field>
+          {vUrl.trim() && !vId && <p role="alert" className="text-sm text-bad">That does not look like a YouTube video link.</p>}
+          <div className="flex gap-2"><Button disabled={!vId || vBusy} onClick={lookUp}>{vBusy ? 'Looking up…' : 'Look up title'}</Button></div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Video title" htmlFor="vd-title"><TextInput id="vd-title" value={vTitle} onChange={(e: { target: { value: string } }) => setVTitle(e.target.value)} /></Field>
+            <Field label="Channel (optional)" htmlFor="vd-ch"><TextInput id="vd-ch" value={vChannel} onChange={(e: { target: { value: string } }) => setVChannel(e.target.value)} /></Field>
+          </div>
+          <Field label="Minutes you actually spent" htmlFor="vd-min" hint="Include time spent practising or taking notes. Only count real time."><TextInput id="vd-min" inputMode="numeric" value={vMin} onChange={(e: { target: { value: string } }) => setVMin(e.target.value.replace(/\D/g, '').slice(0, 4))} /></Field>
+          {vGuard.findings.length > 0 && <p role="alert" className="text-sm text-bad">The title looks private or secret. Remove it before continuing.</p>}
+          {vMsg && <p role="status" className="text-sm">{vMsg}</p>}
+          <Button variant="primary" disabled={!vId || !vTitle.trim() || !vGuard.canSave} onClick={startFromVideo}>Start an entry from this video</Button>
+        </div>
+      </Collapsible>
+
       <Card className="p-4">
         <form className="space-y-3" onSubmit={(e: { preventDefault(): void }) => { e.preventDefault(); save(); }}>
           <h2 className="font-semibold">{editing ? 'Edit entry' : 'New entry'}</h2>
@@ -100,8 +145,9 @@ export function ApprenticeshipPage() {
           <Checkbox checked={f.offTheJob} onChange={(v) => set('offTheJob', v)} label="Counts as off-the-job training" />
           <Field label="Title" htmlFor="ap-title"><TextInput id="ap-title" value={f.title} onChange={(e: { target: { value: string } }) => set('title', e.target.value)} placeholder="e.g. Networking fundamentals module" /></Field>
           <Field label="What I did" htmlFor="ap-did"><TextArea id="ap-did" rows={2} value={f.whatIDid} onChange={(e: { target: { value: string } }) => set('whatIDid', e.target.value)} /></Field>
-          <Field label="What I learned" htmlFor="ap-learned"><TextArea id="ap-learned" rows={2} value={f.learned} onChange={(e: { target: { value: string } }) => set('learned', e.target.value)} /></Field>
+          <Field label="What I learned" htmlFor="ap-learned" hint={f.link ? LEARNING_PROMPTS.join(' ') : undefined}><TextArea id="ap-learned" rows={2} value={f.learned} onChange={(e: { target: { value: string } }) => set('learned', e.target.value)} /></Field>
           <Field label="Reflection (optional)" htmlFor="ap-refl" hint="What went well, what you would do differently."><TextArea id="ap-refl" rows={2} value={f.reflection} onChange={(e: { target: { value: string } }) => set('reflection', e.target.value)} /></Field>
+          <Field label="Link or evidence (optional)" htmlFor="ap-link"><TextInput id="ap-link" inputMode="url" value={f.link} onChange={(e: { target: { value: string } }) => set('link', e.target.value)} /></Field>
           {reqs.length > 0 && (
             <fieldset className="space-y-1"><legend className="text-sm font-medium">Relates to</legend>
               {reqs.map((r) => <Checkbox key={r.id} checked={f.requirementIds.includes(r.id)} onChange={(v) => set('requirementIds', v ? [...f.requirementIds, r.id] : f.requirementIds.filter((x) => x !== r.id))} label={r.title} />)}
@@ -113,6 +159,18 @@ export function ApprenticeshipPage() {
         </form>
       </Card>
       <PrivacyNote />
+      <Collapsible title="Copy for Aptem">
+        <p className="text-xs text-muted mb-2">The entry above, field by field, ready to paste into your provider’s log. ForgeTools can’t sign in to Aptem or fill it in for you, so you paste and submit it yourself. Field names in Aptem may differ slightly.</p>
+        <ul className="space-y-2" data-testid="aptem-fields">
+          {aptemFields({ date: f.date, hours: clampHours(Number(f.hours)), activity: f.activity, offTheJob: f.offTheJob, title: f.title, whatIDid: f.whatIDid, learned: f.learned, reflection: f.reflection, link: f.link }, f.requirementIds.map(reqTitle).filter((x): x is string => !!x)).map((x) => (
+            <li key={x.label} className="border border-line rounded-md p-2 flex items-start justify-between gap-2">
+              <div className="min-w-0"><p className="text-xs text-muted">{x.label}</p><p className="text-sm wrap-any whitespace-pre-wrap">{x.value}</p></div>
+              <CopyButton text={x.value} label="Copy" />
+            </li>
+          ))}
+        </ul>
+        <div className="mt-2"><CopyButton text={aptemText(aptemFields({ date: f.date, hours: clampHours(Number(f.hours)), activity: f.activity, offTheJob: f.offTheJob, title: f.title, whatIDid: f.whatIDid, learned: f.learned, reflection: f.reflection, link: f.link }, f.requirementIds.map(reqTitle).filter((x): x is string => !!x)))} label="Copy everything" size="md" /></div>
+      </Collapsible>
 
       <section>
         <SectionTitle action={<CopyButton text={weeklySummary(entries, now, reqTitle)} label="Copy this week’s summary" size="md" />}>Entries · {plural(entries.length, 'entry', 'entries')}</SectionTitle>
@@ -126,6 +184,7 @@ export function ApprenticeshipPage() {
                     {e.whatIDid && <p className="text-sm wrap-any"><span className="text-muted">Did: </span>{e.whatIDid}</p>}
                     {e.learned && <p className="text-sm wrap-any"><span className="text-muted">Learned: </span>{e.learned}</p>}
                     {e.reflection && <p className="text-sm wrap-any"><span className="text-muted">Reflection: </span>{e.reflection}</p>}
+                    {e.link && <p className="text-xs wrap-any"><span className="text-muted">Link: </span>{/^https:\/\//i.test(e.link) ? <a href={e.link} target="_blank" rel="noopener noreferrer" className="underline">{e.link}</a> : e.link}</p>}
                     {e.requirementIds.length > 0 && <p className="text-xs text-muted wrap-any">Relates to: {e.requirementIds.map(reqTitle).filter(Boolean).join('; ')}</p>}
                     <div className="flex gap-1"><Button size="sm" variant="ghost" onClick={() => edit(e)} aria-label={`Edit entry ${e.title || e.activity}`}>Edit</Button><Button size="sm" variant="ghost" onClick={() => setDel(e)} aria-label={`Delete entry ${e.title || e.activity}`}>Delete</Button></div>
                   </Card>
