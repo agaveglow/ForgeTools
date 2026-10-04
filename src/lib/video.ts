@@ -4,7 +4,7 @@
  * Only the public title and channel name are read (YouTube's oEmbed). The app cannot watch or summarise
  * the video, so "what I learned" always comes from the person. Nothing is written for them.
  */
-import type { ApprenticeEntry, Requirement } from '../data/types';
+import type { Requirement } from '../data/types';
 import type { FetchFn } from './web';
 import { WebError } from './web';
 
@@ -77,23 +77,3 @@ export function suggestRequirements(text: string, reqs: Requirement[], max = 3):
     .map((r) => ({ r, s: words(r.title + ' ' + r.group + ' ' + r.notes).filter((w) => q.has(w)).length }))
     .filter((x) => x.s > 0).sort((a, b) => b.s - a.s).slice(0, max).map((x) => x.r);
 }
-
-export interface AptemField { label: string; value: string }
-/** The entry as labelled fields, in the usual order of an activity log, for copying into the provider's system by hand. */
-export function aptemFields(e: Pick<ApprenticeEntry, 'date' | 'hours' | 'activity' | 'offTheJob' | 'title' | 'whatIDid' | 'learned' | 'reflection' | 'link'>, relates: string[]): AptemField[] {
-  const mins = Math.round(e.hours * 60);
-  const f: AptemField[] = [
-    { label: 'Date', value: e.date },
-    { label: 'Activity type', value: e.activity },
-    { label: 'Duration', value: `${e.hours} h (${mins} min)` },
-    { label: 'Off-the-job', value: e.offTheJob ? 'Yes' : 'No' },
-    { label: 'Title', value: e.title },
-    { label: 'What I did', value: e.whatIDid },
-    { label: 'What I learned', value: e.learned },
-    { label: 'Reflection', value: e.reflection },
-  ];
-  if (relates.length) f.push({ label: 'Relates to', value: relates.join('; ') });
-  if (e.link) f.push({ label: 'Link / evidence', value: e.link });
-  return f.filter((x) => x.value.trim());
-}
-export const aptemText = (fields: AptemField[]): string => fields.map((x) => `${x.label}: ${x.value}`).join('\n');

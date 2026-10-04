@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { aptemFields, aptemText, fetchVideoInfo, minutesToHours, parseVideoId, suggestRequirements, watchUrl, whatIDidFor } from '../../src/lib/video';
+import { fetchVideoInfo, minutesToHours, parseVideoId, suggestRequirements, watchUrl, whatIDidFor } from '../../src/lib/video';
 
 describe('YouTube links', () => {
   test('recognises the usual link shapes and rejects the rest', () => {
@@ -38,11 +38,5 @@ describe('entry from a video', () => {
     const reqs = [{ id: 'a', title: 'Understand networking and subnetting', group: 'Knowledge', notes: '' }, { id: 'b', title: 'Printer maintenance', group: 'Print', notes: '' }] as never[];
     expect(suggestRequirements('Subnetting made simple', reqs).map((r: { id: string }) => r.id)).toEqual(['a']);
     expect(suggestRequirements('cooking pasta', reqs)).toEqual([]);
-  });
-  test('Aptem fields skip empty ones and keep the usual order', () => {
-    const f = aptemFields({ date: '2026-10-04', hours: 0.5, activity: 'Study', offTheJob: true, title: 'Video: X', whatIDid: 'Watched X.', learned: '', reflection: '', link: 'https://youtu.be/dQw4w9WgXcQ' }, ['Networking']);
-    expect(f.map((x) => x.label)).toEqual(['Date', 'Activity type', 'Duration', 'Off-the-job', 'Title', 'What I did', 'Relates to', 'Link / evidence']);
-    expect(f[2].value).toBe('0.5 h (30 min)');
-    expect(aptemText(f).split('\n')[0]).toBe('Date: 2026-10-04');
   });
 });

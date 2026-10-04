@@ -222,6 +222,18 @@ export interface ApprenticeEntry extends BaseRecord {
   requirementIds: ID[];
   /** Optional evidence link, for example the video that was watched. */
   link?: string;
+  /** Aptem "Type of activity". Older entries do not have it. */
+  aptemType?: 'otj' | 'engmaths' | 'other';
+  /** Aptem "When did this activity take place?" */
+  when?: 'paid' | 'own-paid' | 'own-toil';
+  /** Exact minutes spent. `hours` is kept in step with it for the totals. */
+  minutes?: number;
+  /** Aptem learning plan component, as named in Aptem. */
+  component?: string;
+  /** Where the entry is in Aptem, as set by the person. ForgeTools cannot see Aptem. */
+  aptemStatus?: 'to-enter' | 'submitted' | 'accepted' | 'rejected' | 'resubmitted';
+  /** A Harvard-style reference for the source (for example a video), ready to copy. */
+  reference?: string;
 }
 
 // ---------- Live notes (paper trail) ----------
@@ -300,6 +312,8 @@ export interface Settings {
   customWidgets?: CustomWidget[];
   /** The user's own general daily jobs (clock in, watching the inbox and ticket queue, clock out...). */
   dailyJobs?: DailyJob[];
+  /** The learning plan components as named in Aptem (the person's own list). */
+  aptemComponents?: string[];
   /** Work-log editor mode. 'auto' = quick on phones, full on desktop. */
   logMode: 'auto' | 'quick' | 'full';
   lastExportAt?: string;

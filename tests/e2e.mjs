@@ -457,16 +457,20 @@ async function run(label, viewport) {
     await go('/apprenticeship');
     await p.getByText('Targets and dates').click();
     await p.getByLabel('Weekly off-the-job hours').fill('6');
-    await p.getByLabel('Title', { exact: true }).fill('Networking module');
-    await p.getByLabel('What I did').fill('Worked through subnetting exercises');
-    await p.getByLabel('Hours', { exact: true }).fill('2.5');
+    await p.getByLabel('Describe the activity').fill('Networking module: worked through subnetting exercises');
+    await p.getByLabel('Hours', { exact: true }).fill('2');
+    await p.getByLabel('Minutes', { exact: true }).fill('30');
+    await p.getByRole('button', { name: 'Add entry' }).click();
+    await p.getByText('Choose the learning plan component').waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByLabel('Which component does this activity apply to?').fill('module 1 self');
+    await p.getByRole('button', { name: 'Module 1 Self-Paced Learning' }).click();
+    await p.getByRole('button', { name: /Link to my requirements/ }).click();
     await p.getByRole('checkbox', { name: 'Explain network fundamentals' }).check();
     await p.getByRole('button', { name: 'Add entry' }).click();
-    await p.getByText('Networking module').first().waitFor({ state: 'visible', timeout: 3000 });
-    await p.getByLabel('Hours', { exact: true }).fill('1');
-    await p.getByLabel('What I did').fill('Password is Hunter2!x');
+    await p.getByText('Networking module: worked through subnetting exercises').first().waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByLabel('Describe the activity').fill('Password is Hunter2!x');
     ok(await p.getByRole('button', { name: 'Add entry' }).isDisabled(), 'secret blocks the apprenticeship entry');
-    await p.getByLabel('What I did').fill('Read the module notes');
+    await p.getByLabel('Describe the activity').fill('Read the module notes');
     await go('/');
     await p.getByRole('checkbox', { name: 'Check print queue alerts' }).click();
     await p.getByRole('progressbar', { name: 'Daily tasks done' }).waitFor({ state: 'visible', timeout: 3000 });
@@ -731,9 +735,36 @@ async function run(label, viewport) {
     await p.locator('[data-testid=glance]').waitFor({ state: 'visible', timeout: 5000 });
   });
 
-  await step(S('apprenticeship: log from a YouTube link, copy for Aptem'), async () => {
+  await step(S('apprenticeship: Aptem form, log from a YouTube link, copy for Aptem, tick off'), async () => {
     await p.route('https://www.youtube.com/oembed**', (r) => r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ title: 'Subnetting made simple', author_name: 'Net Channel' }) }));
     await go('/apprenticeship');
+    // the form mirrors Aptem: type, when, description, date, hours and minutes, component
+    for (const t of ['Off-the-Job training', 'English or maths', 'Other']) ok(await p.getByRole('radio', { name: t }).count() === 1, `type option ${t}`);
+    ok(await p.getByRole('radio', { name: /during my paid working hours/ }).isChecked(), 'paid hours is the default');
+    ok(await p.getByRole('radio', { name: 'Off-the-Job training' }).isChecked(), 'off-the-job is the default');
+    await p.getByRole('radio', { name: /time off in lieu/ }).check();
+    ok(await p.getByRole('radio', { name: /time off in lieu/ }).isChecked(), 'can choose time off in lieu');
+    await p.getByRole('radio', { name: /during my paid working hours/ }).check();
+    // the 1000 character limit is enforced
+    await p.getByLabel('Describe the activity').fill('x'.repeat(1001));
+    ok((await p.locator('[data-testid=desc-count]').innerText()).includes('1001 / 1000'), 'counter shows the overflow');
+    await p.getByLabel('Hours', { exact: true }).fill('1'); await p.getByLabel('Minutes', { exact: true }).fill('0');
+    await p.getByRole('button', { name: 'Add entry' }).click();
+    await p.getByText('Aptem allows 1000 characters').waitFor({ state: 'visible', timeout: 3000 });
+    // Aptem's other limits: 12 hours at most, and no future dates
+    await p.getByLabel('Describe the activity').fill('Test limits');
+    await p.getByLabel('Hours', { exact: true }).fill('13');
+    await p.getByRole('button', { name: 'Add entry' }).click();
+    await p.getByText('at most 12 hours').waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByLabel('Hours', { exact: true }).fill('1');
+    const todayStr = await p.locator('#ap-date').inputValue();
+    await p.locator('#ap-date').fill(new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10));
+    await p.getByRole('button', { name: 'Add entry' }).click();
+    await p.getByText('cannot be in the future').waitFor({ state: 'visible', timeout: 3000 });
+    await p.locator('#ap-date').fill(todayStr);
+    ok(await p.getByRole('button', { name: /Before you save/ }).count() === 1, 'the before-you-save checklist is there');
+    await p.getByLabel('Describe the activity').fill('');
+    // from a YouTube link
     await p.getByRole('button', { name: /Log from a video link/ }).click();
     await p.getByLabel('YouTube link').fill('https://evil.example/watch?v=dQw4w9WgXcQ');
     await p.getByText('does not look like a YouTube video link').waitFor({ state: 'visible', timeout: 3000 });
@@ -742,20 +773,25 @@ async function run(label, viewport) {
     await p.getByRole('button', { name: 'Look up title' }).click();
     await until(async () => (await p.locator('#vd-title').inputValue()) === 'Subnetting made simple', 'title filled from lookup', 5000);
     eq(await p.locator('#vd-ch').inputValue(), 'Net Channel');
-    await p.locator('#vd-min').fill('35');
+    await p.locator('#vd-year').fill('2021');
+    await p.locator('#vd-min').fill('95');
     await p.getByRole('button', { name: 'Start an entry from this video' }).click();
-    eq(await p.locator('#ap-title').inputValue(), 'Video: Subnetting made simple');
-    eq(await p.locator('#ap-hours').inputValue(), '0.5', '35 minutes is half an hour (nearest quarter hour)');
-    ok((await p.locator('#ap-did').inputValue()).includes('Watched the video “Subnetting made simple” by Net Channel (35 min).'), 'factual what I did');
-    eq(await p.locator('#ap-learned').inputValue(), '', 'what I learned is left for the person to write');
+    eq(await p.locator('#ap-hrs').inputValue(), '1'); eq(await p.locator('#ap-mins').inputValue(), '35', '95 minutes is 1 hour 35, exactly');
+    const desc0 = await p.locator('#ap-desc').inputValue();
+    ok(desc0.includes('Watched the video “Subnetting made simple” by Net Channel (95 min).'), 'factual description');
+    ok(!/learn/i.test(desc0), 'what you learned is left for the person to write');
+    await p.getByRole('button', { name: /Link or evidence/ }).click();
     eq(await p.locator('#ap-link').inputValue(), 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-    // the Aptem block mirrors the form and leaves out empty fields
-    await p.getByRole('button', { name: /Copy for Aptem/ }).click();
-    const txt = await p.locator('[data-testid=aptem-fields]').innerText();
-    ok(txt.includes('Subnetting made simple') && txt.includes('0.5 h (30 min)'), 'fields shown');
-    ok(!txt.includes('What I learned'), 'empty learned is not invented');
-    await p.locator('#ap-learned').fill('Learned how to split a /24 into four /26 subnets.');
-    ok((await p.locator('[data-testid=aptem-fields]').innerText()).includes('four /26 subnets'), 'learned appears once written');
+    await p.locator('#ap-desc').fill(desc0 + ' Learned how to split a /24 into four /26 subnets.');
+    // a component is needed, as in Aptem
+    await p.getByRole('button', { name: 'Add entry' }).click();
+    await p.getByText('Choose the learning plan component').waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByLabel('Which component does this activity apply to?').fill('zzz');
+    await p.getByText('Nothing matches').waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByLabel('Which component does this activity apply to?').fill('module 3 cyber');
+    eq(await p.locator('#ap-comp-list button').count(), 1, 'search narrows the list');
+    await p.getByRole('button', { name: 'Module 3 Cyber Defence Practical Application' }).click();
+    ok(await p.locator('[data-testid=component-chosen]').isVisible(), 'chosen component is shown');
     // a non-https link is refused
     await p.locator('#ap-link').fill('javascript:alert(1)');
     await p.getByRole('button', { name: 'Add entry' }).click();
@@ -763,9 +799,42 @@ async function run(label, viewport) {
     await p.locator('#ap-link').fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
     await p.getByRole('button', { name: 'Add entry' }).click();
     await p.getByRole('link', { name: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' }).waitFor({ state: 'visible', timeout: 5000 });
-    // the weekly summary carries the link
+    // it waits in "To enter in Aptem" until ticked
+    const waiting = Number(/\((\d+)\)/.exec(await p.getByRole('button', { name: /To enter in Aptem/ }).innerText())?.[1]);
+    ok(waiting >= 1, 'the new entry is waiting to be entered');
+    const card = p.locator('li', { has: p.getByText('Module 3 Cyber Defence Practical Application').first() }).filter({ has: p.getByRole('button', { name: /Copy for Aptem/ }) }).first();
+    await card.getByRole('button', { name: /Copy for Aptem/ }).click();
+    const txt = await card.locator('[data-testid=aptem-fields]').innerText();
+    ok(txt.includes('Type of activity') && txt.includes('Off-the-Job training'), 'type copied with Aptem wording');
+    ok(txt.includes('during my paid working hours'), 'when copied');
+    ok(txt.includes('four /26 subnets') && txt.includes('Link: https://www.youtube.com/watch?v=dQw4w9WgXcQ'), 'description includes what was learned and the link');
+    ok(/Time spent: Hours\s*\n?\s*1/.test(txt) && /Time spent: Minutes\s*\n?\s*35/.test(txt), 'hours and minutes are separate');
+    ok(/\d\d\/\d\d\/\d{4}/.test(txt), 'date is dd/mm/yyyy');
+    ok(txt.includes('Module 3 Cyber Defence Practical Application'), 'component copied');
+    ok((await card.innerText()).includes('Net Channel. (2021). Subnetting made simple. Available at: https://www.youtube.com/watch?v=dQw4w9WgXcQ (Accessed:'), 'Harvard reference built from the video');
+    await card.getByLabel('Status in Aptem').selectOption('submitted');
+    await p.getByRole('button', { name: new RegExp(`To enter in Aptem \\(${waiting - 1}\\)`) }).waitFor({ state: 'visible', timeout: 3000 });
+    // only entries the tutor accepted count as verified
+    ok(!(await p.getByText('Accepted by tutor').first().locator('xpath=..').innerText()).includes('1.58 h'), 'submitted is not verified');
+    await p.getByRole('button', { name: /^All \(/ }).click();
+    const card2 = p.locator('li', { has: p.getByText('Module 3 Cyber Defence Practical Application').first() }).filter({ has: p.getByRole('button', { name: /Copy for Aptem/ }) }).first();
+    await card2.getByLabel('Status in Aptem').selectOption('accepted');
+    await until(async () => (await p.getByText('Accepted by tutor').first().locator('xpath=..').innerText()).includes('1.58 h'), 'accepted hours counted', 3000);
+    // the component list can be edited to match Aptem
+    await p.getByRole('button', { name: 'My component list' }).click();
+    const ta = p.getByLabel('Component names, one per line');
+    await ta.fill((await ta.inputValue()) + '\nModule 7 Test Assignment');
+    await p.getByRole('button', { name: 'Save list' }).click();
+    await p.getByLabel('Describe the activity').fill('Check the list');
+    await p.getByLabel('Which component does this activity apply to?').fill('module 7');
+    await p.getByRole('button', { name: 'Module 7 Test Assignment' }).waitFor({ state: 'visible', timeout: 3000 });
+    // a repeat of an earlier entry (same date, component and time) is flagged
+    await p.getByLabel('Which component does this activity apply to?').fill('module 1 self');
+    await p.getByRole('button', { name: 'Module 1 Self-Paced Learning' }).click();
+    await p.getByLabel('Hours', { exact: true }).fill('2'); await p.getByLabel('Minutes', { exact: true }).fill('30');
+    await p.locator('[data-testid=dup-warning]').waitFor({ state: 'visible', timeout: 3000 });
     await noHScroll();
-    await shot('apprenticeship-video');
+    await shot('apprenticeship-aptem');
   });
 
   await step(S('navigation: home hub, area screens, tabs, back, all apps'), async () => {

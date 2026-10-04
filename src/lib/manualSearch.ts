@@ -35,7 +35,7 @@ export function searchPages(pages: PageText[], query: string, limit = 40): PageH
 
 export const formatBytes = (n: number): string => (n >= 1048576 ? `${(n / 1048576).toFixed(n >= 10485760 ? 0 : 1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 
-export const BRANDS = ['Ricoh', 'Develop', 'UTAX', 'Sharp', 'Epson', 'Other'] as const;
+export const BRANDS = ['Ricoh', 'Develop', 'UTAX', 'Sharp', 'Epson', 'Apprenticeship', 'Other'] as const;
 export const guessBrand = (name: string): string => {
   const n = name.toLowerCase();
   if (/epson|wf-?\d|workforce/.test(n)) return 'Epson';
@@ -43,5 +43,6 @@ export const guessBrand = (name: string): string => {
   if (/ineo|develop|bizhub/.test(n)) return 'Develop';
   if (/utax|triumph|ih_|\d{4}ci/.test(n)) return 'UTAX';
   if (/sharp|mx-/.test(n)) return 'Sharp';
+  if (/off.?the.?job|aptem|harvard|referenc|apprentic|activity.?log/.test(n)) return 'Apprenticeship';
   return 'Other';
 };
