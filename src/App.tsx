@@ -104,20 +104,28 @@ function route(path: string): ReactNode {
 }
 
 function useTheme() {
-  const { theme, accent, textScale, fontStyle, corners } = useSettings();
+  const { theme, accent, textScale, fontStyle, corners, skin, motion } = useSettings();
+  const terminal = skin !== 'classic';
   useEffect(() => {
     const apply = () => {
-      const t = theme === 'system' ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : theme;
-      document.documentElement.setAttribute('data-theme', t);
+      const t = terminal ? 'dark' : theme === 'system' ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : theme;
+      const root = document.documentElement;
+      root.setAttribute('data-theme', t);
+      root.setAttribute('data-skin', terminal ? 'terminal' : 'classic');
+      root.setAttribute('data-motion', motion === false ? 'off' : 'on');
       applyLook({ accent, textScale, fontStyle, corners }, t);
     };
     apply();
-    try { if (theme === 'system') localStorage.removeItem('forgetools:theme'); else localStorage.setItem('forgetools:theme', theme); } catch { /* storage unavailable */ }
-    if (theme !== 'system') return;
+    try {
+      if (theme === 'system') localStorage.removeItem('forgetools:theme'); else localStorage.setItem('forgetools:theme', theme);
+      localStorage.setItem('forgetools:skin', terminal ? 'terminal' : 'classic');
+      localStorage.setItem('forgetools:motion', motion === false ? 'off' : 'on');
+    } catch { /* storage unavailable */ }
+    if (theme !== 'system' || terminal) return;
     const mq = window.matchMedia('(prefers-color-scheme: light)');
     mq.addEventListener('change', apply);
     return () => mq.removeEventListener('change', apply);
-  }, [theme, accent, textScale, fontStyle, corners]);
+  }, [theme, accent, textScale, fontStyle, corners, terminal, motion]);
 }
 
 export function App() {
@@ -174,7 +182,7 @@ function Shell() {
     <div className="min-h-dvh flex flex-col">
       <a href="#main" onClick={(e: { preventDefault(): void }) => { e.preventDefault(); document.getElementById('main')?.focus(); }} className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-surface focus:border focus:border-line focus:rounded-sm focus:px-3 focus:py-2">Skip to content</a>
 
-      <header className="sticky top-0 z-30 bg-surface/95 backdrop-blur border-b border-line pt-safe">
+      <header className="ft-top sticky top-0 z-30 bg-surface/95 backdrop-blur border-b border-line pt-safe">
         <div className="mx-auto max-w-5xl flex items-center gap-2 px-3 h-14">
           {parent !== null && <Link to={parent} aria-label="Back" className="grid place-items-center size-11 rounded-full border border-line bg-surface hover:bg-surface2 shrink-0"><Icon name="back" size={20} /></Link>}
           <Link to="/" className={clsx('items-center gap-2 font-semibold min-h-11 min-w-0', parent !== null ? 'hidden sm:flex' : 'flex')}><span className="inline-grid place-items-center size-8 rounded-full bg-accent text-accent-ink font-mono text-sm shrink-0">{(appName || 'F').charAt(0).toUpperCase()}</span><span className={clsx('truncate', parent !== null && 'hidden sm:inline')}>{appName || 'ForgeTools'}</span></Link>
@@ -198,7 +206,7 @@ function Shell() {
       </header>
 
       <main id="main" tabIndex={-1} className="flex-1 px-4 py-5 md:px-8 md:py-7 pb-16 outline-none">
-        <div id="page" className="mx-auto w-full max-w-5xl">{route(path)}</div>
+        <div id="page" className="mx-auto w-full max-w-5xl"><div key={path} className="ft-boot">{route(path)}</div></div>
       </main>
       {searchOpen && <SearchPalette onClose={() => setSearchOpen(false)} />}
     </div>

@@ -96,9 +96,15 @@ export function SettingsPage() {
         <SectionTitle>Appearance and behaviour</SectionTitle>
         <Card className="p-4 space-y-4">
           <div>
+            <p className="text-sm font-medium mb-1">Style</p>
+            <div className="flex gap-1.5" role="radiogroup" aria-label="Style">{([['terminal', 'Terminal'], ['classic', 'Classic']] as const).map(([v, l]) => <Chip key={v} active={(s.skin ?? 'terminal') === v} onClick={() => store.updateSettings({ skin: v })}>{l}</Chip>)}</div>
+            <p className="text-xs text-muted mt-1">Terminal is a green screen with drifting pixel patterns, scan lines and glowing panels. Classic is the plain light or dark look.</p>
+            {(s.skin ?? 'terminal') === 'terminal' && <div className="mt-2"><Checkbox checked={s.motion !== false} onChange={(v) => store.updateSettings({ motion: v })} label="Animated background and effects" /></div>}
+          </div>
+          {(s.skin ?? 'terminal') === 'classic' && <div>
             <p className="text-sm font-medium mb-1">Theme</p>
             <div className="flex gap-1.5" role="radiogroup" aria-label="Theme">{(['system', 'light', 'dark'] as const).map((t) => <Chip key={t} active={s.theme === t} onClick={() => store.updateSettings({ theme: t })}>{t[0].toUpperCase() + t.slice(1)}</Chip>)}</div>
-          </div>
+          </div>}
           <LookControls />
           <div>
             <p className="text-sm font-medium mb-1">Work log form</p>

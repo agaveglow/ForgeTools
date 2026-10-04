@@ -6,6 +6,10 @@
     if (t !== 'light' && t !== 'dark') {
       t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
     }
+    var skin = localStorage.getItem('forgetools:skin') === 'classic' ? 'classic' : 'terminal';
+    if (skin === 'terminal') t = 'dark';
+    root.setAttribute('data-skin', skin);
+    root.setAttribute('data-motion', localStorage.getItem('forgetools:motion') === 'off' ? 'off' : 'on');
     root.setAttribute('data-theme', t);
     var raw = localStorage.getItem('forgetools:look');
     if (raw) {
@@ -15,5 +19,6 @@
     }
   } catch (e) {
     if (!root.getAttribute('data-theme')) root.setAttribute('data-theme', 'dark');
+    if (!root.getAttribute('data-skin')) root.setAttribute('data-skin', 'terminal');
   }
 })();

@@ -360,11 +360,21 @@ async function run(label, viewport) {
 
   await step(S('theme toggle'), async () => {
     await go('/settings');
+    eq(await p.evaluate(() => document.documentElement.getAttribute('data-skin')), 'terminal', 'terminal is the default style');
+    await shot('settings-terminal');
+    await p.getByRole('checkbox', { name: 'Animated background and effects' }).uncheck();
+    eq(await p.evaluate(() => document.documentElement.getAttribute('data-motion')), 'off', 'effects can be turned off');
+    await p.getByRole('checkbox', { name: 'Animated background and effects' }).check();
+    await p.getByRole('button', { name: 'Classic', exact: true }).click();
+    eq(await p.evaluate(() => document.documentElement.getAttribute('data-skin')), 'classic');
     await p.getByRole('button', { name: 'Dark', exact: true }).click();
     eq(await p.evaluate(() => document.documentElement.getAttribute('data-theme')), 'dark');
     await shot('settings-dark');
     await p.getByRole('button', { name: 'Light', exact: true }).click();
     eq(await p.evaluate(() => document.documentElement.getAttribute('data-theme')), 'light');
+    await p.getByRole('button', { name: 'Terminal', exact: true }).click();
+    eq(await p.evaluate(() => document.documentElement.getAttribute('data-theme')), 'dark', 'terminal is always dark');
+    await p.getByRole('button', { name: 'Classic', exact: true }).click();
   });
 
   await step(S('export; import roundtrip'), async () => {

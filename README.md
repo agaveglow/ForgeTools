@@ -213,6 +213,10 @@ Fix & guides → **Procedures** has eight step-by-step jobs (ticket routine, new
 
 On the Glance home screen tap **Edit home**. You can change the colour of each ring, add, rename, recolour, reorder or remove bubbles (any page can be a bubble), and add your own cards (note, checklist, counter, progress bar, countdown, shortcuts) with a colour of your choice. Cards can also be shown or hidden from the All widgets view. Everything saves as you go and stays on the device; text is checked for secrets and personal details like all other notes.
 
+## Terminal look
+
+The default style is a green-screen terminal: near-black with green phosphor text, pixel-glyph patterns drifting behind the content, a slow scan beam, scan lines, glowing corner-bracket panels, prompt-style headings with a blinking cursor, and a short draw-in when the page changes. **Settings > Appearance > Style** switches to Classic (plain light or dark). **Animated background and effects** turns the motion off, and the system's reduce-motion setting turns it off too. Headings keep clean accessible names (the prompt marks are decoration only).
+
 ## Guide agent: honest matching and building your own guides
 
 The guide agent only offers a library guide when it really covers what you asked, not just because one word (such as "Outlook") matches. It now also searches the built-in Procedures and Study library, so a request like "how to whitelist a domain in Outlook" finds the built-in allow-list procedure. When nothing covers the request it says so, names the words nothing matched, lists loosely related guides as "related, not the answer", and asks a few questions (the job, the area, whether admin rights are needed, the steps if you know them, how you know it worked, what to watch for). **Build my guide** then assembles a new guide from your own answers; it never invents steps, and with no steps typed it makes an outline and says the steps are still to be added. You can then add pages from the online lookup, save it to the Knowledge base, and it appears under **Procedures > Your own guides**.

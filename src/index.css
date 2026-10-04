@@ -138,3 +138,105 @@ body {
 
 /* Narrow pages sit in the middle of the screen now that there is no side menu. */
 #page > [class*="max-w-"] { margin-inline: auto; }
+
+
+/* ================= Terminal skin (default) =================
+   Green phosphor on near-black, pixel glyph patterns drifting behind the content, scan lines and a slow scan beam.
+   html[data-skin='terminal'] is set from Settings. data-motion='off' and prefers-reduced-motion keep it still. */
+html[data-skin='terminal'] {
+  color-scheme: dark;
+  --c-canvas: #020805;
+  --c-surface: #06140c;
+  --c-surface2: #0b2015;
+  --c-line: #1d6a3a;
+  --c-ink: #c9ffd9;
+  --c-muted: #72c791;
+  --c-accent: #39ff7a;
+  --c-accent-ink: #021a0b;
+  --c-ok: #39ff7a;
+  --c-bad: #ff6f6f;
+  --c-warn: #ffd24a;
+  --c-info: #5ce1ff;
+  --ft-font: ui-monospace, 'Cascadia Code', 'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  --r-xs: 0px; --r-sm: 2px; --r-md: 3px;
+  --ft-glow: color-mix(in srgb, var(--c-accent) 38%, transparent);
+  background: var(--c-canvas);
+}
+html[data-skin='terminal'] body { background: transparent; position: relative; font-size: 14.5px; letter-spacing: 0.01em; }
+html[data-skin='terminal'] #root { position: relative; z-index: 1; }
+
+/* Pattern layers: two pixel-glyph tiles drifting in opposite directions. */
+html[data-skin='terminal'] body::before {
+  content: ''; position: fixed; inset: -144px; z-index: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='%2339ff7a'%3E%3Crect x='9' y='6' width='2' height='6' fill-opacity='0.16'/%3E%3Crect x='7' y='8' width='6' height='2' fill-opacity='0.16'/%3E%3Crect x='44' y='14' width='2' height='2' fill-opacity='0.2'/%3E%3Crect x='52' y='14' width='2' height='2' fill-opacity='0.12'/%3E%3Crect x='48' y='18' width='2' height='2' fill-opacity='0.12'/%3E%3Crect x='6' y='40' width='6' height='2' fill-opacity='0.12'/%3E%3Crect x='16' y='40' width='6' height='2' fill-opacity='0.12'/%3E%3Crect x='26' y='40' width='6' height='2' fill-opacity='0.12'/%3E%3Crect x='50' y='46' width='2' height='12' fill-opacity='0.14'/%3E%3Crect x='50' y='46' width='6' height='2' fill-opacity='0.14'/%3E%3Crect x='50' y='56' width='6' height='2' fill-opacity='0.14'/%3E%3Crect x='24' y='58' width='10' height='2' fill-opacity='0.1'/%3E%3Crect x='24' y='66' width='10' height='2' fill-opacity='0.1'/%3E%3Crect x='24' y='58' width='2' height='10' fill-opacity='0.1'/%3E%3Crect x='32' y='58' width='2' height='10' fill-opacity='0.1'/%3E%3Crect x='60' y='30' width='2' height='2' fill-opacity='0.18'/%3E%3Crect x='14' y='24' width='2' height='2' fill-opacity='0.1'/%3E%3C/g%3E%3C/svg%3E"); background-size: 72px 72px;
+  animation: ft-drift-a 38s linear infinite; will-change: transform;
+}
+html[data-skin='terminal']::after {
+  content: ''; position: fixed; inset: -240px; z-index: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg fill='%2339ff7a'%3E%3Crect x='14' y='14' width='2' height='2' fill-opacity='0.12'/%3E%3Crect x='18' y='18' width='2' height='2' fill-opacity='0.12'/%3E%3Crect x='22' y='22' width='2' height='2' fill-opacity='0.12'/%3E%3Crect x='18' y='26' width='2' height='2' fill-opacity='0.12'/%3E%3Crect x='14' y='30' width='2' height='2' fill-opacity='0.12'/%3E%3Crect x='28' y='32' width='8' height='2' fill-opacity='0.12'/%3E%3Crect x='80' y='20' width='2' height='2' fill-opacity='0.1'/%3E%3Crect x='84' y='20' width='2' height='2' fill-opacity='0.1'/%3E%3Crect x='88' y='20' width='2' height='6' fill-opacity='0.1'/%3E%3Crect x='80' y='24' width='2' height='2' fill-opacity='0.1'/%3E%3Crect x='84' y='28' width='2' height='2' fill-opacity='0.1'/%3E%3Crect x='70' y='74' width='2' height='2' fill-opacity='0.12'/%3E%3Crect x='74' y='78' width='2' height='2' fill-opacity='0.12'/%3E%3Crect x='78' y='82' width='2' height='2' fill-opacity='0.12'/%3E%3Crect x='82' y='78' width='2' height='2' fill-opacity='0.12'/%3E%3Crect x='86' y='74' width='2' height='2' fill-opacity='0.12'/%3E%3Crect x='20' y='90' width='16' height='2' fill-opacity='0.1'/%3E%3Crect x='20' y='98' width='10' height='2' fill-opacity='0.1'/%3E%3Crect x='20' y='106' width='14' height='2' fill-opacity='0.1'/%3E%3Crect x='100' y='100' width='2' height='2' fill-opacity='0.18'/%3E%3Crect x='104' y='100' width='2' height='2' fill-opacity='0.1'/%3E%3Crect x='108' y='104' width='2' height='2' fill-opacity='0.12'/%3E%3C/g%3E%3C/svg%3E"); background-size: 120px 120px;
+  animation: ft-drift-b 64s linear infinite; will-change: transform;
+}
+/* Slow scan beam. */
+html[data-skin='terminal']::before {
+  content: ''; position: fixed; left: 0; right: 0; top: 0; height: 180px; z-index: 0; pointer-events: none;
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--c-accent) 7%, transparent) 70%, color-mix(in srgb, var(--c-accent) 16%, transparent) 99%, transparent);
+  animation: ft-beam 9s linear infinite; will-change: transform;
+}
+/* Scan lines and screen edge falloff over everything, with a faint flicker. */
+html[data-skin='terminal'] body::after {
+  content: ''; position: fixed; inset: 0; z-index: 90; pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 2px, rgba(0, 0, 0, 0.14) 2px 3px),
+    radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.5) 100%);
+  animation: ft-flicker 7s steps(1, end) infinite;
+}
+@keyframes ft-drift-a { to { transform: translate3d(72px, 72px, 0); } }
+@keyframes ft-drift-b { to { transform: translate3d(-120px, 120px, 0); } }
+@keyframes ft-beam { from { transform: translateY(-180px); } to { transform: translateY(100vh); } }
+@keyframes ft-flicker { 0%, 93%, 97% { opacity: 1; } 95%, 98% { opacity: 0.82; } }
+@keyframes ft-blink { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0; } }
+@keyframes ft-boot { from { opacity: 0; clip-path: inset(0 0 100% 0); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
+@keyframes ft-pulse { 0%, 100% { box-shadow: 0 0 0 1px var(--ft-glow), 0 0 8px var(--ft-glow); } 50% { box-shadow: 0 0 0 1px var(--ft-glow), 0 0 18px var(--ft-glow); } }
+
+/* Page change: the screen draws in from the top. */
+html[data-skin='terminal'] .ft-boot { animation: ft-boot 0.35s steps(8, end) backwards; }
+
+/* Headings read like a prompt, with a blinking cursor. */
+html[data-skin='terminal'] .ft-title { text-shadow: 0 0 10px var(--ft-glow); font-weight: 600; }
+html[data-skin='terminal'] .ft-title::before { content: '> '; content: '> ' / ''; color: var(--c-accent); }
+html[data-skin='terminal'] .ft-title::after { content: '_'; content: '_' / ''; color: var(--c-accent); animation: ft-blink 1.1s steps(1, end) infinite; margin-left: 2px; }
+
+/* Panels: thin line, bright corner brackets and a soft glow. */
+html[data-skin='terminal'] .ft-card {
+  position: relative;
+  border-color: var(--c-line);
+  background-color: color-mix(in srgb, var(--c-surface) 92%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--c-accent) 6%, transparent) inset, 0 0 22px color-mix(in srgb, var(--c-accent) 6%, transparent);
+  background-image:
+    linear-gradient(var(--c-accent), var(--c-accent)), linear-gradient(var(--c-accent), var(--c-accent)),
+    linear-gradient(var(--c-accent), var(--c-accent)), linear-gradient(var(--c-accent), var(--c-accent)),
+    linear-gradient(var(--c-accent), var(--c-accent)), linear-gradient(var(--c-accent), var(--c-accent)),
+    linear-gradient(var(--c-accent), var(--c-accent)), linear-gradient(var(--c-accent), var(--c-accent));
+  background-size: 12px 2px, 2px 12px, 12px 2px, 2px 12px, 12px 2px, 2px 12px, 12px 2px, 2px 12px;
+  background-position: left top, left top, right top, right top, left bottom, left bottom, right bottom, right bottom;
+  background-repeat: no-repeat;
+}
+html[data-skin='terminal'] .ft-top { border-bottom: 1px dashed var(--c-line); background-color: color-mix(in srgb, var(--c-canvas) 88%, transparent); }
+
+/* Buttons glow instead of fading. */
+html[data-skin='terminal'] .ft-btn { letter-spacing: 0.02em; }
+html[data-skin='terminal'] .ft-btn:not(:disabled):hover { box-shadow: 0 0 12px var(--ft-glow); }
+html[data-skin='terminal'] .ft-btn.bg-accent { box-shadow: 0 0 14px var(--ft-glow); font-weight: 700; }
+html[data-skin='terminal'] .ft-orb { animation: ft-pulse 4.5s ease-in-out infinite; }
+html[data-skin='terminal'] ::selection { background: var(--c-accent); color: var(--c-accent-ink); }
+html[data-skin='terminal'] input, html[data-skin='terminal'] textarea, html[data-skin='terminal'] select { caret-color: var(--c-accent); }
+
+/* Still modes. */
+html[data-motion='off'] body::before, html[data-motion='off']::after, html[data-motion='off']::before, html[data-motion='off'] body::after,
+html[data-motion='off'] .ft-boot, html[data-motion='off'] .ft-title::after, html[data-motion='off'] .ft-orb { animation: none !important; }
+html[data-motion='off']::before { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  html[data-skin='terminal'] body::before, html[data-skin='terminal']::after, html[data-skin='terminal']::before, html[data-skin='terminal'] body::after,
+  html[data-skin='terminal'] .ft-boot, html[data-skin='terminal'] .ft-title::after, html[data-skin='terminal'] .ft-orb { animation: none !important; }
+  html[data-skin='terminal']::before { display: none; }
+}

@@ -14,7 +14,7 @@ export function Icon({ name, size = 24 }: { name: string; size?: number }) {
 /** A round, tinted icon holder, like an app on a watch. */
 export function RoundIcon({ name, hue, size = 48 }: { name: string; hue: Hue; size?: number }) {
   return (
-    <span className="grid place-items-center rounded-full shrink-0 border border-line" style={{ width: size, height: size, color: HUE[hue], background: `color-mix(in srgb, ${HUE[hue]} 20%, var(--c-surface))` }}>
+    <span className="ft-orb grid place-items-center rounded-full shrink-0 border border-line" style={{ width: size, height: size, color: HUE[hue], background: `color-mix(in srgb, ${HUE[hue]} 20%, var(--c-surface))` }}>
       <Icon name={name} size={Math.round(size * 0.5)} />
     </span>
   );

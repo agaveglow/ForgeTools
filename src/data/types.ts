@@ -304,6 +304,10 @@ export interface DailyJob {
 
 export interface Settings {
   theme: 'system' | 'light' | 'dark';
+  /** Overall look. Terminal (green screen, animated patterns) is the default. */
+  skin?: 'terminal' | 'classic';
+  /** False keeps the terminal look still. Default on. */
+  motion?: boolean;
   /** Look: accent colour (#rrggbb), text size, font and corner style. */
   accent?: string;
   textScale?: 'sm' | 'md' | 'lg' | 'xl';
