@@ -662,6 +662,45 @@ async function run(label, viewport) {
   });
 
 
+  await step(S('daily jobs: clock in, watch reminders, daily checks, edit and reset'), async () => {
+    await go('/today');
+    await p.getByRole('heading', { name: 'Daily jobs' }).waitFor({ state: 'visible', timeout: 5000 });
+    ok((await p.locator('[data-testid=jobs]').innerText()).includes('Clock in on BrightHR'), 'clock in listed');
+    ok((await p.locator('[data-testid=watches]').innerText()).includes('Check ITarian tickets'), 'ITarian watch listed');
+    ok((await p.locator('[data-testid=watches]').innerText()).includes('Check Outlook emails'), 'Outlook watch listed');
+    eq(await p.locator('[data-testid=stamp-clock-in]').count(), 0, 'no time before ticking');
+    await p.getByLabel('Clock in on BrightHR').check();
+    await p.locator('[data-testid=stamp-clock-in]').waitFor({ state: 'visible', timeout: 3000 });
+    ok(/at \d\d:\d\d/.test(await p.locator('[data-testid=stamp-clock-in]').innerText()), 'time noted');
+    ok((await p.locator('[data-testid=watches]').innerText()).includes('not checked yet'), 'not checked yet');
+    await p.getByRole('button', { name: 'I have checked: ITarian tickets' }).click();
+    await until(async () => (await p.locator('[data-testid=watches]').innerText()).includes('just now'), 'checked just now', 3000);
+    ok((await p.locator('[data-testid=watches]').innerText()).includes('1 today'), 'count shows 1');
+    // a check that is overdue raises the reminder
+    await p.evaluate(() => {
+      const k = 'forgetools:todayState'; const v = JSON.parse(localStorage.getItem(k));
+      v.checked['watch-itarian'] = new Date(Date.now() - 45 * 60000).toISOString(); localStorage.setItem(k, JSON.stringify(v));
+    });
+    await p.reload();
+    await p.locator('[data-testid=overdue]').waitFor({ state: 'visible', timeout: 5000 });
+    ok((await p.locator('[data-testid=overdue]').innerText()).includes('ITarian tickets'), 'overdue names ITarian');
+    ok((await p.locator('[data-testid=jobs]').innerText()).includes('at '), 'clock in time survives a reload');
+    // edit
+    await p.getByRole('button', { name: 'Edit my jobs' }).click();
+    await p.getByLabel('Add a job').fill('Check the shared mailbox');
+    await p.locator('#dj-kind').selectOption('watch');
+    await p.getByRole('button', { name: 'Add job' }).click();
+    ok((await p.locator('[data-testid=job-editor]').innerHTML()).includes('Check the shared mailbox'), 'added');
+    await p.getByLabel('Add a job').fill('Password: hunter2-secret-123');
+    ok(await p.getByRole('button', { name: 'Add job' }).isDisabled(), 'a secret blocks adding');
+    await p.getByLabel('Add a job').fill('');
+    await p.getByRole('button', { name: 'Delete Check the shared mailbox' }).click();
+    ok(!(await p.locator('[data-testid=job-editor]').innerHTML()).includes('shared mailbox'), 'deleted');
+    await p.getByRole('button', { name: 'Done editing' }).click();
+    await noHScroll();
+    await shot('daily-jobs');
+  });
+
   await step(S('daily workflow: sections, ticks persist for today, clear'), async () => {
     await go('/workflow');
     await p.getByText('Remain available for incidents').waitFor({ state: 'visible', timeout: 5000 });

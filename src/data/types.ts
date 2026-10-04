@@ -270,6 +270,17 @@ export interface CustomWidget {
   links?: string[];
 }
 
+/** One general daily job. 'job' is ticked once a day. 'watch' is something to keep checking, with a reminder interval. */
+export interface DailyJob {
+  id: string;
+  text: string;
+  kind: 'job' | 'watch';
+  /** Watch items only: minutes between checks. */
+  everyMin?: number;
+  /** Job items only: record the time it was ticked (for clocking in and out). */
+  stamp?: boolean;
+}
+
 export interface Settings {
   theme: 'system' | 'light' | 'dark';
   /** Look: accent colour (#rrggbb), text size, font and corner style. */
@@ -283,6 +294,8 @@ export interface Settings {
   /** Dashboard layout: widget order, hidden widgets, sizes (1 to 3 columns wide) and renamed titles. */
   dashboard?: DashboardLayout;
   customWidgets?: CustomWidget[];
+  /** The user's own general daily jobs (clock in, watching the inbox and ticket queue, clock out...). */
+  dailyJobs?: DailyJob[];
   /** Work-log editor mode. 'auto' = quick on phones, full on desktop. */
   logMode: 'auto' | 'quick' | 'full';
   lastExportAt?: string;

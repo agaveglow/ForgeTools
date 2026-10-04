@@ -190,3 +190,7 @@ The PDF reader is Mozilla PDF.js 3.2.146 (Apache-2.0), pre-built, in `public/ven
 ## Daily workflow
 
 **Daily workflow** holds the day's operating guide: start of day, priorities, the work/check/respond/document/continue loop, what to monitor, quiet-period work, incidents, the documentation standard and end of day. Ticks apply to the current day only and clear themselves the next day.
+
+## Daily jobs
+
+**Daily jobs** is the page for the general jobs of the day, next to your daily checks. The starting list is: clock in on BrightHR, check Outlook emails, check ITarian tickets, clock out on BrightHR. Edit it to suit: add, rename, reorder or delete jobs. Once-a-day jobs can note the time you ticked them. "Keep watching" jobs (inbox, ticket queue) show when you last checked and turn amber when you are past your chosen interval. The page never connects to BrightHR, Outlook or ITarian: the ticks and times are your own, kept on this device, and clear themselves the next day. The reminder only shows while the page is open.

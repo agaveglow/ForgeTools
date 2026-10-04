@@ -17,6 +17,7 @@ import { FilesPage } from './pages/FilesPage';
 import { applyLook } from './lib/look';
 import { LivePage } from './pages/LivePage';
 import { CheckGuidePage, ChecksPage } from './pages/ChecksPage';
+import { TodayPage } from './pages/TodayPage';
 import { WorkflowPage } from './pages/WorkflowPage';
 import { ManualReaderPage, ManualsPage } from './pages/ManualsPage';
 import { SlaPage } from './pages/SlaPage';
@@ -32,6 +33,7 @@ import { SettingsPage } from './pages/SettingsPage';
 interface NavItem { to: string; label: string; short: string; icon: string; root: string }
 const NAV: NavItem[] = [
   { to: '/', label: 'Dashboard', short: 'Home', icon: '⌂', root: '/' },
+  { to: '/today', label: 'Daily jobs', short: 'Today', icon: '◷', root: '/today' },
   { to: '/workflow', label: 'Daily workflow', short: 'Day', icon: '↻', root: '/workflow' },
   { to: '/tasks', label: 'Tasks', short: 'Tasks', icon: '☑', root: '/tasks' },
   { to: '/live', label: 'Live notes', short: 'Notes', icon: '✎', root: '/live' },
@@ -84,6 +86,7 @@ function route(path: string): ReactNode {
   if (path === '/live') return <LivePage />;
   if (path === '/checks') return <ChecksPage />;
   if (path === '/sla') return <SlaPage />;
+  if (path === '/today') return <TodayPage />;
   if (path === '/workflow') return <WorkflowPage />;
   if (path === '/manuals') return <ManualsPage />;
   if ((p = match('/manuals/:id', path))) return <ManualReaderPage id={p.id} key={p.id} />;
