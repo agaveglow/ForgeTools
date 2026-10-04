@@ -1055,7 +1055,7 @@ async function run(label, viewport) {
 
   await step(S('toolbox: cable pinout, subnet maths, note builder guard, kit ticks persist'), async () => {
     await go('/tools');
-    eq(await p.locator('[data-testid=tool-list] a').count(), 9, 'nine tools');
+    eq(await p.locator('[data-testid=tool-list] a').count(), 14, 'fourteen tools');
     await go('/tools/cable');
     await p.locator('[data-testid=pinouts] svg').first().waitFor({ state: 'visible', timeout: 3000 });
     ok((await p.locator('[data-testid=pinouts] svg').first().getAttribute('aria-label')).includes('Pin 1 White/Orange'), 'T568B pin 1 is white/orange');
@@ -1148,6 +1148,38 @@ async function run(label, viewport) {
     await go('/tools/harden');
     await p.getByRole('checkbox').first().check();
     ok((await p.locator('[data-testid=ck-win]').innerText()).startsWith('1 of'), 'hardening tick counted');
+  });
+
+  await step(S('reference tools: ports search, SPF and DMARC checks, password generator, converters, procedure ticks'), async () => {
+    await go('/tools/ports');
+    await p.locator('#pt-q').fill('9100');
+    await until(async () => (await p.locator('[data-testid=port-list]').innerText()).includes('Raw printing'), 'port 9100 found');
+    await noHScroll();
+    await go('/tools/dns');
+    await p.locator('#dn-spf').fill('v=spf1 include:mail.example.net +all');
+    await until(async () => (await p.locator('[data-testid=spf-result]').innerText()).includes('lets other senders through'), 'spf +all flagged');
+    await p.locator('#dn-dm').fill('v=DMARC1; p=none');
+    await until(async () => (await p.locator('[data-testid=dmarc-result]').innerText()).includes('watching only'), 'dmarc none noted');
+    await noHScroll();
+    await go('/tools/password');
+    const a = (await p.locator('[data-testid=pg-output] pre').innerText()).trim();
+    ok(a.length === 16, 'default length 16: ' + a.length);
+    await p.getByRole('button', { name: 'Generate another' }).click();
+    const b = (await p.locator('[data-testid=pg-output] pre').innerText()).trim();
+    ok(a !== b, 'a new password is different');
+    await p.locator('#pg-test').fill('password123');
+    await until(async () => (await p.locator('[data-testid=pg-test-result]').innerText()).includes('Very weak'), 'weak password rated');
+    await go('/tools/convert');
+    await p.locator('#cv-text').fill('aGVsbG8=');
+    await until(async () => (await p.locator('[data-testid=cv-out]').innerText()).includes('hello'), 'base64 decoded');
+    await p.locator('#cv-time').fill('0');
+    await until(async () => (await p.locator('[data-testid=cv-time-out]').innerText()).includes('1970-01-01T00:00:00.000Z'), 'time converted');
+    await p.locator('#cv-mac').fill('00-1A-2B-3C-4D-5E');
+    await until(async () => (await p.locator('[data-testid=cv-mac-out]').innerText()).includes('001a.2b3c.4d5e'), 'mac reformatted');
+    await noHScroll();
+    await go('/tools/checks');
+    await p.getByRole('checkbox').first().check();
+    ok((await p.locator('[data-testid=ck-incident]').innerText()).startsWith('1 of'), 'procedure tick counted');
   });
 
   await step(S('home button: on every page, returns to the Glance home, fits the header'), async () => {

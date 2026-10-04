@@ -4,7 +4,7 @@ const b = await chromium.launch();
 let problems = 0;
 for (const [name, vp] of [['desktop', { width: 1280, height: 850 }], ['phone', { width: 390, height: 844 }]]) {
   const p = await (await b.newContext({ viewport: vp })).newPage();
-  const routes = ['/', '/logs', '/logs/new', '/troubleshoot', '/troubleshoot/net-no-internet', '/commands', '/security', '/kb', '/kb/new', '/skills', '/settings', '/workflow', '/manuals', '/tools', '/tools/cable', '/tools/calc', '/tools/notes', '/tools/kit', '/tools/redact', '/tools/events', '/tools/hash', '/tools/header', '/tools/harden', '/procedures', '/procedures/proc-ticket-flow', '/library', '/library/lib-network-basics', '/requirements', '/today', '/a/today', '/a/fix', '/apps'];
+  const routes = ['/', '/logs', '/logs/new', '/troubleshoot', '/troubleshoot/net-no-internet', '/commands', '/security', '/kb', '/kb/new', '/skills', '/settings', '/workflow', '/manuals', '/tools', '/tools/cable', '/tools/calc', '/tools/notes', '/tools/kit', '/tools/redact', '/tools/events', '/tools/hash', '/tools/header', '/tools/harden', '/tools/ports', '/tools/dns', '/tools/password', '/tools/convert', '/tools/checks', '/procedures', '/procedures/proc-ticket-flow', '/library', '/library/lib-network-basics', '/requirements', '/today', '/a/today', '/a/fix', '/apps'];
   for (const r of routes) {
     await p.goto('http://localhost:4173/#' + r); await p.waitForTimeout(250);
     const res = await p.evaluate(() => {

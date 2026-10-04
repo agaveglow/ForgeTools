@@ -123,7 +123,7 @@ export function HeaderPage() {
   );
 }
 
-function ChecklistCard({ list }: { list: CheckList }) {
+export function ChecklistCard({ list }: { list: CheckList }) {
   const [ticks, setTicks] = useState<number[]>([]);
   return (
     <Card className="p-4 space-y-2" aria-label={list.title}>
