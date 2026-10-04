@@ -16,6 +16,27 @@ const eq = (a, b, m) => { if (a !== b) throw new Error(`${m ?? 'eq'}: expected $
 const until = async (fn, m, ms = 3000) => { const t = Date.now(); for (;;) { try { if (await fn()) return; } catch {} if (Date.now() - t > ms) throw new Error(typeof m === 'function' ? await m() : (m ?? 'timed out')); await new Promise((r) => setTimeout(r, 50)); } };
 const ok = (c, m) => { if (!c) throw new Error(m ?? 'assertion failed'); };
 
+
+// A tiny valid 3-page PDF with known text, built in memory so the test needs no outside files.
+function makePdf(texts) {
+  const objs = []; const add = (b) => { objs.push(b); return objs.length; };
+  add('<< /Type /Catalog /Pages 2 0 R >>');
+  const kids = texts.map((_, i) => `${4 + i * 2} 0 R`).join(' ');
+  add(`<< /Type /Pages /Kids [${kids}] /Count ${texts.length} >>`);
+  add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+  texts.forEach((t, i) => {
+    const stream = `BT /F1 24 Tf 60 700 Td (${t}) Tj ET`;
+    add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${5 + i * 2} 0 R >>`);
+    add(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
+  });
+  let out = '%PDF-1.4\n'; const off = [];
+  objs.forEach((b, i) => { off.push(out.length); out += `${i + 1} 0 obj\n${b}\nendobj\n`; });
+  const x = out.length;
+  out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n` + off.map((o) => String(o).padStart(10, '0') + ' 00000 n \n').join('');
+  out += `trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${x}\n%%EOF\n`;
+  return Buffer.from(out, 'latin1');
+}
+
 async function run(label, viewport) {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport, acceptDownloads: true });
@@ -638,6 +659,92 @@ async function run(label, viewport) {
     const bk = p.locator('[data-widget="today"]').getByRole('checkbox', { name: /Check backup status/ });
     await bk.waitFor({ state: 'visible', timeout: 4000 });
     ok((await bk.getAttribute('aria-checked')) === 'true', 'ticking the guide ticks the dashboard task');
+  });
+
+
+  await step(S('daily workflow: sections, ticks persist for today, clear'), async () => {
+    await go('/workflow');
+    await p.getByText('Remain available for incidents').waitFor({ state: 'visible', timeout: 5000 });
+    eq((await p.locator('[data-testid=wf-count]').innerText()).trim(), '0 of 38 ticked today');
+    eq(await p.locator('[data-testid=wf-priorities] li').count(), 4, 'four priorities');
+    eq(await p.locator('[data-testid=wf-loop] li').count(), 5, 'five loop steps');
+    await p.getByLabel(/Check the ticketing system for new tickets, updates and overnight/).check();
+    await p.getByLabel('What was reported?').check();
+    eq((await p.locator('[data-testid=wf-count]').innerText()).trim(), '2 of 38 ticked today');
+    await p.reload();
+    await p.getByText('Remain available for incidents').waitFor({ state: 'visible', timeout: 5000 });
+    eq((await p.locator('[data-testid=wf-count]').innerText()).trim(), '2 of 38 ticked today', 'ticks survive a reload');
+    await p.getByRole('button', { name: /Quick daily reference/ }).click();
+    eq(await p.locator('[data-testid=wf-quick] li').count(), 6);
+    await p.getByRole('button', { name: /What to monitor continuously/ }).click();
+    eq(await p.locator('[data-testid=wf-monitor] li').count(), 9);
+    await noHScroll();
+    await shot('workflow');
+    await p.getByRole('button', { name: /Clear today/ }).click();
+    eq((await p.locator('[data-testid=wf-count]').innerText()).trim(), '0 of 38 ticked today');
+  });
+
+  await step(S('printer guides: add a manual, read pages, search, bookmark, attach to a guide'), async () => {
+    await go('/manuals');
+    await p.getByText('No manuals yet.').waitFor({ state: 'visible', timeout: 5000 });
+    await p.setInputFiles('[data-testid=manual-file]', { name: 'Epson WF-579R sample.pdf', mimeType: 'application/pdf', buffer: makePdf(['Cover page intro', 'Paper jam clearing steps for the rear cover', 'Error code E-501 means check the ink pad']) });
+    await p.getByText('Epson WF-579R sample').first().waitFor({ state: 'visible', timeout: 10000 });
+    await p.getByRole('heading', { name: 'Epson' }).waitFor({ state: 'visible', timeout: 3000 });
+    await until(async () => (await p.locator('body').innerText()).includes('3 pages'), 'page count shown', 5000);
+    await until(async () => (await p.locator('body').innerText()).includes('Ready'), 'search ready', 15000);
+    await p.getByLabel('Search all manuals').fill('E-501');
+    await p.locator('#main').getByRole('button', { name: 'Search', exact: true }).click();
+    await p.locator('[data-testid=all-hits] a').first().waitFor({ state: 'visible', timeout: 5000 });
+    ok((await p.locator('[data-testid=all-hits]').innerText()).includes('page 3'), 'hit points to page 3');
+    await p.locator('[data-testid=all-hits] a').first().click();
+    await p.waitForSelector('[data-testid=page-canvas][data-ready="1"]', { timeout: 15000 });
+    eq(await p.locator('[data-testid=page-canvas]').getAttribute('data-page'), '3', 'opened on page 3');
+    const dark = await p.evaluate(() => { const c = document.querySelector('[data-testid=page-canvas]'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] < 100) n++; return n; });
+    ok(dark > 200, 'page is drawn with text, not blank');
+    await p.getByText('Text on this page').click();
+    await until(async () => (await p.locator('[data-testid=page-text]').innerText()).includes('E-501'), 'page text shown', 5000);
+    await p.getByRole('button', { name: 'Previous page' }).click();
+    await until(async () => (await p.locator('[data-testid=page-canvas]').getAttribute('data-page')) === '2', 'went to page 2', 8000);
+    await p.getByLabel('Bookmark label').fill('Rear cover jam');
+    await p.getByRole('button', { name: 'Bookmark', exact: true }).click();
+    await p.getByText('Page 2 · Rear cover jam').waitFor({ state: 'visible', timeout: 5000 });
+    await p.getByLabel('Bookmark label').fill('Root password: hunter2-secret');
+    ok(await p.getByRole('button', { name: 'Bookmark', exact: true }).isDisabled(), 'a secret in a label blocks saving');
+    await p.getByLabel('Bookmark label').fill('');
+    await p.getByLabel('Find in this manual').fill('paper jam');
+    await p.getByRole('button', { name: 'Find', exact: true }).click();
+    await p.locator('[data-testid=hits] button').first().waitFor({ state: 'visible', timeout: 5000 });
+    // zoom changes the drawn size
+    const w0 = await p.evaluate(() => document.querySelector('[data-testid=page-canvas]').width);
+    await p.getByRole('button', { name: 'Zoom in' }).click();
+    await until(async () => (await p.evaluate(() => document.querySelector('[data-testid=page-canvas]').width)) > w0, 'zoom enlarges the page', 8000);
+    // attach to a guide
+    await go('/kb/new');
+    await p.locator('#kb-title').fill('Rear cover jam test guide');
+    await p.locator('#kb-body').fill('1. Open the rear cover\n2. Remove the paper');
+    await p.getByRole('button', { name: 'Save entry' }).click();
+    await p.waitForTimeout(400);
+    await go('/manuals');
+    await p.locator('a[href^="#/manuals/"]').first().click();
+    await p.waitForSelector('[data-testid=page-canvas][data-ready="1"]', { timeout: 15000 });
+    await p.getByRole('button', { name: 'Attach to a guide' }).click();
+    const opts = await p.locator('#ph-entry option').allInnerTexts();
+    ok(opts.some((o) => o.includes('Rear cover jam test guide')), 'the new guide can be chosen');
+    await p.locator('#ph-entry').selectOption({ label: 'Rear cover jam test guide' });
+    ok(await p.getByRole('button', { name: 'Attach page picture' }).isDisabled(), 'needs the check box first');
+    await p.getByLabel(/shows only manual content/).check();
+    await p.getByRole('button', { name: 'Attach page picture' }).click();
+    await p.getByText(/Attached to “Rear cover jam test guide”/).waitFor({ state: 'visible', timeout: 10000 });
+    // the manual survives a reload (it is stored on the device)
+    await p.reload();
+    await p.waitForSelector('[data-testid=page-canvas][data-ready="1"]', { timeout: 15000 });
+    await noHScroll();
+    await shot('manual-reader');
+    // remove it
+    await go('/manuals');
+    p.once('dialog', (d) => d.accept());
+    await p.getByRole('button', { name: /^Remove Epson WF-579R sample/ }).click();
+    await p.getByText('No manuals yet.').waitFor({ state: 'visible', timeout: 5000 });
   });
 
   await step(S('encryption: on, stored as ciphertext, locks, wrong passphrase refused, unlock, lock now'), async () => {

@@ -180,3 +180,13 @@ Work logs still have an optional free-text "ticket reference" field. No ticketin
 - **Learning page and LearnForge integration**: work logs already capture concepts, to-research items and a next activity; there is no dedicated page.
 - **Accounts and sync**: see the storage adapter above.
 - Evidence file attachments (only a text reference is stored), global undo, drafts auto-saved while typing, and a "last used" sort in the KB.
+
+## Printer guides (manual library)
+
+Add your own PDF manuals under **Printer guides**. They are stored only on the device (IndexedDB), never uploaded and never part of this repository. Pages are drawn from the file as you open them, so a 190 MB service manual works. The app reads each manual's text in the background so you can search one manual or all of them, bookmark pages, save a page as a picture, or attach a page to a guide as a step photo.
+
+The PDF reader is Mozilla PDF.js 3.2.146 (Apache-2.0), pre-built, in `public/vendor/pdfjs`. It is served from the app itself, with scripting and eval switched off. Do not add manuals to this repository: they are copyrighted.
+
+## Daily workflow
+
+**Daily workflow** holds the day's operating guide: start of day, priorities, the work/check/respond/document/continue loop, what to monitor, quiet-period work, incidents, the documentation standard and end of day. Ticks apply to the current day only and clear themselves the next day.

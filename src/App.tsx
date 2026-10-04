@@ -17,6 +17,8 @@ import { FilesPage } from './pages/FilesPage';
 import { applyLook } from './lib/look';
 import { LivePage } from './pages/LivePage';
 import { CheckGuidePage, ChecksPage } from './pages/ChecksPage';
+import { WorkflowPage } from './pages/WorkflowPage';
+import { ManualReaderPage, ManualsPage } from './pages/ManualsPage';
 import { SlaPage } from './pages/SlaPage';
 import { BoardPage } from './pages/BoardPage';
 import { TasksPage } from './pages/TasksPage';
@@ -30,9 +32,11 @@ import { SettingsPage } from './pages/SettingsPage';
 interface NavItem { to: string; label: string; short: string; icon: string; root: string }
 const NAV: NavItem[] = [
   { to: '/', label: 'Dashboard', short: 'Home', icon: '⌂', root: '/' },
+  { to: '/workflow', label: 'Daily workflow', short: 'Day', icon: '↻', root: '/workflow' },
   { to: '/tasks', label: 'Tasks', short: 'Tasks', icon: '☑', root: '/tasks' },
   { to: '/live', label: 'Live notes', short: 'Notes', icon: '✎', root: '/live' },
   { to: '/checks', label: 'Check guides', short: 'Checks', icon: '✔', root: '/checks' },
+  { to: '/manuals', label: 'Printer guides', short: 'Manuals', icon: '▤', root: '/manuals' },
   { to: '/sla', label: 'Response times', short: 'SLA', icon: '⏱', root: '/sla' },
   { to: '/board', label: 'Task board', short: 'Board', icon: '▥', root: '/board' },
   { to: '/logs', label: 'Work logs', short: 'Logs', icon: '☰', root: '/logs' },
@@ -80,6 +84,9 @@ function route(path: string): ReactNode {
   if (path === '/live') return <LivePage />;
   if (path === '/checks') return <ChecksPage />;
   if (path === '/sla') return <SlaPage />;
+  if (path === '/workflow') return <WorkflowPage />;
+  if (path === '/manuals') return <ManualsPage />;
+  if ((p = match('/manuals/:id', path))) return <ManualReaderPage id={p.id} key={p.id} />;
   if ((p = match('/checks/:id', path))) return <CheckGuidePage id={p.id} />;
   if (path === '/requirements') return <RequirementsPage />;
   if (path === '/apprenticeship') return <ApprenticeshipPage />;
