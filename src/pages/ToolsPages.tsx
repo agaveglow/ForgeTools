@@ -36,6 +36,9 @@ const TOOL_GROUPS: Array<{ id: string; title: string; blurb: string; tools: Tool
     { to: '/tools/harden', title: 'Hardening checklists', blurb: 'Windows, Microsoft 365, firewall and printer settings to tick through' },
     { to: '/tools/password', title: 'Password tools', blurb: 'Random password generator and a guessability test' },
   ] },
+  { id: 'toolkit', title: 'Engineer tool guide', blurb: 'What the standard engineer tools are for', tools: [
+    { to: '/tools/engineer', title: 'Engineer tool guide', blurb: 'ssh, rsync, curl, nmap, Wireshark, WireGuard, Ansible, PowerShell and more: when to use each' },
+  ] },
   { id: 'desk', title: 'IT service desk', blurb: 'Tickets, visits and procedures', tools: [
     { to: '/tools/notes', title: 'Ticket note builder', blurb: 'A closure note and a customer update from a few boxes' },
     { to: '/tools/checks', title: 'Procedure checklists', blurb: 'Incident first response, restore test, starter, leaver, site exit' },

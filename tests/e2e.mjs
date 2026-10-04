@@ -1095,10 +1095,21 @@ async function run(label, viewport) {
     ok((await p.locator('[data-testid=lab-solution]').innerText()).length > 20, 'answer shown');
   });
 
+  await step(S('engineer tool guide: search, expand, caution shown'), async () => {
+    await go('/tools/engineer');
+    await p.locator('[data-testid=eng-tools]').waitFor({ state: 'visible', timeout: 5000 });
+    await p.locator('#eng-q').fill('nmap');
+    eq((await p.locator('[data-testid=eng-count]').innerText()).trim(), '1 tool');
+    await p.locator('[data-testid=eng-nmap] summary').click();
+    ok((await p.locator('[data-testid=eng-nmap]').innerText()).includes('authorised'), 'authorisation caution visible');
+    await p.locator('#eng-q').fill('zzzz');
+    eq((await p.locator('[data-testid=eng-count]').innerText()).trim(), '0 tools');
+  });
+
   await step(S('toolbox: cable pinout, subnet maths, note builder guard, kit ticks persist'), async () => {
     await go('/tools');
-    eq(await p.locator('[data-testid^=tool-section-] a').count(), 21, 'twenty-one tool cards');
-    eq(await p.locator('[data-testid^=tool-section-]').count(), 6, 'six sections');
+    eq(await p.locator('[data-testid^=tool-section-] a').count(), 22, 'twenty-two tool cards');
+    eq(await p.locator('[data-testid^=tool-section-]').count(), 7, 'seven sections');
     await p.getByLabel('Search the toolbox').fill('hash');
     eq(await p.locator('[data-testid^=tool-section-] a').count(), 1, 'search narrows to one card');
     await p.getByLabel('Search the toolbox').fill('');

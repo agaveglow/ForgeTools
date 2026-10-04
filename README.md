@@ -268,3 +268,7 @@ Toolbox > Networking > Network lab. A practice command prompt and a visual netwo
 - Seven practice scenarios (wrong printer address, unplugged cable, bad gateway, DNS, DHCP, blocked port, plus free play). A "Fixed" badge shows when the goal check passes.
 - The diagram lets you power devices off, unplug cables, edit addresses, masks, gateway, DNS, VLAN and blocked ports, and add or remove devices.
 - Nothing is saved or sent, and the lab resets when you leave the page. Use made-up addresses only; do not enter customer details.
+
+## Engineer tool guide
+
+Toolbox > Engineer tool guide. Short orientation notes on well-known tools (ssh, rsync, curl, WireGuard, nmap, Wireshark, PowerShell, Ansible and others): what each is for, when to reach for it, starter commands with made-up documentation addresses, and cautions. Scanning and capture tools carry an authorisation warning. Content is in `src/content/engtools.ts`.

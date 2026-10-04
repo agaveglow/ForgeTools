@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { DMARC_TAGS, DNS_COMMANDS, RECORD_TYPES, SPF_TERMS, TTL_NOTES } from '../content/dns';
 import { OPS_CHECKS } from '../content/checks';
+import { ENG_GROUPS, ENG_TOOLS } from '../content/engtools';
 import { PRINT_CHECKS, PRINT_FIRST, PRINT_PROTOCOLS } from '../content/print';
 import { PORTS, PORT_COMMANDS, PORT_RANGES } from '../content/ports';
 import { checkDmarc, checkSpf } from '../lib/dnsRecords';
@@ -164,6 +165,49 @@ export function PrintPage() {
       {PRINT_CHECKS.map((l) => <ChecklistCard key={l.id} list={l} />)}
       <Card className="p-4 text-sm space-y-1"><SectionTitle>Do not change without approval</SectionTitle>
         <ul className="list-disc pl-5"><li>The printer administrator password</li><li>Addresses, subnet, gateway or name servers</li><li>Firmware</li><li>Mail sign-in or security settings</li><li>File-sharing security level</li><li>Factory defaults</li><li>Queues and drivers on a shared print server</li></ul></Card>
+    </div>
+  );
+}
+
+export function EngToolsPage() {
+  useTitle('Engineer tool guide');
+  const [q, setQ] = useState('');
+  const ql = q.trim().toLowerCase();
+  const match = (t: (typeof ENG_TOOLS)[number]) => !ql || `${t.name} ${t.what} ${t.use} ${t.group}`.toLowerCase().includes(ql);
+  const shown = ENG_TOOLS.filter(match);
+  return (
+    <div className="max-w-3xl pb-10 space-y-4" data-testid="eng-tools">
+      <PageHeader title="Engineer tool guide" sub="What well-known tools are for, when to reach for them, and starter commands." actions={<Back />} />
+      <Card className="p-4 text-sm space-y-1">
+        <p>Short orientation notes from your own research list, not manuals. Examples use made-up documentation addresses (192.0.2.x).</p>
+        <p className="text-muted">Check each tool's licence and your employer's software policy before installing anything on a work device. Use scanning and capture tools only where you are authorised.</p>
+      </Card>
+      <Card className="p-4"><Field label="Search the guide" htmlFor="eng-q"><TextInput id="eng-q" value={q} placeholder="tunnel, scan, backup" onChange={(e: Chg) => setQ(e.target.value)} /></Field></Card>
+      <p className="text-xs text-muted" aria-live="polite" data-testid="eng-count">{shown.length} tool{shown.length === 1 ? '' : 's'}</p>
+      {ENG_GROUPS.map((g) => {
+        const items = shown.filter((t) => t.group === g);
+        if (!items.length) return null;
+        return (
+          <section key={g} className="space-y-2" aria-label={g}>
+            <h2 className="text-sm font-semibold text-muted px-1">{g}</h2>
+            {items.map((t) => (
+              <Card key={t.id} className="p-3" data-testid={`eng-${t.id}`}>
+                <details>
+                  <summary className="cursor-pointer font-medium min-h-9 flex items-center">{t.name}</summary>
+                  <div className="mt-2 space-y-2 text-sm">
+                    <p>{t.what}</p>
+                    <p><span className="font-medium">Reach for it when:</span> {t.use}</p>
+                    {t.job && <p><span className="font-medium">In your work:</span> {t.job}</p>}
+                    {t.cmds.length > 0 && <CodeBlock code={t.cmds.join('\n')} />}
+                    {t.care && <p className="text-muted"><span className="font-medium text-ink">Take care:</span> {t.care}</p>}
+                    {t.lab && <p><Badge tone="info">Practice</Badge> {t.lab} <Link to="/tools/lab" className="underline">Open the Network lab</Link></p>}
+                  </div>
+                </details>
+              </Card>
+            ))}
+          </section>
+        );
+      })}
     </div>
   );
 }
