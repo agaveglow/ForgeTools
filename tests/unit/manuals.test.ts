@@ -89,7 +89,7 @@ describe('areas and navigation', () => {
   test('every page is in exactly one area, with an icon', () => {
     const all = AREAS.flatMap((a) => a.pages.map((p) => p.to));
     expect(new Set(all).size).toBe(all.length);
-    expect(all.length).toBe(21);
+    expect(all.length).toBe(23);
     for (const a of AREAS) for (const p of a.pages) expect(GLANCE_ICONS[p.icon]?.length).toBeGreaterThan(0);
   });
   test('paths belong to the right area', () => {

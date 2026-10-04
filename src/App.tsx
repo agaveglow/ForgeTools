@@ -22,6 +22,7 @@ import { Icon } from './ui/Bubble';
 import { areaOfPath, parentPath } from './lib/areas';
 import { WorkflowPage } from './pages/WorkflowPage';
 import { ManualReaderPage, ManualsPage } from './pages/ManualsPage';
+import { GuideList, GuideView } from './pages/GuidesPage';
 import { SlaPage } from './pages/SlaPage';
 import { BoardPage } from './pages/BoardPage';
 import { TasksPage } from './pages/TasksPage';
@@ -57,6 +58,10 @@ function route(path: string): ReactNode {
   if (path === '/live') return <LivePage />;
   if (path === '/checks') return <ChecksPage />;
   if (path === '/sla') return <SlaPage />;
+  if (path === '/procedures') return <GuideList set="procedures" />;
+  if (path === '/library') return <GuideList set="library" />;
+  if ((p = match('/procedures/:id', path))) return <GuideView id={p.id} />;
+  if ((p = match('/library/:id', path))) return <GuideView id={p.id} />;
   if (path === '/today') return <TodayPage />;
   if (path === '/workflow') return <WorkflowPage />;
   if (path === '/manuals') return <ManualsPage />;

@@ -3,13 +3,35 @@ import { store, useCollection } from '../data/hooks';
 import { REQUIREMENT_KIND_LABEL, REQUIREMENT_STATUS_LABEL } from '../data/types';
 import type { Requirement, RequirementKind, RequirementStatus } from '../data/types';
 import { requirementProgress } from '../lib/progress';
-import { Badge, Button, Card, Chip, Empty, Field, Modal, PageHeader, SectionTitle, Select, TextArea, TextInput } from '../ui/primitives';
+import { Badge, Button, Card, Chip, Collapsible, Empty, Field, Modal, PageHeader, SectionTitle, Select, TextArea, TextInput } from '../ui/primitives';
 import { Bar } from '../ui/Progress';
 import { PrivacyNote, SensitivePanel, useSaveGuard } from '../ui/SensitivePanel';
 import { useTitle } from '../ui/hooks';
+import { ROADMAP } from '../content/roadmap';
 
 const STATUSES = Object.keys(REQUIREMENT_STATUS_LABEL) as RequirementStatus[];
 const tone = (s: RequirementStatus) => (s === 'signed-off' ? 'ok' : s === 'evidenced' ? 'info' : s === 'in-progress' ? 'warn' : 'neutral') as 'ok' | 'info' | 'warn' | 'neutral';
+
+function SuggestedGoals() {
+  const reqs = useCollection('requirements');
+  const [msg, setMsg] = useState('');
+  const have = new Set(reqs.map((r) => `${r.group}|${r.title}`.toLowerCase()));
+  const fresh = ROADMAP.filter((g) => !have.has(`${g.group}|${g.title}`.toLowerCase()));
+  const add = () => {
+    for (const g of fresh) store.upsert('requirements', { title: g.title, kind: 'apprenticeship' as RequirementKind, group: g.group, notes: '', status: 'not-started' as RequirementStatus });
+    setMsg(`Added ${fresh.length} goal${fresh.length === 1 ? '' : 's'}.`);
+  };
+  return (
+    <Collapsible title="Suggested learning goals for an IT support apprentice">
+      <div className="space-y-2" data-testid="suggested-goals">
+        <p className="text-xs text-muted">A general roadmap in ten stages, from how support works through hardware, networking, Microsoft 365 and printers. Adding it creates ordinary requirements you can edit, rename or delete. Anything already on your list is skipped.</p>
+        <ul className="text-sm list-disc pl-5">{[...new Set(ROADMAP.map((g) => g.group))].map((g) => <li key={g}>{g}</li>)}</ul>
+        {msg && <p role="status" className="text-sm text-ok" data-testid="goals-done">{msg}</p>}
+        <Button variant="primary" disabled={fresh.length === 0} onClick={add}>{fresh.length === 0 ? 'All suggested goals are on your list' : `Add ${fresh.length} suggested goals`}</Button>
+      </div>
+    </Collapsible>
+  );
+}
 
 export function RequirementsPage() {
   useTitle('Requirements');
@@ -86,6 +108,7 @@ export function RequirementsPage() {
     <div className="max-w-3xl pb-10 space-y-5">
       <PageHeader title="Requirements" sub="What your job and apprenticeship expect of you, and how far along each is." />
       <p className="text-xs text-muted" role="note">ForgeTools doesn’t ship a requirements list. Enter yours from your job description and apprenticeship plan, using your own wording. Status is your judgement; link tasks and apprenticeship entries to show the evidence.</p>
+      <SuggestedGoals />
       <Card className="p-4">
         <form className="space-y-3" onSubmit={(e: { preventDefault(): void }) => { e.preventDefault(); save(); }}>
           <div className="flex flex-wrap gap-1.5" role="group" aria-label="Type">{(Object.keys(REQUIREMENT_KIND_LABEL) as RequirementKind[]).map((k) => <Chip key={k} active={kind === k} onClick={() => setKind(k)}>{REQUIREMENT_KIND_LABEL[k]}</Chip>)}</div>

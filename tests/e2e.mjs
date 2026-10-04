@@ -868,7 +868,7 @@ async function run(label, viewport) {
     // all apps lists every page
     await p.getByRole('link', { name: 'All apps', exact: true }).click();
     await p.locator('[data-testid=all-apps]').waitFor({ state: 'visible', timeout: 5000 });
-    eq(await p.locator('[data-testid=all-apps] li').count(), 21, 'twenty-one pages');
+    eq(await p.locator('[data-testid=all-apps] li').count(), 23, 'twenty-three pages');
     await noHScroll();
     await shot('all-apps');
     await go('/a/today'); await noHScroll(); await shot('area-today');
@@ -1029,6 +1029,28 @@ async function run(label, viewport) {
     await go('/import');
     await p.locator('input[aria-label="Choose a document"]').setInputFiles({ name: 'doc.pdf', mimeType: 'application/pdf', buffer: makePdf(['Reset the print spooler', 'Then run net start spooler']) });
     await until(async () => (await p.locator('#im-text').inputValue()).includes('print spooler'), 'pdf text read into the import box', 15000);
+  });
+
+  await step(S('procedures and study library: open, search, tick steps, copy template; suggested goals added once'), async () => {
+    await go('/procedures');
+    await p.locator('[data-testid=guide-list] a').first().waitFor({ state: 'visible', timeout: 5000 });
+    const n = await p.locator('[data-testid=guide-list] a').count();
+    ok(n >= 8, 'procedures listed: ' + n);
+    await p.getByLabel('Search procedures').fill('printer');
+    eq(await p.locator('[data-testid=guide-list] a').count() >= 1, true, 'search finds the printer procedure');
+    await p.locator('[data-testid=guide-list] a', { hasText: 'Add a network printer' }).click();
+    await p.getByRole('heading', { name: /Add a network printer by IP/ }).waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('checkbox').first().check();
+    ok((await p.locator('body').innerText()).includes('1 of'), 'tick counted');
+    await noHScroll();
+    await go('/library');
+    await p.locator('[data-testid=guide-list] a', { hasText: 'Networking fundamentals' }).click();
+    await p.getByRole('heading', { name: /Networking fundamentals/ }).waitFor({ state: 'visible', timeout: 3000 });
+    await go('/requirements');
+    await p.getByText('Suggested learning goals for an IT support apprentice').click();
+    await p.getByRole('button', { name: /Add \d+ suggested goals/ }).click();
+    await p.locator('[data-testid=goals-done]').waitFor({ state: 'visible', timeout: 3000 });
+    ok(await p.getByRole('button', { name: /All suggested goals are on your list/ }).isDisabled(), 'second add is disabled');
   });
 
   await step(S('encryption: on, stored as ciphertext, locks, wrong passphrase refused, unlock, lock now'), async () => {

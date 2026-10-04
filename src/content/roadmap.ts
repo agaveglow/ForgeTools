@@ -1,0 +1,91 @@
+/** A general learning roadmap for an IT support apprentice. Offered as optional goals; nothing is added without a tap. */
+export interface RoadmapGoal { group: string; title: string }
+
+const R: Array<[string, string[]]> = [
+  ['Stage 1: How support works', [
+    'Explain first, second and third line support',
+    'Know what a helpdesk engineer does day to day',
+    'Practise customer-service communication: what to say and what not to promise',
+    'Understand timekeeping, documentation and escalation expectations',
+    'Log a ticket correctly, with a clear problem statement',
+    'Learn the terms: hardware, software, service, server, client, network, domain, ticket, SLA',
+    'Shadow or role-play a support call and write it up',
+  ]],
+  ['Stage 2: Hardware', [
+    'Name the main PC components and what each does',
+    'Tell HDD, SSD and NVMe storage apart',
+    'Compare laptop, desktop and Mac hardware',
+    'Diagnose a "will not power on" fault in a sensible order',
+    'Take apart and rebuild a PC or laptop',
+  ]],
+  ['Stage 3: Operating systems', [
+    'Explain what an operating system does',
+    'Navigate Windows: File Explorer, Settings, Control Panel, Task Manager',
+    'Navigate macOS: Finder, System Settings, Activity Monitor',
+    'Create user accounts on Windows and macOS',
+    'Troubleshoot a slow system using evidence',
+  ]],
+  ['Stage 4: Software and updates', [
+    'Know the difference between EXE, MSI, PKG and DMG installers',
+    'Explain why patching matters and how Windows and macOS update',
+    'Install, uninstall and troubleshoot an application that will not start',
+    'Recognise compatibility, corrupt-install and permission problems',
+  ]],
+  ['Stage 5: Networking', [
+    'Explain DNS, DHCP and IPv4 addressing',
+    'Describe the OSI model and use it to narrow a fault',
+    'Use ipconfig, ping, tracert, nslookup, arp and route print',
+    'Learn five more command-line tools and demonstrate them',
+    'Identify common ports and protocols; compare TCP and UDP',
+    'Tell access points, routers, hubs, switches and bridges apart',
+    'Explain patch panels, firewalls, cabling and PoE',
+    'Build a small lab network and explain how it fits together',
+    'Complete a networking fundamentals course and its practical tasks',
+  ]],
+  ['Stage 6: Microsoft 365 and identity', [
+    'Set up a learning account and complete the Microsoft 365 core services path',
+    'Understand licence types and what each includes',
+    'Work in a Microsoft 365 test environment',
+    'Demonstrate basic admin tasks: users, licences, MFA, mailbox permissions',
+    'Prepare for a Microsoft 365 fundamentals exam',
+    'Find your way around SharePoint, Teams, Outlook and OneDrive',
+  ]],
+  ['Stage 7: Cloud and domains', [
+    'Complete a cloud fundamentals course',
+    'Join and remove a PC from a cloud directory and from an on-premises domain in a lab',
+    'Map a network drive from a server',
+    'Connect to a server by remote desktop',
+    'Move files between a server and a PC over the network',
+    'Complete introductory AI and data fundamentals courses',
+  ]],
+  ['Stage 8: Printers and copiers', [
+    'Explain print, scan, copy, paper and toner at a high level',
+    'Know the brands and types of printer you support',
+    'Find the service modes and admin settings on a machine',
+    'Add a printer by TCP/IP with the correct driver',
+    'Add a printer through a print server',
+    'Choose the right driver for a customer environment and know where to get it',
+    'Set up scan to email and scan to folder on a test machine',
+    'Replace common physical components',
+    'Diagnose a planted printer fault and fix it',
+    'Explain bridges and internal versus external finishers; fit and configure one',
+    'Look up parts and find an exact replacement, noting variants such as voltage',
+    'Reset a machine for refurbishment and work through a refurbishment checklist',
+    'Work through the manufacturer training modules your employer provides',
+  ]],
+  ['Stage 9: Tools and security', [
+    'Use the remote-management platform: add accounts, monitor updates, run audits, start remote sessions',
+    'Know when to use a built-in remote-help tool and its limits',
+    'Handle calls: pick up, transfer, and what you may and may not dial',
+    'Provision a desk phone on a test system',
+    'Complete backup and email-security training',
+    'Complete endpoint-protection training',
+    'Complete a security fundamentals course',
+  ]],
+  ['Stage 10: Reviewing', [
+    'Hold a knowledge review: what is clear, what is still confusing',
+    'Present a short guide on one service to the team',
+  ]],
+];
+
+export const ROADMAP: RoadmapGoal[] = R.flatMap(([group, titles]) => titles.map((title) => ({ group, title })));

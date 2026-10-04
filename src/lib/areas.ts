@@ -13,6 +13,7 @@ export const AREAS: Area[] = [
   ] },
   { id: 'fix', to: '/a/fix', label: 'Fix & guides', blurb: 'Find the steps for a job or a fault.', icon: 'tools', hue: 'warn', pages: [
     { to: '/agent', label: 'Guide agent', blurb: 'Ask how to do something', icon: 'spark' },
+    { to: '/procedures', label: 'Procedures', blurb: 'Build, install, reset, onboard', icon: 'list' },
     { to: '/troubleshoot', label: 'Troubleshooting', blurb: 'Step-by-step fault finding', icon: 'search' },
     { to: '/commands', label: 'Commands', blurb: 'What each command does', icon: 'terminal' },
     { to: '/manuals', label: 'Printer guides', blurb: 'Your manuals, page by page', icon: 'book' },
@@ -29,6 +30,7 @@ export const AREAS: Area[] = [
   ] },
   { id: 'learn', to: '/a/learn', label: 'Learning', blurb: 'Apprenticeship hours and goals.', icon: 'cap', hue: 'ok', pages: [
     { to: '/apprenticeship', label: 'Apprenticeship', blurb: 'Log hours, from a video too', icon: 'cap' },
+    { to: '/library', label: 'Study library', blurb: 'Networking, copiers, Windows', icon: 'book' },
     { to: '/requirements', label: 'Requirements', blurb: 'Your job and course goals', icon: 'target' },
     { to: '/skills', label: 'Skills profile', blurb: 'Skills you can evidence', icon: 'star' },
   ] },
