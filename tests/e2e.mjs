@@ -854,11 +854,11 @@ async function run(label, viewport) {
     eq(await p.getByRole('link', { name: 'Back', exact: true }).count(), 0, 'no Back on home');
     await p.locator('[data-testid=glance-apps]').getByRole('link', { name: 'Today', exact: true }).click();
     await p.locator('[data-testid=area-today]').waitFor({ state: 'visible', timeout: 5000 });
-    eq(await p.locator('[data-testid=area-today] li').count(), 5, 'five Today pages');
+    eq(await p.locator('[data-testid=area-today] li').count(), 6, 'six Today pages');
     await p.locator('[data-testid=area-today]').getByRole('link', { name: /Tasks/ }).click();
     await p.getByRole('heading', { name: 'Tasks', exact: true }).first().waitFor({ state: 'visible', timeout: 5000 });
     const tabs = await p.locator('[data-testid=area-tabs] a').allInnerTexts();
-    eq(tabs.join('|'), 'Daily jobs|Daily workflow|Tasks|Task board|Check guides', 'sibling tabs');
+    eq(tabs.join('|'), 'Daily jobs|Daily workflow|Tasks|Task board|Check guides|Response times', 'sibling tabs');
     eq(await p.locator('[data-testid=area-tabs] a[aria-current=page]').innerText(), 'Tasks');
     await p.locator('[data-testid=area-tabs]').getByRole('link', { name: 'Check guides' }).click();
     await p.getByRole('heading', { name: 'Check guides' }).waitFor({ state: 'visible', timeout: 5000 });
@@ -1108,8 +1108,8 @@ async function run(label, viewport) {
 
   await step(S('toolbox: cable pinout, subnet maths, note builder guard, kit ticks persist'), async () => {
     await go('/tools');
-    eq(await p.locator('[data-testid^=tool-section-] a').count(), 22, 'twenty-two tool cards');
-    eq(await p.locator('[data-testid^=tool-section-]').count(), 7, 'seven sections');
+    eq(await p.locator('[data-testid^=tool-section-] a').count(), 17, 'seventeen tool cards');
+    eq(await p.locator('[data-testid^=tool-section-]').count(), 6, 'six sections');
     await p.getByLabel('Search the toolbox').fill('hash');
     eq(await p.locator('[data-testid^=tool-section-] a').count(), 1, 'search narrows to one card');
     await p.getByLabel('Search the toolbox').fill('');

@@ -17,16 +17,12 @@ const onVal = (set: (v: string) => void) => (e: { target: { value: string } }) =
 // ---------- hub ----------
 interface ToolCard { to: string; title: string; blurb: string }
 const TOOL_GROUPS: Array<{ id: string; title: string; blurb: string; tools: ToolCard[] }> = [
-  { id: 'print', title: 'Managed print', blurb: 'Printers, copiers and scanning', tools: [
+  { id: 'print', title: 'Managed print', blurb: 'Printers, copiers and scanning. Print ports are under Networking; cost per page is under Calculate and convert', tools: [
     { to: '/tools/print', title: 'Print and scan reference', blurb: 'Where to look first, ports and protocols, scan-to-folder and email checks' },
-    { to: '/tools/calc', title: 'Cost per page', blurb: 'Cost per page and monthly cost, in the calculators' },
-    { to: '/tools/ports', title: 'Print ports', blurb: '9100, 631, 445, 587 and the rest, in the ports reference' },
   ] },
   { id: 'network', title: 'Networking', blurb: 'Cables, addresses, names and ports', tools: [
     { to: '/tools/cable', title: 'Cable guide', blurb: 'RJ45 wiring diagram, straight and crossover, faults, limits, PoE' },
-    { to: '/tools/calc', title: 'Calculators', blurb: 'Subnets, number converter, transfer time, cost per page' },
-    { to: '/tools/ports', title: 'Ports and services', blurb: 'What common ports are for and which need care' },
-    { to: '/tools/lab', title: 'Network lab', blurb: 'A practice command prompt and network diagram: break it, test it, fix it' },
+    { to: '/tools/ports', title: 'Ports and services', blurb: 'What common ports are for, including print ports, and which need care' },
     { to: '/tools/dns', title: 'DNS and mail records', blurb: 'Record types, plus an SPF and DMARC checker' },
   ] },
   { id: 'security', title: 'Security', blurb: 'Events, files, mail and settings', tools: [
@@ -36,25 +32,21 @@ const TOOL_GROUPS: Array<{ id: string; title: string; blurb: string; tools: Tool
     { to: '/tools/harden', title: 'Hardening checklists', blurb: 'Windows, Microsoft 365, firewall and printer settings to tick through' },
     { to: '/tools/password', title: 'Password tools', blurb: 'Random password generator and a guessability test' },
   ] },
-  { id: 'toolkit', title: 'Engineer tool guide', blurb: 'What the standard engineer tools are for', tools: [
-    { to: '/tools/engineer', title: 'Engineer tool guide', blurb: 'ssh, rsync, curl, nmap, Wireshark, WireGuard, Ansible, PowerShell and more: when to use each' },
-  ] },
-  { id: 'desk', title: 'IT service desk', blurb: 'Tickets, visits and procedures', tools: [
+  { id: 'desk', title: 'IT service desk', blurb: 'Tickets, visits and checklists', tools: [
     { to: '/tools/notes', title: 'Ticket note builder', blurb: 'A closure note and a customer update from a few boxes' },
     { to: '/tools/checks', title: 'Procedure checklists', blurb: 'Incident first response, restore test, starter, leaver, site exit' },
     { to: '/tools/kit', title: 'Kit checklists', blurb: 'Tools, spares and before-you-leave checks' },
-    { to: '/procedures', title: 'Procedures', blurb: 'Step-by-step jobs, including allowing a sender and shared mailbox access' },
   ] },
-  { id: 'data', title: 'Documents and data', blurb: 'Images, text and timestamps', tools: [
-    { to: '/tools/redact', title: 'Screenshot redactor', blurb: 'Black out names and numbers before you keep an image' },
+  { id: 'data', title: 'Calculate and convert', blurb: 'Sums, formats and images', tools: [
+    { to: '/tools/calc', title: 'Calculators', blurb: 'Subnets, number converter, transfer time, cost per page' },
     { to: '/tools/convert', title: 'Converters', blurb: 'Base64, hex, URL text, timestamps and MAC formats' },
+    { to: '/tools/redact', title: 'Screenshot redactor', blurb: 'Black out names and numbers before you keep an image' },
   ] },
-  { id: 'assist', title: 'Assistants (on this device)', blurb: 'Helpers that run here. No cloud AI, nothing sent anywhere', tools: [
-    { to: '/agent', title: 'Guide agent', blurb: 'Ask how to do something. It finds a guide, or asks questions and builds one with you' },
-    { to: '/library', title: 'Study library', blurb: 'Plain-English references for networking, copiers and Windows' },
+  { id: 'learn', title: 'Practice and reference', blurb: 'Learn and rehearse away from a customer\'s PC', tools: [
+    { to: '/tools/lab', title: 'Network lab', blurb: 'A practice command prompt and network diagram: break it, test it, fix it' },
+    { to: '/tools/engineer', title: 'Engineer tool guide', blurb: 'ssh, rsync, curl, nmap, Wireshark, WireGuard, Ansible, PowerShell and more: when to use each' },
   ] },
 ];
-export const TOOL_COUNT = TOOL_GROUPS.reduce((n, g) => n + g.tools.length, 0);
 export function ToolsHub() {
   useTitle('Toolbox');
   const [q, setQ] = useState('');
@@ -65,7 +57,7 @@ export function ToolsHub() {
       <PageHeader title="Toolbox" sub="Small tools for the job, grouped by what you are doing. Everything runs on this device and nothing is sent anywhere." />
       <TextInput aria-label="Search the toolbox" placeholder="Search tools" value={q} onChange={onVal(setQ)} />
       <nav aria-label="Toolbox sections" className="flex flex-wrap gap-1.5">
-        {TOOL_GROUPS.map((g) => <a key={g.id} href={`#tool-${g.id}`} onClick={(e: { preventDefault(): void }) => { e.preventDefault(); document.getElementById(`tool-${g.id}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }); }} className="inline-flex items-center min-h-9 px-3 rounded-sm border border-line bg-surface text-sm hover:bg-surface2">{g.title.replace(' (on this device)', '')}</a>)}
+        {TOOL_GROUPS.map((g) => <a key={g.id} href={`#tool-${g.id}`} onClick={(e: { preventDefault(): void }) => { e.preventDefault(); document.getElementById(`tool-${g.id}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }); }} className="inline-flex items-center min-h-9 px-3 rounded-sm border border-line bg-surface text-sm hover:bg-surface2">{g.title}</a>)}
       </nav>
       {groups.length === 0 && <p className="text-sm text-muted">No tools match.</p>}
       {groups.map((g) => (
@@ -81,6 +73,7 @@ export function ToolsHub() {
           </ul>
         </section>
       ))}
+      {!ql && <p className="text-sm text-muted border-t border-dashed border-line pt-3">Looking for something else? Step-by-step jobs are in <Link to="/procedures" className="underline">Procedures</Link>, fault finding in <Link to="/troubleshoot" className="underline">Troubleshooting</Link>, asking how to do something in the <Link to="/agent" className="underline">Guide agent</Link>, and study material in the <Link to="/library" className="underline">Study library</Link>.</p>}
     </div>
   );
 }

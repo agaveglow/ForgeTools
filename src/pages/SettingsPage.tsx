@@ -148,7 +148,6 @@ export function SettingsPage() {
           {sec && <p role="status" className={'text-sm ' + (sec.ok ? 'text-ok' : 'text-bad')}>{sec.text}</p>}
           <p className="text-xs text-muted">Limits: this protects data stored on the device while locked. It cannot protect against malware on your phone, someone watching you type, or a weak passphrase. Cleared or lost site data also removes your data, so keep an encrypted backup.</p>
         </Card>
-        <FolderBackup />
       </section>
 
       <section>
@@ -165,6 +164,7 @@ export function SettingsPage() {
           </div>
           {msg && <p role="status" className={'text-sm ' + (msg.ok ? 'text-ok' : 'text-bad')}>{msg.text}</p>}
         </Card>
+        <FolderBackup />
       </section>
 
       <section>
@@ -178,14 +178,6 @@ export function SettingsPage() {
       </section>
 
       <section>
-        <SectionTitle>Erase</SectionTitle>
-        <Card className="p-4 space-y-3">
-          <p className="text-sm">Delete every record on this device. Files in the Files page and your encryption setting are not affected.</p>
-          <Button variant="danger" onClick={() => setConfirm('reset')}>Erase everything…</Button>
-        </Card>
-      </section>
-
-      <section>
         <SectionTitle>Privacy</SectionTitle>
         <Card className="p-4 text-sm space-y-2">
           <p>ForgeTools checks what you type for passwords, keys, tokens, card numbers and personal details before saving. Secrets are blocked outright. Other details need your confirmation.</p>
@@ -193,6 +185,14 @@ export function SettingsPage() {
           <ul className="list-disc pl-5">{NEVER_ENTER.map((x) => <li key={x}>{x}</li>)}</ul>
           <p className="font-medium pt-1">Write it like this instead:</p>
           <ul className="space-y-1">{REDACTION_EXAMPLES.map((r) => <li key={r.use} className="wrap-any"><span className="text-bad line-through">{r.instead}</span><br /><span className="text-ok">{r.use}</span></li>)}</ul>
+        </Card>
+      </section>
+
+      <section>
+        <SectionTitle>Erase</SectionTitle>
+        <Card className="p-4 space-y-3">
+          <p className="text-sm">Delete every record on this device. Files in the Files page and your encryption setting are not affected.</p>
+          <Button variant="danger" onClick={() => setConfirm('reset')}>Erase everything…</Button>
         </Card>
       </section>
 
