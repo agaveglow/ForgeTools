@@ -338,6 +338,8 @@ export interface Settings {
   autoLockMinutes?: number;
   /** Cover the screen when the app is in the background so task switchers show nothing. Default on. */
   privacyShield?: boolean;
+  /** Phone app: keep an encrypted copy of your data in a folder you chose. Only the folder's name is kept here. */
+  folderBackup?: { name: string };
   /** Hide the 'turn on encryption' reminder until this time (ISO). */
   nudgeUntil?: string;
   /** Apprenticeship targets, entered by the user from their own plan. */

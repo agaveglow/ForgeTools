@@ -21,6 +21,7 @@ export class VaultAdapter implements StorageAdapter {
   private key: CryptoKey | null = null;
   private chain: Promise<void> = Promise.resolve();
   private listeners = new Set<() => void>();
+  private persistListeners = new Set<() => void>();
   private version = 0;
   state: VaultState;
   failedPersist = false;
@@ -62,9 +63,32 @@ export class VaultAdapter implements StorageAdapter {
       try {
         if (value === undefined) this.inner.remove(ENC + key);
         else this.inner.write(ENC + key, await encryptText(k, JSON.stringify(value)));
+        this.persistListeners.forEach((l) => l());
       } catch { this.failedPersist = true; this.version++; this.listeners.forEach((l) => l()); }
     });
   }
+  /** Called after each encrypted write reaches storage. Used to keep the optional folder copy up to date. */
+  onPersisted(cb: () => void): () => void { this.persistListeners.add(cb); return () => { this.persistListeners.delete(cb); }; }
+
+  /** The encrypted form of everything stored (ciphertext and the lock's salt and check value). Never plain data. Null when encryption is off. */
+  snapshot(): Record<string, unknown> | null {
+    if (this.state === 'off') return null;
+    const out: Record<string, unknown> = {};
+    for (const k of this.inner.keys()) if (k === 'vault' || k.startsWith(ENC)) out[k] = this.inner.read(k);
+    return out;
+  }
+
+  /** Put a snapshot back into a fresh app. Replaces whatever is stored now. The app then asks for the passphrase. */
+  restore(entries: Record<string, unknown>): void {
+    if (this.state !== 'off') throw new Error('Restore only works in an app with encryption off.');
+    for (const k of this.inner.keys()) this.inner.remove(k);
+    for (const [k, v] of Object.entries(entries)) {
+      if (k === 'vault') { const { bio: _bio, ...rest } = v as VaultMeta; void _bio; this.inner.write(k, rest); } else this.inner.write(k, v);
+    }
+    this.mem = new Map(); this.key = null;
+    this.setState('locked');
+  }
+
   /** Resolves once every queued write has reached storage. */
   flush(): Promise<void> { return this.chain; }
 

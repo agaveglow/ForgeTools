@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { DMARC_TAGS, DNS_COMMANDS, RECORD_TYPES, SPF_TERMS, TTL_NOTES } from '../content/dns';
 import { OPS_CHECKS } from '../content/checks';
+import { PRINT_CHECKS, PRINT_FIRST, PRINT_PROTOCOLS } from '../content/print';
 import { PORTS, PORT_COMMANDS, PORT_RANGES } from '../content/ports';
 import { checkDmarc, checkSpf } from '../lib/dnsRecords';
 import type { Finding } from '../lib/dnsRecords';
@@ -146,6 +147,23 @@ export function OpsChecksPage() {
     <div className="max-w-3xl pb-10 space-y-4">
       <PageHeader title="Procedure checklists" sub="Incident first response, backup restore test, starters, leavers and leaving a site. Ticks last for the visit only." actions={<Back />} />
       {OPS_CHECKS.map((l) => <ChecklistCard key={l.id} list={l} />)}
+    </div>
+  );
+}
+
+export function PrintPage() {
+  useTitle('Print and scan reference');
+  return (
+    <div className="max-w-3xl pb-10 space-y-4">
+      <PageHeader title="Print and scan reference" sub="Where to look first, what the ports and protocols do, and tick-through checks for scan and queue problems." actions={<Back />} />
+      <Card className="p-4 space-y-2"><SectionTitle>What you see and where to look</SectionTitle>
+        <ul className="space-y-2 text-sm" data-testid="print-first">{PRINT_FIRST.map(([a, b]) => <li key={a}><span className="font-medium">{a}.</span> <span className="text-muted">{b}</span></li>)}</ul></Card>
+      <Card className="p-4 space-y-2"><SectionTitle>Protocols and ports</SectionTitle>
+        <ul className="space-y-2 text-sm">{PRINT_PROTOCOLS.map(([a, b, c]) => <li key={a}><span className="font-medium">{a}.</span> {b} <span className="text-muted">Often fails because: {c}.</span></li>)}</ul>
+        <p className="text-xs text-muted">Printing and scanning are separate functions. A printer can print perfectly while scan-to-email is broken. Diagnose the exact function reported.</p></Card>
+      {PRINT_CHECKS.map((l) => <ChecklistCard key={l.id} list={l} />)}
+      <Card className="p-4 text-sm space-y-1"><SectionTitle>Do not change without approval</SectionTitle>
+        <ul className="list-disc pl-5"><li>The printer administrator password</li><li>Addresses, subnet, gateway or name servers</li><li>Firmware</li><li>Mail sign-in or security settings</li><li>File-sharing security level</li><li>Factory defaults</li><li>Queues and drivers on a shared print server</li></ul></Card>
     </div>
   );
 }

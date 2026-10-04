@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { clsx } from './lib/util';
+import { folderPlugin, syncNow } from './lib/folderSync';
 import { Link, match, usePath } from './ui/router';
 import { SearchPalette } from './ui/SearchPalette';
 import { Dashboard } from './pages/DashboardPage';
@@ -25,7 +26,7 @@ import { ManualReaderPage, ManualsPage } from './pages/ManualsPage';
 import { GuideList, GuideView } from './pages/GuidesPage';
 import { CablePage, CalcPage, KitPage, NotePage, ToolsHub } from './pages/ToolsPages';
 import { EventsPage, HardenPage, HashPage, HeaderPage } from './pages/SecurityPages';
-import { ConvertPage, DnsPage, OpsChecksPage, PasswordPage, PortsPage } from './pages/ReferencePages';
+import { ConvertPage, DnsPage, OpsChecksPage, PasswordPage, PortsPage, PrintPage } from './pages/ReferencePages';
 import { RedactPage } from './pages/RedactPage';
 import { SlaPage } from './pages/SlaPage';
 import { BoardPage } from './pages/BoardPage';
@@ -77,6 +78,7 @@ function route(path: string): ReactNode {
   if (path === '/tools/password') return <PasswordPage />;
   if (path === '/tools/convert') return <ConvertPage />;
   if (path === '/tools/checks') return <OpsChecksPage />;
+  if (path === '/tools/print') return <PrintPage />;
   if (path === '/procedures') return <GuideList set="procedures" />;
   if (path === '/library') return <GuideList set="library" />;
   if ((p = match('/procedures/:id', path))) return <GuideView id={p.id} />;
@@ -167,6 +169,23 @@ function EncryptionNudge() {
   );
 }
 
+/** Keeps the optional encrypted folder copy up to date: a few seconds after any change, and when the app goes to the background. */
+function useFolderSync() {
+  const v = useVault();
+  const { folderBackup } = useSettings();
+  useEffect(() => {
+    const plugin = folderPlugin();
+    if (!plugin || !folderBackup || v.state !== 'unlocked') return;
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const soon = () => { if (t) clearTimeout(t); t = setTimeout(() => { void syncNow(v, plugin); }, 4000); };
+    const off = v.onPersisted(soon);
+    const hide = () => { if (document.visibilityState === 'hidden') { if (t) clearTimeout(t); void syncNow(v, plugin); } };
+    document.addEventListener('visibilitychange', hide);
+    soon();
+    return () => { if (t) clearTimeout(t); off(); document.removeEventListener('visibilitychange', hide); };
+  }, [v, v.state, folderBackup?.name]);
+}
+
 function useAutoLock() {
   const v = useVault();
   const mins = useSettings().autoLockMinutes ?? 5;
@@ -194,6 +213,7 @@ function Shell() {
   const hasOpenNote = useCollection('jobNotes').some((n) => n.status === 'open');
   const vaultState = useVault().state;
   useAutoLock();
+  useFolderSync();
   const path = usePath();
   const [searchOpen, setSearchOpen] = useState(false);
 

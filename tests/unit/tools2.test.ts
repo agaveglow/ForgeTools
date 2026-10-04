@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { PORTS } from '../../src/content/ports';
 import { RECORD_TYPES, DNS_COMMANDS } from '../../src/content/dns';
 import { OPS_CHECKS } from '../../src/content/checks';
+import { PRINT_CHECKS, PRINT_FIRST, PRINT_PROTOCOLS } from '../../src/content/print';
 import { checkDmarc, checkSpf } from '../../src/lib/dnsRecords';
 import { DEFAULT_GEN, estimateBits, generate, pool, randomBelow } from '../../src/lib/passgen';
 import { fromBase64, fromHexText, macFormats, parseTime, toBase64, toHexText, urlDecode, urlEncode, viewTime } from '../../src/lib/convert';
@@ -15,9 +16,9 @@ describe('reference content', () => {
     expect(PORTS.find((p) => p.port === 9100)?.name).toBe('Raw printing');
   });
   test('no vendor names or secrets in new content', () => {
-    const text = JSON.stringify([PORTS, RECORD_TYPES, DNS_COMMANDS, OPS_CHECKS]);
+    const text = JSON.stringify([PORTS, RECORD_TYPES, DNS_COMMANDS, OPS_CHECKS, PRINT_CHECKS, PRINT_FIRST, PRINT_PROTOCOLS]);
     expect(BANNED.test(text)).toBe(false);
-    for (const l of OPS_CHECKS) { expect(new Set(l.items).size).toBe(l.items.length); expect(scanText(l.items.join(' ')).filter((f) => f.severity === 'block')).toEqual([]); }
+    for (const l of [...OPS_CHECKS, ...PRINT_CHECKS]) { expect(new Set(l.items).size).toBe(l.items.length); expect(scanText(l.items.join(' ')).filter((f) => f.severity === 'block')).toEqual([]); }
   });
 });
 

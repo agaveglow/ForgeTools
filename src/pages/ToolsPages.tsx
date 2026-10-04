@@ -15,32 +15,68 @@ import { useTitle } from '../ui/hooks';
 const onVal = (set: (v: string) => void) => (e: { target: { value: string } }) => set(e.target.value);
 
 // ---------- hub ----------
-const TOOLS = [
-  { to: '/tools/cable', title: 'Cable guide', blurb: 'RJ45 wiring diagram, straight and crossover, faults, limits, PoE' },
-  { to: '/tools/calc', title: 'Calculators', blurb: 'Subnets, number converter, transfer time, cost per page' },
-  { to: '/tools/redact', title: 'Screenshot redactor', blurb: 'Black out names and numbers before you keep an image' },
-  { to: '/tools/notes', title: 'Ticket note builder', blurb: 'A closure note and a customer update from a few boxes' },
-  { to: '/tools/kit', title: 'Kit checklists', blurb: 'Tools, spares and before-you-leave checks' },
-  { to: '/tools/events', title: 'Security events', blurb: 'What Windows event IDs mean, failed-logon codes, alert types' },
-  { to: '/tools/hash', title: 'File hash checker', blurb: 'Check a download against the published hash, on this device' },
-  { to: '/tools/header', title: 'Email header reader', blurb: 'Route, SPF, DKIM, DMARC and mismatches, plus phishing triage' },
-  { to: '/tools/ports', title: 'Ports and services', blurb: 'What common ports are for and which need care' },
-  { to: '/tools/dns', title: 'DNS and mail records', blurb: 'Record types, plus an SPF and DMARC checker' },
-  { to: '/tools/password', title: 'Password tools', blurb: 'Random password generator and a guessability test' },
-  { to: '/tools/convert', title: 'Converters', blurb: 'Base64, hex, URL text, timestamps and MAC formats' },
-  { to: '/tools/checks', title: 'Procedure checklists', blurb: 'Incident first response, restore test, starter, leaver, site exit' },
-  { to: '/tools/harden', title: 'Hardening checklists', blurb: 'Windows, Microsoft 365, firewall and printer settings to tick through' },
+interface ToolCard { to: string; title: string; blurb: string }
+const TOOL_GROUPS: Array<{ id: string; title: string; blurb: string; tools: ToolCard[] }> = [
+  { id: 'print', title: 'Managed print', blurb: 'Printers, copiers and scanning', tools: [
+    { to: '/tools/print', title: 'Print and scan reference', blurb: 'Where to look first, ports and protocols, scan-to-folder and email checks' },
+    { to: '/tools/calc', title: 'Cost per page', blurb: 'Cost per page and monthly cost, in the calculators' },
+    { to: '/tools/ports', title: 'Print ports', blurb: '9100, 631, 445, 587 and the rest, in the ports reference' },
+  ] },
+  { id: 'network', title: 'Networking', blurb: 'Cables, addresses, names and ports', tools: [
+    { to: '/tools/cable', title: 'Cable guide', blurb: 'RJ45 wiring diagram, straight and crossover, faults, limits, PoE' },
+    { to: '/tools/calc', title: 'Calculators', blurb: 'Subnets, number converter, transfer time, cost per page' },
+    { to: '/tools/ports', title: 'Ports and services', blurb: 'What common ports are for and which need care' },
+    { to: '/tools/dns', title: 'DNS and mail records', blurb: 'Record types, plus an SPF and DMARC checker' },
+  ] },
+  { id: 'security', title: 'Security', blurb: 'Events, files, mail and settings', tools: [
+    { to: '/tools/events', title: 'Security events', blurb: 'What Windows event IDs mean, failed-logon codes, alert types' },
+    { to: '/tools/header', title: 'Email header reader', blurb: 'Route, SPF, DKIM, DMARC and mismatches, plus phishing triage' },
+    { to: '/tools/hash', title: 'File hash checker', blurb: 'Check a download against the published hash, on this device' },
+    { to: '/tools/harden', title: 'Hardening checklists', blurb: 'Windows, Microsoft 365, firewall and printer settings to tick through' },
+    { to: '/tools/password', title: 'Password tools', blurb: 'Random password generator and a guessability test' },
+  ] },
+  { id: 'desk', title: 'IT service desk', blurb: 'Tickets, visits and procedures', tools: [
+    { to: '/tools/notes', title: 'Ticket note builder', blurb: 'A closure note and a customer update from a few boxes' },
+    { to: '/tools/checks', title: 'Procedure checklists', blurb: 'Incident first response, restore test, starter, leaver, site exit' },
+    { to: '/tools/kit', title: 'Kit checklists', blurb: 'Tools, spares and before-you-leave checks' },
+    { to: '/procedures', title: 'Procedures', blurb: 'Step-by-step jobs, including allowing a sender and shared mailbox access' },
+  ] },
+  { id: 'data', title: 'Documents and data', blurb: 'Images, text and timestamps', tools: [
+    { to: '/tools/redact', title: 'Screenshot redactor', blurb: 'Black out names and numbers before you keep an image' },
+    { to: '/tools/convert', title: 'Converters', blurb: 'Base64, hex, URL text, timestamps and MAC formats' },
+  ] },
+  { id: 'assist', title: 'Assistants (on this device)', blurb: 'Helpers that run here. No cloud AI, nothing sent anywhere', tools: [
+    { to: '/agent', title: 'Guide agent', blurb: 'Ask how to do something. It finds a guide, or asks questions and builds one with you' },
+    { to: '/library', title: 'Study library', blurb: 'Plain-English references for networking, copiers and Windows' },
+  ] },
 ];
+export const TOOL_COUNT = TOOL_GROUPS.reduce((n, g) => n + g.tools.length, 0);
 export function ToolsHub() {
   useTitle('Toolbox');
+  const [q, setQ] = useState('');
+  const ql = q.trim().toLowerCase();
+  const groups = TOOL_GROUPS.map((g) => ({ ...g, tools: g.tools.filter((t) => !ql || `${t.title} ${t.blurb} ${g.title}`.toLowerCase().includes(ql)) })).filter((g) => g.tools.length);
   return (
-    <div className="max-w-3xl pb-10">
-      <PageHeader title="Toolbox" sub="Small tools for the job. Everything runs on this device and nothing is sent anywhere." />
-      <ul className="grid gap-2 sm:grid-cols-2" data-testid="tool-list">
-        {TOOLS.map((t) => (
-          <li key={t.to}><Link to={t.to} className="block h-full rounded-md border border-line bg-surface p-3 hover:bg-surface2 focus-visible:outline-2 focus-visible:outline-accent"><p className="font-medium">{t.title}</p><p className="text-sm text-muted">{t.blurb}</p></Link></li>
-        ))}
-      </ul>
+    <div className="max-w-3xl pb-10 space-y-5" data-testid="tool-list">
+      <PageHeader title="Toolbox" sub="Small tools for the job, grouped by what you are doing. Everything runs on this device and nothing is sent anywhere." />
+      <TextInput aria-label="Search the toolbox" placeholder="Search tools" value={q} onChange={onVal(setQ)} />
+      <nav aria-label="Toolbox sections" className="flex flex-wrap gap-1.5">
+        {TOOL_GROUPS.map((g) => <a key={g.id} href={`#tool-${g.id}`} onClick={(e: { preventDefault(): void }) => { e.preventDefault(); document.getElementById(`tool-${g.id}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }); }} className="inline-flex items-center min-h-9 px-3 rounded-sm border border-line bg-surface text-sm hover:bg-surface2">{g.title.replace(' (on this device)', '')}</a>)}
+      </nav>
+      {groups.length === 0 && <p className="text-sm text-muted">No tools match.</p>}
+      {groups.map((g) => (
+        <section key={g.id} id={`tool-${g.id}`} aria-labelledby={`tool-h-${g.id}`} data-testid={`tool-section-${g.id}`} className="scroll-mt-20">
+          <div className="mb-2 border-b border-dashed border-line pb-1">
+            <h2 id={`tool-h-${g.id}`} className="font-semibold">{g.title} <span className="text-xs font-normal text-muted">({g.tools.length})</span></h2>
+            <p className="text-xs text-muted">{g.blurb}</p>
+          </div>
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {g.tools.map((t) => (
+              <li key={g.id + t.to + t.title}><Link to={t.to} className="block h-full rounded-md border border-line bg-surface p-3 hover:bg-surface2 focus-visible:outline-2 focus-visible:outline-accent"><p className="font-medium">{t.title}</p><p className="text-sm text-muted">{t.blurb}</p></Link></li>
+            ))}
+          </ul>
+        </section>
+      ))}
     </div>
   );
 }

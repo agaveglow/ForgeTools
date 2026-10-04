@@ -251,3 +251,11 @@ Import → **Import a pack** loads a JSON file of guides and requirements onto t
 ## Navigation: home is the hub
 
 The long side menu and bottom bar are gone. The top bar has Back, Home, Note, Search and **All apps**. The home bubbles open five areas: **Today** (daily jobs, workflow, tasks, board, check guides), **Fix & guides** (guide agent, troubleshooting, commands, printer guides, knowledge base, security checklist, response times), **Notes** (live notes, work logs, voice notes, import, files), **Learning** (apprenticeship, requirements, skills) and **Settings**, plus shortcuts to a live note and the printer guides. Inside an area, a row of tabs jumps between its pages. Back always goes up one level: detail, list, area, home. All the old page addresses still work. Pages use rounder corners and bigger headings and numbers; the corner style can still be changed in Settings.
+
+## Encrypted folder copy (phone app)
+
+With encryption on, Settings > Folder copy lets you choose a folder on the device. The app writes only the already-encrypted vault file there and re-saves it after each change. After an update or reinstall, choose the folder and Restore, then unlock with your passphrase. It is unavailable while encryption is off, excludes images attached in Files, and does not encrypt file names. The native part is Android-only and is built by the APK workflow.
+
+## Toolbox sections and Print and scan
+
+The Toolbox is grouped into six sections (print, network, security, desk, data, assist) with search and jump chips. "Print and scan" is a generic original reference: first checks, protocols, and intake/queue/scan-to-folder/scan-to-email/close checklists. It holds no customer or company-specific data.

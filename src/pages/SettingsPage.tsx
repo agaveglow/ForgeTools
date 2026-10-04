@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { store, useSettings, useStoreVersion, useVault } from '../data/hooks';
 import { COLLECTIONS } from '../data/types';
 import { downloadText, nowIso, plural, timeAgo } from '../lib/util';
+import { folderPlugin, MIRROR_FILE, MIRROR_PREV, onSyncStatus, parseMirror, syncNow, syncStatus } from '../lib/folderSync';
 import { Button, Card, Checkbox, Chip, Field, Modal, PageHeader, SectionTitle, TextInput } from '../ui/primitives';
 import { useTitle } from '../ui/hooks';
 import { migrateFiles, saveCreatedFile } from '../data/files';
@@ -147,6 +148,7 @@ export function SettingsPage() {
           {sec && <p role="status" className={'text-sm ' + (sec.ok ? 'text-ok' : 'text-bad')}>{sec.text}</p>}
           <p className="text-xs text-muted">Limits: this protects data stored on the device while locked. It cannot protect against malware on your phone, someone watching you type, or a weak passphrase. Cleared or lost site data also removes your data, so keep an encrypted backup.</p>
         </Card>
+        <FolderBackup />
       </section>
 
       <section>
@@ -211,6 +213,89 @@ export function SettingsPage() {
         </Modal>
       )}
     </div>
+  );
+}
+
+function FolderBackup() {
+  const s = useSettings();
+  const vault = useVault();
+  const plugin = folderPlugin();
+  const [st, setSt] = useState(syncStatus());
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [found, setFound] = useState<{ savedAt: string; count: number; entries: Record<string, unknown> } | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => onSyncStatus(() => setSt(syncStatus())), []);
+  const fmt = (iso: string) => { try { return new Date(iso).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }); } catch { return iso; } };
+  const choose = async () => {
+    if (!plugin) return;
+    setMsg(null); setBusy(true);
+    try {
+      const r = await plugin.pickFolder();
+      store.updateSettings({ folderBackup: { name: r.name } });
+      await syncNow(vault, plugin);
+      setMsg({ ok: true, text: `Saving encrypted copies to “${r.name}”.` });
+    } catch (e) { if ((e as Error)?.message !== 'cancelled') setMsg({ ok: false, text: 'Could not use that folder. Pick one on the phone itself, not a cloud-only location.' }); }
+    setBusy(false);
+  };
+  const saveNow = async () => { if (!plugin) return; setBusy(true); await syncNow(vault, plugin); setBusy(false); };
+  const stop = async () => { if (!plugin) return; await plugin.forget(); store.updateSettings({ folderBackup: undefined }); setMsg({ ok: true, text: 'Stopped. Files already in the folder were left where they are.' }); };
+  const look = async () => {
+    if (!plugin) return;
+    setMsg(null); setFound(null); setBusy(true);
+    try {
+      await plugin.pickFolder();
+      let r = await plugin.readFile({ name: MIRROR_FILE });
+      let parsed = r.data ? parseMirror(r.data) : null;
+      if (!parsed || !parsed.ok) { r = await plugin.readFile({ name: MIRROR_PREV }); parsed = r.data ? parseMirror(r.data) : parsed; }
+      if (!parsed) setMsg({ ok: false, text: 'No ForgeTools copy was found in that folder.' });
+      else if (!parsed.ok) setMsg({ ok: false, text: parsed.error });
+      else setFound({ savedAt: parsed.savedAt, count: Object.keys(parsed.entries).length - 1, entries: parsed.entries });
+    } catch (e) { if ((e as Error)?.message !== 'cancelled') setMsg({ ok: false, text: 'Could not read that folder.' }); }
+    setBusy(false);
+  };
+  const restore = () => {
+    if (!found) return;
+    try { vault.restore(found.entries); store.reload(); setFound(null); }
+    catch (e) { setMsg({ ok: false, text: (e as Error).message }); }
+  };
+  return (
+    <Card className="p-4 space-y-3 mt-3" data-testid="folder-backup" aria-label="Encrypted copy in a folder">
+      <p className="text-sm font-medium">Encrypted copy in a folder</p>
+      {!plugin ? <p className="text-sm text-muted">Available in the phone app. It keeps an encrypted copy of your data in a folder you pick, so it survives an uninstall or a lost phone.</p> : (
+        <>
+          <p className="text-xs text-muted">The copy is the same encrypted data the app already stores, so the folder never holds anything readable. You need your passphrase to open it. It is kept up to date a few seconds after each change. Pictures attached to guides are not included.</p>
+          {vault.state === 'off' ? (
+            <>
+              <p className="text-sm text-warn" role="note">Turn encryption on first. Without it the folder would hold readable data.</p>
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Starting on a new or reinstalled phone?</p>
+                <Button disabled={busy} onClick={look}>Restore from a folder</Button>
+              </div>
+              {found && (
+                <div className="rounded-sm border-2 border-warn bg-warn/10 p-3 text-sm space-y-2" data-testid="restore-found">
+                  <p>Found a copy saved {fmt(found.savedAt)} with {found.count} stored item{found.count === 1 ? '' : 's'}. Restoring replaces what is in this app now, then asks for your passphrase.</p>
+                  <div className="flex gap-2"><Button variant="primary" onClick={restore}>Restore and ask for passphrase</Button><Button onClick={() => setFound(null)}>Cancel</Button></div>
+                </div>
+              )}
+            </>
+          ) : vault.state === 'unlocked' ? (
+            <>
+              {s.folderBackup ? (
+                <>
+                  <p className="text-sm" data-testid="folder-status">Saving to <strong>{s.folderBackup.name}</strong>. {st ? (st.ok ? `Last saved ${fmt(st.at)}.` : <span className="text-bad">{st.error}</span>) : 'Not saved yet.'}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button disabled={busy} onClick={saveNow}>Save now</Button>
+                    <Button disabled={busy} onClick={choose}>Choose a different folder</Button>
+                    <Button variant="danger" onClick={stop}>Stop saving to a folder</Button>
+                  </div>
+                </>
+              ) : <Button variant="primary" disabled={busy} onClick={choose}>Choose a folder</Button>}
+            </>
+          ) : null}
+        </>
+      )}
+      {msg && <p role={msg.ok ? 'status' : 'alert'} className={msg.ok ? 'text-sm text-ok' : 'text-sm text-bad'}>{msg.text}</p>}
+    </Card>
   );
 }
 

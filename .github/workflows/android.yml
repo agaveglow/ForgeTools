@@ -26,9 +26,21 @@ jobs:
           sed -i 's/android:allowBackup="true"/android:allowBackup="false"/' $f
           sed -i 's/<application/<application android:usesCleartextTraffic="false"/' $f
           grep -n "allowBackup\|usesCleartextTraffic" $f
+      - name: Add the folder-backup plugin
+        run: |
+          d=android/app/src/main/java/app/forgetools/mobile
+          mkdir -p "$d"
+          cp native/android/FolderSyncPlugin.java native/android/MainActivity.java "$d/"
       - run: npx cap sync android
-      - run: chmod +x gradlew && ./gradlew assembleRelease
+      - name: Build release APK
         working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease 2>&1 | tee "$RUNNER_TEMP/gradle.log" || {
+            msg=$(grep -E "error:|What went wrong|FAILED|Execution failed|\.java:[0-9]+" -A2 "$RUNNER_TEMP/gradle.log" | head -40 | sed 's/%/%25/g' | awk 'BEGIN{ORS="%0A"}{print}')
+            echo "::error title=Gradle build failed::$msg"
+            exit 1
+          }
       - name: Sign the APK
         id: sign
         run: |

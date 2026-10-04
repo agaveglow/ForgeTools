@@ -1065,7 +1065,11 @@ async function run(label, viewport) {
 
   await step(S('toolbox: cable pinout, subnet maths, note builder guard, kit ticks persist'), async () => {
     await go('/tools');
-    eq(await p.locator('[data-testid=tool-list] a').count(), 14, 'fourteen tools');
+    eq(await p.locator('[data-testid^=tool-section-] a').count(), 20, 'twenty tool cards');
+    eq(await p.locator('[data-testid^=tool-section-]').count(), 6, 'six sections');
+    await p.getByLabel('Search the toolbox').fill('hash');
+    eq(await p.locator('[data-testid^=tool-section-] a').count(), 1, 'search narrows to one card');
+    await p.getByLabel('Search the toolbox').fill('');
     await go('/tools/cable');
     await p.locator('[data-testid=pinouts] svg').first().waitFor({ state: 'visible', timeout: 3000 });
     ok((await p.locator('[data-testid=pinouts] svg').first().getAttribute('aria-label')).includes('Pin 1 White/Orange'), 'T568B pin 1 is white/orange');
@@ -1356,6 +1360,61 @@ async function run(label, viewport) {
     await cdp.send('WebAuthn.disable');
   });
 
+
+  await step(S('print reference page; folder copy: encrypted only, auto-saves, restores into a fresh app'), async () => {
+    // The earlier steps leave encryption on and the app locked.
+    await p.getByLabel('Passphrase').fill('purple-tractor-lamp-9');
+    await p.getByRole('button', { name: 'Unlock' }).click();
+    await p.waitForSelector('h1', { timeout: 15000 });
+    await go('/tools/print');
+    await p.locator('[data-testid=print-first]').waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByLabel('Check the scan account').first().waitFor({ state: 'attached', timeout: 1000 }).catch(() => undefined);
+    await p.getByRole('checkbox').first().check();
+    ok((await p.locator('[data-testid=ck-pr-intake]').innerText()).startsWith('1 of'), 'print checklist tick counted');
+    await noHScroll();
+    const fake = () => {
+      window.__ftFolder = {
+        pickFolder: async () => { sessionStorage.setItem('ft_fake_folder', 'ForgeToolsData'); return { name: 'ForgeToolsData' }; },
+        folderName: async () => ({ name: sessionStorage.getItem('ft_fake_folder') }),
+        writeFile: async ({ name, data }) => { sessionStorage.setItem('ft_fake:' + name, data); },
+        readFile: async ({ name }) => ({ data: sessionStorage.getItem('ft_fake:' + name) }),
+        forget: async () => { sessionStorage.removeItem('ft_fake_folder'); },
+      };
+    };
+    await p.addInitScript(fake);
+    await p.evaluate(fake);
+    await go('/settings');
+    await p.locator('[data-testid=folder-backup]').waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('button', { name: 'Choose a folder' }).click();
+    await until(async () => (await p.locator('[data-testid=folder-status]').innerText().catch(() => '')).includes('Last saved'), 'first copy saved', 8000);
+    const first = await p.evaluate(() => sessionStorage.getItem('ft_fake:forgetools-data.json'));
+    ok(first.includes('"forgetools-mirror"') && first.includes('enc.'), 'copy has the expected shape');
+    ok(!first.includes('SIP trunk') && !first.includes('Zebra'), 'no readable text in the copy');
+    const t1 = JSON.parse(first).savedAt;
+    await go('/tools/kit');
+    await p.getByLabel(/^Add an item to/).first().fill('Spare label roll');
+    await p.getByRole('button', { name: 'Add', exact: true }).first().click();
+    await until(async () => JSON.parse(await p.evaluate(() => sessionStorage.getItem('ft_fake:forgetools-data.json'))).savedAt !== t1, 'change saved to the folder on its own', 12000);
+    await go('/settings');
+    await p.getByRole('button', { name: 'Lock now' }).click();
+    await p.getByText('ForgeTools is locked').waitFor({ state: 'visible', timeout: 5000 });
+    // A new or reinstalled phone: nothing stored, the folder copy is still there.
+    await p.evaluate(() => localStorage.clear());
+    await p.reload();
+    await p.waitForSelector('h1', { timeout: 10000 });
+    await go('/settings');
+    await p.getByRole('button', { name: 'Restore from a folder' }).click();
+    await p.locator('[data-testid=restore-found]').waitFor({ state: 'visible', timeout: 5000 });
+    await p.getByRole('button', { name: 'Restore and ask for passphrase' }).click();
+    await p.getByText('ForgeTools is locked').waitFor({ state: 'visible', timeout: 5000 });
+    await p.getByLabel('Passphrase').fill('purple-tractor-lamp-9');
+    await p.getByRole('button', { name: 'Unlock' }).click();
+    await p.waitForSelector('h1', { timeout: 15000 });
+    await go('/kb');
+    await p.getByText('Zebra quartz unique title').first().waitFor({ state: 'visible', timeout: 5000 });
+    await go('/tools/kit');
+    await p.getByText('Spare label roll').first().waitFor({ state: 'visible', timeout: 5000 });
+  });
 
   await step(S('no console errors'), async () => { eq(JSON.stringify(errs), '[]'); });
   await browser.close();
