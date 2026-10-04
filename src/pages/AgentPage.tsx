@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { store, useCollection } from '../data/hooks';
 import { LOG_CATEGORIES } from '../data/types';
 import type { LogCategory } from '../data/types';
@@ -103,14 +103,24 @@ function Builder({ analysis, text, onBuild, onOutline }: { analysis: TopicAnalys
   const [verify, setVerify] = useState('');
   const [watch, setWatch] = useState('');
   const guard = useSaveGuard({ goal, steps, verify, watch });
+  const ref = useRef<HTMLElement | null>(null);
+  useEffect(() => { const el = ref.current; if (el) { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); el.focus({ preventScroll: true }); } }, []);
   const redact = (r: Record<string, string>) => { setGoal(r.goal); setSteps(r.steps); setVerify(r.verify); setWatch(r.watch); guard.setConfirmed(false); };
   const set = (f: (v: string) => void) => (e: { target: { value: string } }) => f(e.target.value);
   return (
-    <Card className="p-4 space-y-3 mt-4" data-testid="guide-builder" aria-label="Build a new guide">
-      <div>
-        <h2 className="font-semibold">I don’t have a guide that covers this</h2>
-        <p className="text-sm text-muted">{analysis.unmatched.length ? `Nothing in the library covers: ${analysis.unmatched.join(', ')}.` : 'Nothing in the library covers it closely.'} I won’t guess steps. Answer a few questions and I’ll build a new guide from what you tell me, which you can then add to from the web.</p>
+    <section ref={ref} tabIndex={-1} className="mt-4 rounded-md border-2 border-warn bg-warn/10 p-4 space-y-3 outline-none" data-testid="guide-builder" aria-label="Teach the library this topic">
+      <div className="flex items-start gap-3">
+        <span aria-hidden className="grid place-items-center size-9 shrink-0 rounded-full bg-warn text-accent-ink font-bold text-lg">?</span>
+        <div>
+          <h2 className="font-semibold text-base">I don’t know this one yet. Help me add it.</h2>
+          <p className="text-sm">{analysis.unmatched.length ? `Nothing in your library covers: ${analysis.unmatched.join(', ')}.` : 'Nothing in your library covers it closely.'} I won’t guess steps. Fill in what you know below and I’ll build a guide you can keep.</p>
+        </div>
       </div>
+      <ol className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium" aria-label="What happens next">
+        <li><span className="inline-grid place-items-center size-5 rounded-full bg-warn text-accent-ink mr-1">1</span>Answer the questions</li>
+        <li><span className="inline-grid place-items-center size-5 rounded-full bg-surface2 border border-line mr-1">2</span>Build the guide</li>
+        <li><span className="inline-grid place-items-center size-5 rounded-full bg-surface2 border border-line mr-1">3</span>Add from the web, then save it</li>
+      </ol>
       {analysis.related.length > 0 && (
         <div data-testid="related-items">
           <p className="text-sm font-medium">Related, but not the answer</p>
@@ -120,7 +130,7 @@ function Builder({ analysis, text, onBuild, onOutline }: { analysis: TopicAnalys
       <Field label="1. What is the job, in one sentence?" htmlFor="gb-goal"><TextInput id="gb-goal" value={goal} onChange={set(setGoal)} /></Field>
       <Field label="2. Which area is it in?" htmlFor="gb-area"><Select id="gb-area" value={area} onChange={(e: { target: { value: string } }) => setArea(e.target.value as LogCategory)}>{LOG_CATEGORIES.map((c) => <option key={c}>{c}</option>)}</Select></Field>
       <Checkbox checked={admin} onChange={setAdmin} label="3. It needs administrator rights" />
-      <Field label="4. Do you know the steps? Type them, one per line" htmlFor="gb-steps" hint="Leave blank to start with an outline, then look the steps up online or add them later.">
+      <Field label="4. Do you know the steps? Type them here, one per line" htmlFor="gb-steps" hint="Leave blank to start with an outline, then look the steps up online or add them later.">
         <TextArea id="gb-steps" rows={5} value={steps} onChange={set(setSteps)} placeholder={'Open the admin portal\nFind the user\n…'} />
       </Field>
       <Field label="5. How do you know it worked?" htmlFor="gb-verify"><TextInput id="gb-verify" value={verify} onChange={set(setVerify)} /></Field>
@@ -130,7 +140,7 @@ function Builder({ analysis, text, onBuild, onOutline }: { analysis: TopicAnalys
         <Button variant="primary" disabled={!goal.trim() || !guard.canSave} onClick={() => onBuild(buildCustomGuide({ goal, area, needsAdmin: admin, steps: steps.split('\n'), verify, watch }))}>Build my guide</Button>
         {analysis.kind === 'problem' && <Button onClick={onOutline}>Show a general troubleshooting outline instead</Button>}
       </div>
-    </Card>
+    </section>
   );
 }
 
@@ -235,6 +245,7 @@ export function AgentPage() {
                 <h2 className="text-lg font-semibold wrap-any">{guide.title}</h2>
               </div>
               {hasVisuals(model) && <section aria-label="Visual guide"><VisualGuide model={model} /><p className="text-xs text-muted mt-2">Save the guide, then open it in the Knowledge base to attach photos or screenshots to steps.</p></section>}
+              {guide.sections.some((x) => x.items.length === 1 && x.items[0] === 'Steps still to be added.') && <p role="status" data-testid="steps-missing" className="rounded-sm border-2 border-warn bg-warn/10 p-3 text-sm"><strong>The steps are still empty.</strong> Add pages from “Look it up online” below, or build the guide again with your own steps.</p>}
               <GuideView guide={guide} />
               <Sources items={guide.sources} />
               <div className="flex flex-wrap items-center gap-2 pt-1">

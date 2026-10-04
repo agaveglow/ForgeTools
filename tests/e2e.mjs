@@ -1192,7 +1192,11 @@ async function run(label, viewport) {
     await p.locator('#ag-text').fill('How to configure a SIP trunk failover on the phone system');
     await p.getByRole('button', { name: 'Generate guide' }).click();
     await p.locator('[data-testid=guide-builder]').waitFor({ state: 'visible', timeout: 4000 });
-    ok((await p.locator('[data-testid=guide-builder]').innerText()).includes('I don’t have a guide that covers this'), 'honest no-match message');
+    ok((await p.locator('[data-testid=guide-builder]').innerText()).includes('I don’t know this one yet. Help me add it.'), 'prominent no-match prompt');
+    await p.getByRole('button', { name: 'Build my guide' }).click();
+    await p.locator('[data-testid=steps-missing]').waitFor({ state: 'visible', timeout: 4000 });
+    await p.getByRole('button', { name: 'Generate again' }).click();
+    await p.locator('[data-testid=guide-builder]').waitFor({ state: 'visible', timeout: 4000 });
     await p.locator('#gb-steps').fill('1. Open the phone system admin page\n2. Add a second route\n3. Set it as backup');
     await p.locator('#gb-verify').fill('A test call still connects when the first route is off');
     await p.getByRole('button', { name: 'Build my guide' }).click();
