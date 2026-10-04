@@ -117,6 +117,7 @@ export function SettingsPage() {
       <section>
         <SectionTitle>Security</SectionTitle>
         <Card className="p-4 space-y-3">
+          <Checkbox checked={s.privacyShield !== false} onChange={(v) => store.updateSettings({ privacyShield: v })} label="Hide the screen when the app is in the background (app switcher shows nothing)" />
           {vault.state === 'off' ? (
             <>
               <p className="text-sm"><strong>Encryption is off.</strong> Anyone who can open this app or browser profile on your device can read your notes. Turn on a passphrase to encrypt records and saved files and to lock the app when idle.</p>

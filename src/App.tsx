@@ -131,8 +131,40 @@ function useTheme() {
 export function App() {
   const v = useVault();
   useTheme();
-  if (v.state === 'locked') return <LockScreen />;
-  return <Shell />;
+  return <><PrivacyShield />{v.state === 'locked' ? <LockScreen /> : <Shell />}</>;
+}
+
+
+/** Covers the screen whenever the app is in the background, so the phone's app switcher and screenshots of it show nothing. */
+function PrivacyShield() {
+  const on = useSettings().privacyShield !== false;
+  const [away, setAway] = useState(false);
+  useEffect(() => {
+    if (!on) { setAway(false); return; }
+    const sync = () => setAway(document.visibilityState === 'hidden');
+    const hide = () => setAway(true);
+    document.addEventListener('visibilitychange', sync);
+    window.addEventListener('pagehide', hide);
+    window.addEventListener('pageshow', sync);
+    return () => { document.removeEventListener('visibilitychange', sync); window.removeEventListener('pagehide', hide); window.removeEventListener('pageshow', sync); };
+  }, [on]);
+  if (!on || !away) return null;
+  return <div data-testid="privacy-shield" aria-hidden="true" className="fixed inset-0 z-[200] grid place-items-center bg-canvas text-accent font-mono text-lg">ForgeTools</div>;
+}
+
+/** Until encryption is on, anything stored on this device can be read by whoever holds it. */
+function EncryptionNudge() {
+  const { nudgeUntil } = useSettings();
+  if (nudgeUntil && nudgeUntil > new Date().toISOString()) return null;
+  return (
+    <section data-testid="encryption-nudge" aria-label="Protect this device" className="mb-4 rounded-md border-2 border-warn bg-warn/10 p-3 text-sm space-y-2">
+      <p><strong>Your data on this device is not encrypted.</strong> Anyone who gets into this phone or browser could read your notes. Turn on encryption and the app asks for a passphrase to open.</p>
+      <div className="flex flex-wrap gap-2">
+        <Link to="/settings" className="inline-flex items-center min-h-11 px-3.5 rounded-md border border-accent bg-accent text-accent-ink font-medium">Turn on encryption</Link>
+        <button type="button" onClick={() => store.updateSettings({ nudgeUntil: new Date(Date.now() + 86_400_000).toISOString() })} className="inline-flex items-center min-h-11 px-3.5 rounded-md border border-line bg-surface">Remind me tomorrow</button>
+      </div>
+    </section>
+  );
 }
 
 function useAutoLock() {
@@ -160,6 +192,7 @@ function useAutoLock() {
 function Shell() {
   const { appName } = useSettings();
   const hasOpenNote = useCollection('jobNotes').some((n) => n.status === 'open');
+  const vaultState = useVault().state;
   useAutoLock();
   const path = usePath();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -206,6 +239,7 @@ function Shell() {
       </header>
 
       <main id="main" tabIndex={-1} className="flex-1 px-4 py-5 md:px-8 md:py-7 pb-16 outline-none">
+        {path === '/' && vaultState === 'off' && <div className="mx-auto w-full max-w-5xl"><EncryptionNudge /></div>}
         <div id="page" className="mx-auto w-full max-w-5xl"><div key={path} className="ft-boot">{route(path)}</div></div>
       </main>
       {searchOpen && <SearchPalette onClose={() => setSearchOpen(false)} />}

@@ -213,6 +213,25 @@ Fix & guides → **Procedures** has eight step-by-step jobs (ticket routine, new
 
 On the Glance home screen tap **Edit home**. You can change the colour of each ring, add, rename, recolour, reorder or remove bubbles (any page can be a bubble), and add your own cards (note, checklist, counter, progress bar, countdown, shortcuts) with a colour of your choice. Cards can also be shown or hidden from the All widgets view. Everything saves as you go and stays on the device; text is checked for secrets and personal details like all other notes.
 
+## Security model: what protects what
+
+This app stores everything on your own device and has no server, so there is nothing for anyone to break into remotely. The real risks are someone getting hold of the phone or browser, something running in the page, and the build and download chain. What is in place:
+
+| Risk | Protection | Your part |
+| --- | --- | --- |
+| Lost, borrowed or stolen phone | Optional encryption (AES-256-GCM, key from a passphrase with PBKDF2, 600,000 rounds), auto-lock, slowed-down wrong guesses, fingerprint unlock | **Turn encryption on.** Until you do, the app shows a reminder on the home screen. Passphrases must be 12+ characters and not easy to guess. Use four or more random words |
+| Someone glancing at the app switcher or screenshots of it | Privacy shield: the screen is covered whenever the app goes to the background (Settings > Security) | Keep it on |
+| Code injected into the page | No `innerHTML`, `eval` or inline scripts. Strict Content-Security-Policy: scripts only from this app, no frames, no plugins. Links are only ever https. PDF files are read with scripting and `eval` switched off | None |
+| The page loaded inside someone else's site | Refuses to run in a frame | None |
+| Hostile backup or pack file | Backups and packs are validated, size-limited and cannot change settings or prototypes. Secrets in a pack are refused | Only import files you made |
+| Customer data ending up here | The sensitive-data scanner blocks secrets and warns on personal details before anything is saved | Keep keeping customer details out |
+| Tampered build | GitHub Actions are pinned to exact commits, dependency install scripts do not run, Dependabot watches updates, the APK is built from this repo and its SHA-256 is printed on each release so you can check it with the hash tool | Check the hash before installing |
+| Web page being found | Not indexed by search engines. The page holds no data: another person opening it sees an empty app | None |
+
+**Limits, honestly:** nothing can protect data from malware or a rooted phone, from someone who watches you type the passphrase, or from a weak passphrase. File names (which hold guide titles) are not encrypted. A backup file is only as safe as its passphrase. If someone has your **unlocked** phone, they can use the app: keep the auto-lock short.
+
+**APK signing:** every build must be signed with the same key or Android will refuse to install it over the last one, and uninstalling deletes the app's data (export an encrypted backup first). Until a permanent key is added as two repository secrets (`ANDROID_KEYSTORE_B64` and `ANDROID_KEYSTORE_PASSWORD`), builds use a one-off key and the release notes say so.
+
 ## Terminal look
 
 The default style is a green-screen terminal: near-black with green phosphor text, pixel-glyph patterns drifting behind the content, a slow scan beam, scan lines, glowing corner-bracket panels, prompt-style headings with a blinking cursor, and a short draw-in when the page changes. **Settings > Appearance > Style** switches to Classic (plain light or dark). **Animated background and effects** turns the motion off, and the system's reduce-motion setting turns it off too. Headings keep clean accessible names (the prompt marks are decoration only).

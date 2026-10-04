@@ -336,6 +336,10 @@ export interface Settings {
   transcribeModel?: string;
   /** Minutes of inactivity before an encrypted app locks itself. 0 = only when you lock it. */
   autoLockMinutes?: number;
+  /** Cover the screen when the app is in the background so task switchers show nothing. Default on. */
+  privacyShield?: boolean;
+  /** Hide the 'turn on encryption' reminder until this time (ISO). */
+  nudgeUntil?: string;
   /** Apprenticeship targets, entered by the user from their own plan. */
   otjWeeklyHours?: number;
   otjTotalHours?: number;

@@ -1,3 +1,4 @@
+import { safeHref } from '../lib/safeUrl';
 import type { Guide, Source } from '../lib/agent';
 import { CodeBlock } from './primitives';
 import { Link } from './router';
@@ -10,7 +11,7 @@ export function Sources({ items }: { items: Source[] }) {
       <p className="text-xs text-muted mb-1">Sources</p>
       <div className="flex flex-wrap gap-1.5">
         {items.slice(0, 10).map((s) => s.external
-          ? <a key={s.route} href={s.route} target="_blank" rel="noopener noreferrer" className={cls}>{s.label} ↗</a>
+          ? (safeHref(s.route) ? <a key={s.route} href={safeHref(s.route)} target="_blank" rel="noopener noreferrer" className={cls}>{s.label} ↗</a> : <span key={s.route} className={cls}>{s.label} (link removed)</span>)
           : <Link key={s.route + s.label} to={s.route} className={cls}>{s.label}</Link>)}
       </div>
     </div>

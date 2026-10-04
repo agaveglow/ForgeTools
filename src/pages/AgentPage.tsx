@@ -5,6 +5,7 @@ import type { LogCategory } from '../data/types';
 import { saveCreatedFile } from '../data/files';
 import { buildCustomGuide, buildGuide, guideToText, localAgent } from '../lib/agent';
 import type { Answer, Guide, TopicAnalysis } from '../lib/agent';
+import { safeHref } from '../lib/safeUrl';
 import { fetchReadable, searchWeb, webSection } from '../lib/web';
 import type { WebResult } from '../lib/web';
 import { timeAgo } from '../lib/util';
@@ -79,7 +80,7 @@ function WebLookup({ initial, onAdd }: { initial: string; onAdd: (url: string, t
         <ul className="space-y-2">
           {results.map((r) => (
             <li key={r.url} className="border border-line rounded-sm p-2.5">
-              <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium underline wrap-any">{r.title} ↗</a>
+              {safeHref(r.url) ? <a href={safeHref(r.url)} target="_blank" rel="noopener noreferrer" className="text-sm font-medium underline wrap-any">{r.title} ↗</a> : <span className="text-sm font-medium wrap-any">{r.title}</span>}
               {r.description && <p className="text-xs text-muted wrap-any mt-0.5">{r.description}</p>}
               <div className="mt-1.5">{added.includes(r.url) ? <Badge tone="ok">Added to guide</Badge> : <Button size="sm" disabled={busy} onClick={() => add(r.url)}>Add to guide</Button>}</div>
             </li>

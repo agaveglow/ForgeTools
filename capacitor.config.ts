@@ -4,6 +4,7 @@ const config = {
   appId: 'app.forgetools.mobile',
   appName: 'ForgeTools',
   webDir: 'dist',
+  android: { allowMixedContent: false, webContentsDebuggingEnabled: false, captureInput: false },
   plugins: {
     // Native fetch avoids browser CORS limits for the web lookup feature.
     CapacitorHttp: { enabled: true },

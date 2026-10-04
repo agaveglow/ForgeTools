@@ -1218,6 +1218,28 @@ async function run(label, viewport) {
     await noHScroll();
   });
 
+  await step(S('security: encryption reminder, privacy shield in the background, weak passphrase refused'), async () => {
+    await go('/');
+    await p.locator('[data-testid=encryption-nudge]').waitFor({ state: 'visible', timeout: 4000 });
+    await p.getByRole('button', { name: 'Remind me tomorrow' }).click();
+    eq(await p.locator('[data-testid=encryption-nudge]').count(), 0, 'reminder snoozed');
+    await p.evaluate(() => { Object.defineProperty(document, 'visibilityState', { get: () => 'hidden', configurable: true }); document.dispatchEvent(new Event('visibilitychange')); });
+    await p.locator('[data-testid=privacy-shield]').waitFor({ state: 'visible', timeout: 3000 });
+    await p.evaluate(() => { Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true }); document.dispatchEvent(new Event('visibilitychange')); });
+    await until(async () => (await p.locator('[data-testid=privacy-shield]').count()) === 0, 'shield removed when back');
+    await go('/settings');
+    await p.getByLabel('Hide the screen when the app is in the background').uncheck();
+    await p.evaluate(() => { Object.defineProperty(document, 'visibilityState', { get: () => 'hidden', configurable: true }); document.dispatchEvent(new Event('visibilitychange')); });
+    eq(await p.locator('[data-testid=privacy-shield]').count(), 0, 'shield off when switched off');
+    await p.evaluate(() => { Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true }); document.dispatchEvent(new Event('visibilitychange')); });
+    await p.getByLabel('Hide the screen when the app is in the background').check();
+    await p.getByLabel('New passphrase').fill('Summer2024!!');
+    await p.getByLabel('Repeat passphrase').fill('Summer2024!!');
+    await p.getByRole('button', { name: 'Turn on encryption' }).click();
+    await p.getByText('too easy to guess').first().waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByLabel('New passphrase').fill(''); await p.getByLabel('Repeat passphrase').fill('');
+  });
+
   await step(S('home button: on every page, returns to the Glance home, fits the header'), async () => {
     await go('/tools/cable');
     await p.locator('[data-testid=home-button]').click();

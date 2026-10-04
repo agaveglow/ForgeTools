@@ -5,8 +5,10 @@
  * The passphrase is never stored. Lose it and the data cannot be recovered.
  */
 
+import { estimateBits } from './passgen';
+
 export const DEFAULT_ITERATIONS = 600_000;
-export const MIN_PASSPHRASE = 8;
+export const MIN_PASSPHRASE = 12;
 const PREFIX = 'ft1.';
 
 export class CryptoError extends Error {
@@ -87,5 +89,6 @@ export function passphraseProblem(p: string): string | null {
   if (p.length < MIN_PASSPHRASE) return `Use at least ${MIN_PASSPHRASE} characters. Four random words is better.`;
   if (/^(.)\1+$/.test(p)) return 'That passphrase is too repetitive.';
   if (/^(?:password|12345678|qwertyui|letmein)/i.test(p)) return 'That passphrase is too easy to guess.';
+  if (estimateBits(p).bits < 50) return 'That passphrase is too easy to guess. Try four or more random words, or a longer mix of letters, numbers and symbols.';
   return null;
 }

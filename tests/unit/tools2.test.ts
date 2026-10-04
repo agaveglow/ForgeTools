@@ -108,3 +108,30 @@ describe('guide agent: honest matching and building', () => {
     expect(empty.sections.find((s) => s.title === 'Steps')!.items).toEqual(['Steps still to be added.']);
   });
 });
+
+import { safeHref } from '../../src/lib/safeUrl';
+import { passphraseProblem } from '../../src/lib/crypto';
+import { createStore } from '../../src/data/store';
+describe('security hardening', () => {
+  test('only https links are allowed', () => {
+    expect(safeHref('https://learn.microsoft.com/x?y=1')).toBe('https://learn.microsoft.com/x?y=1');
+    for (const bad of ['javascript:alert(1)', 'data:text/html,<b>x</b>', 'http://example.com', 'ftp://x', '//evil.test', '', undefined, 'not a url']) expect(safeHref(bad as string)).toBeUndefined();
+  });
+  test('weak passphrases are refused, long random ones accepted', () => {
+    expect(passphraseProblem('short')).not.toBeNull();
+    expect(passphraseProblem('password1234')).not.toBeNull();
+    expect(passphraseProblem('Summer2024!!')).not.toBeNull();
+    expect(passphraseProblem('aaaaaaaaaaaa')).not.toBeNull();
+    expect(passphraseProblem('purple-tractor-lamp-9')).toBeNull();
+    expect(passphraseProblem('correct horse battery staple')).toBeNull();
+  });
+  test('a hostile backup cannot pollute prototypes or smuggle bad records', () => {
+    const s = createStore(undefined, { seed: false });
+    const evil = JSON.parse('{"app":"forgetools","schemaVersion":1,"data":{"collections":{"kbEntries":[{"id":"x","__proto__":{"polluted":true},"constructor":{"prototype":{"polluted2":true}},"title":"t","category":"Procedures","tags":[],"body":"b","pinned":false}]}}}');
+    s.importAll(evil, 'merge');
+    expect(({} as any).polluted).toBeUndefined(); expect(({} as any).polluted2).toBeUndefined();
+    expect(s.importAll({ app: 'other' }, 'merge')).toEqual({ ok: false, error: 'This file is not a ForgeTools export.' });
+    expect((s.importAll({ app: 'forgetools', schemaVersion: 1, data: { collections: { kbEntries: [null] } } }, 'merge') as any).ok).toBe(false);
+    expect((s.importAll({ app: 'forgetools', schemaVersion: 1, data: { collections: { kbEntries: 'x' } } }, 'merge') as any).ok).toBe(false);
+  });
+});

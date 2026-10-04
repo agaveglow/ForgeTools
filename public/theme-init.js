@@ -1,6 +1,8 @@
 // Set theme and look before first paint to avoid a flash.
 (function () {
   var root = document.documentElement;
+  // Refuse to run inside someone else's frame (clickjacking). Headers cannot be set on this host, so this is done here.
+  try { if (window.top !== window.self) { root.style.display = 'none'; window.top.location = window.self.location; } } catch (e) { root.style.display = 'none'; }
   try {
     var t = localStorage.getItem('forgetools:theme');
     if (t !== 'light' && t !== 'dark') {

@@ -6,6 +6,7 @@ import { calcSubnet, convertNumber, costPerPage, humanDuration, prefixForHosts, 
 import { EMPTY_NOTE, closureNote, customerUpdate, isEmptyNote } from '../lib/ticketNote';
 import type { NoteFields } from '../lib/ticketNote';
 import { scanText } from '../lib/sensitive';
+import { vault } from '../data/hooks';
 import { Badge, Button, Card, Checkbox, Chip, CopyButton, Field, PageHeader, SectionTitle, Select, TextArea, TextInput } from '../ui/primitives';
 import { PrivacyNote, SensitivePanel, useSaveGuard } from '../ui/SensitivePanel';
 import { Link } from '../ui/router';
@@ -242,10 +243,23 @@ export function NotePage() {
 }
 
 // ---------- kit checklists ----------
-const KIT_KEY = 'forgetools:kit';
+// Kept in the same store as everything else, so it is encrypted when encryption is on.
+const KIT_KEY = 'kit';
+const LEGACY_KIT_KEY = 'forgetools:kit';
 interface KitState { ticks: string[]; custom: Record<string, string[]> }
+const cleanKit = (v: unknown): KitState | null => {
+  const o = v as { ticks?: unknown; custom?: unknown } | null;
+  if (!o || !Array.isArray(o.ticks) || !o.custom || typeof o.custom !== 'object') return null;
+  return { ticks: o.ticks.filter((x: unknown): x is string => typeof x === 'string'), custom: Object.fromEntries(Object.entries(o.custom as object).map(([k, a]) => [k, Array.isArray(a) ? (a as unknown[]).filter((x): x is string => typeof x === 'string') : []])) };
+};
 const readKit = (): KitState => {
-  try { const v = JSON.parse(localStorage.getItem(KIT_KEY) ?? 'null'); if (v && Array.isArray(v.ticks) && v.custom && typeof v.custom === 'object') return { ticks: v.ticks.filter((x: unknown) => typeof x === 'string'), custom: Object.fromEntries(Object.entries(v.custom).map(([k, a]) => [k, Array.isArray(a) ? (a as unknown[]).filter((x) => typeof x === 'string') as string[] : []])) }; } catch { /* none */ }
+  try {
+    const cur = cleanKit(vault.read(KIT_KEY));
+    if (cur) return cur;
+    // One-time move from the old unencrypted place.
+    const old = localStorage.getItem(LEGACY_KIT_KEY);
+    if (old) { const m = cleanKit(JSON.parse(old)); localStorage.removeItem(LEGACY_KIT_KEY); if (m) { vault.write(KIT_KEY, m); return m; } }
+  } catch { /* none */ }
   return { ticks: [], custom: {} };
 };
 
@@ -254,7 +268,7 @@ export function KitPage() {
   const [st, setSt] = useState<KitState>(readKit);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState('');
-  useEffect(() => { try { localStorage.setItem(KIT_KEY, JSON.stringify(st)); } catch { /* storage unavailable */ } }, [st]);
+  useEffect(() => { try { vault.write(KIT_KEY, st); } catch { /* storage unavailable */ } }, [st]);
   const tick = (id: string, on: boolean) => setSt((s) => ({ ...s, ticks: on ? [...new Set([...s.ticks, id])] : s.ticks.filter((x) => x !== id) }));
   const addCustom = (lid: string) => {
     const t = (draft[lid] ?? '').trim();
