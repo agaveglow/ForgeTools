@@ -1,6 +1,6 @@
 /**
  * Read text out of documents on the device (no upload anywhere) and turn it into a guide.
- * Supported: .txt .md .csv .log .html .htm .docx. PDFs and photos are not read directly.
+ * Supported: .txt .md .csv .log .html .htm .docx and PDFs (text layer). Photos are not read directly.
  * The caller should run the text through scrubText() before anything is shown or saved.
  */
 import { analyseTopic, kbCategoryFor } from './agent';
@@ -118,13 +118,30 @@ export async function docxToText(buf: Uint8Array): Promise<string> {
 
 // ---------- entry point ----------
 
-export const DOC_EXT = /\.(?:txt|md|markdown|csv|log|html?|docx)$/i;
+export const DOC_EXT = /\.(?:txt|md|markdown|csv|log|html?|docx|pdf)$/i;
 export const isDocFile = (f: { name: string }) => DOC_EXT.test(f.name);
+
+/** Reads the text layer of a PDF on this device. Scanned pages (pictures) have no text to read. */
+export async function pdfToText(blob: Blob, maxPages = 150): Promise<string> {
+  const { openPdf, pageText } = await import('./pdfjs');
+  let doc: Awaited<ReturnType<typeof openPdf>>;
+  try { doc = await openPdf(blob); } catch { throw new DocError('That PDF could not be opened. It may be damaged or password protected.'); }
+  try {
+    const parts: string[] = [];
+    for (let p = 1; p <= Math.min(doc.numPages, maxPages); p++) {
+      const pg = await doc.getPage(p);
+      parts.push(await pageText(pg)); pg.cleanup();
+    }
+    const text = parts.join('\n\n').trim();
+    if (text.length < 20) throw new DocError('No readable text was found in that PDF. It may be a scan or pictures. Use your phone’s “copy text from image”, then paste it below.');
+    return doc.numPages > maxPages ? `${text}\n\n(Only the first ${maxPages} pages were read.)` : text;
+  } finally { await doc.destroy(); }
+}
 
 export async function extractText(file: { name: string; size: number; arrayBuffer(): Promise<ArrayBuffer> }): Promise<string> {
   if (file.size > MAX_DOC_BYTES) throw new DocError('That file is over 15 MB. Use a smaller document.');
   const name = file.name.toLowerCase();
-  if (/\.pdf$/.test(name)) throw new DocError('PDFs are not read directly yet. Open the PDF on your phone, select and copy the text, then paste it in the box below. Or export it as a Word or text file.');
+  if (/\.pdf$/.test(name)) return pdfToText(new Blob([await file.arrayBuffer()], { type: 'application/pdf' }));
   if (/\.(?:png|jpe?g|webp|heic|gif)$/.test(name)) throw new DocError('Pictures are not read directly yet. Use your phone’s “copy text from image” feature, then paste the text in the box below.');
   if (!DOC_EXT.test(name)) throw new DocError('That file type is not supported. Use .docx, .txt, .md, .html or .csv, or paste the text.');
   const buf = new Uint8Array(await file.arrayBuffer());

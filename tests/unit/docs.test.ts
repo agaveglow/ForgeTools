@@ -44,9 +44,8 @@ describe('zip and docx', () => {
     expect(t).toContain('- Warning: do not delete the folder.');
     expect(t).toContain('Model | IM C3000');
   });
-  test('extractText rejects pdf and images with a helpful message', async () => {
+  test('extractText rejects images with a helpful message', async () => {
     const f = (name: string) => ({ name, size: 10, arrayBuffer: async () => new ArrayBuffer(10) });
-    await expect(extractText(f('a.pdf'))).rejects.toThrow(/paste/);
     await expect(extractText(f('a.png'))).rejects.toThrow(/paste/);
     await expect(extractText(f('a.exe'))).rejects.toBeInstanceOf(DocError);
   });

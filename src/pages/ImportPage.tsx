@@ -12,6 +12,7 @@ import { Link } from '../ui/router';
 import { mergeScrub, ScrubPanel } from '../ui/ScrubPanel';
 import { PrivacyNote, SensitivePanel, useSaveGuard } from '../ui/SensitivePanel';
 import { VisualGuide } from '../ui/VisualGuide';
+import { PackImport } from '../ui/PackImport';
 import { useTitle } from '../ui/hooks';
 
 export function ImportPage() {
@@ -73,14 +74,15 @@ export function ImportPage() {
   return (
     <div className="max-w-3xl pb-10">
       <PageHeader title="Import documents" sub="Turn a document into a guide. Names and numbers are removed first, and the original is never kept." />
+      <div className="mb-4"><PackImport /></div>
       <Card className="p-4 space-y-3">
         <div>
           <p className="text-sm font-medium mb-1">1. Add the document</p>
           <label className="inline-flex items-center justify-center min-h-11 px-3.5 rounded-sm border border-line bg-surface hover:bg-surface2 text-sm font-medium cursor-pointer focus-within:outline-2 focus-within:outline-accent">
             Choose a document
-            <input type="file" accept=".docx,.txt,.md,.markdown,.html,.htm,.csv,.log" className="sr-only" aria-label="Choose a document" onChange={onFile} />
+            <input type="file" accept=".docx,.pdf,.txt,.md,.markdown,.html,.htm,.csv,.log" className="sr-only" aria-label="Choose a document" onChange={onFile} />
           </label>
-          <p className="text-xs text-muted mt-2">Word (.docx), text, Markdown and web pages are read on this device and nothing is uploaded. PDFs and photos aren’t read directly yet: on your phone, select and copy the text, then paste it below.</p>
+          <p className="text-xs text-muted mt-2">Word (.docx), PDF (with a text layer), text, Markdown and web pages are read on this device and nothing is uploaded. Photos aren’t read directly: use your phone’s “copy text from image”, then paste it below. For big manuals use Printer guides instead.</p>
           {busy && <p role="status" className="text-sm mt-1">Reading…</p>}
           {err && <p role="alert" className="text-sm text-bad mt-1">{err}</p>}
         </div>

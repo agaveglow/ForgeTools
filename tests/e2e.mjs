@@ -998,6 +998,39 @@ async function run(label, viewport) {
     await p.getByText('No manuals yet.').waitFor({ state: 'visible', timeout: 5000 });
   });
 
+  await step(S('import: pack preview, add, duplicates skipped, secret refused, warning needs a tick; PDF read'), async () => {
+    await go('/import');
+    await p.getByText('Import a pack (guides and requirements)').click();
+    const pack = { forgetoolsPack: 1, name: 'Test pack', kb: [
+      { title: 'Pack guide alpha', category: 'Procedures', tags: ['t'], body: 'Pack guide alpha\n\nA test.\n\nSTEPS\n1. One\n2. Two' },
+      { title: 'Pack guide secret', category: 'Procedures', tags: [], body: 'Pack guide secret\n\npassword: Hunter2Hunter2!' }],
+      requirements: [{ title: 'Pack requirement one', kind: 'apprenticeship', group: 'Week 1', notes: '' }] };
+    await p.setInputFiles('[data-testid=pack-file]', { name: 'p.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(pack)) });
+    await p.locator('[data-testid=pack-plan]').waitFor({ state: 'visible', timeout: 3000 });
+    const t = await p.locator('[data-testid=pack-plan]').innerText();
+    ok(/1 new guide/.test(t) && /1 new requirement/.test(t), 'counts shown: ' + t.slice(0, 120));
+    ok(/Not added/.test(t) && /Pack guide secret/.test(t), 'secret refused');
+    await p.getByRole('button', { name: 'Add to this device' }).click();
+    await p.locator('[data-testid=pack-done]').waitFor({ state: 'visible', timeout: 3000 });
+    await go('/kb');
+    await p.getByText('Pack guide alpha').first().waitFor({ state: 'visible', timeout: 5000 });
+    ok((await p.getByText('Pack guide secret').count()) === 0, 'secret guide not added');
+    await go('/import');
+    await p.getByText('Import a pack (guides and requirements)').click();
+    await p.setInputFiles('[data-testid=pack-file]', { name: 'p.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(pack)) });
+    await p.locator('[data-testid=pack-plan]').waitFor({ state: 'visible', timeout: 3000 });
+    ok(/already here, skipped/.test(await p.locator('[data-testid=pack-plan]').innerText()), 'duplicates skipped');
+    const warn = { forgetoolsPack: 1, name: 'Warn pack', kb: [{ title: 'Pack guide phone', category: 'Procedures', tags: [], body: 'Pack guide phone\n\nCall 07700 900123 for access.' }], requirements: [] };
+    await p.setInputFiles('[data-testid=pack-file]', { name: 'w.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(warn)) });
+    await p.locator('[data-testid=pack-plan]').waitFor({ state: 'visible', timeout: 3000 });
+    ok(await p.getByRole('button', { name: 'Add to this device' }).isDisabled(), 'add disabled until the warning is ticked');
+    await p.getByLabel(/I have checked these/).check();
+    ok(!(await p.getByRole('button', { name: 'Add to this device' }).isDisabled()), 'add enabled after tick');
+    await go('/import');
+    await p.locator('input[aria-label="Choose a document"]').setInputFiles({ name: 'doc.pdf', mimeType: 'application/pdf', buffer: makePdf(['Reset the print spooler', 'Then run net start spooler']) });
+    await until(async () => (await p.locator('#im-text').inputValue()).includes('print spooler'), 'pdf text read into the import box', 15000);
+  });
+
   await step(S('encryption: on, stored as ciphertext, locks, wrong passphrase refused, unlock, lock now'), async () => {
     await go('/kb/new');
     await p.getByLabel('Title').fill('Zebra quartz unique title');
