@@ -1429,6 +1429,54 @@ async function run(label, viewport) {
     await p.getByRole('button', { name: 'Done', exact: true }).last().click();
   });
 
+  await step(S('home editor: ring design, shape, font, move a block, hide it, quick links (page + website), bad link refused, persists'), async () => {
+    await p.goto(BASE + '#/__blank'); await p.goto(BASE + '#/?view=glance'); await p.waitForTimeout(250);
+    await p.locator('[data-testid=glance]').waitFor({ state: 'visible', timeout: 5000 });
+    await p.locator('[data-testid=glance-edit]').click();
+    await p.locator('[data-testid=glance-editor]').waitFor({ state: 'visible', timeout: 3000 });
+    ok((await p.locator('[data-testid=ring-designs] li').count()) === 6, 'six ring designs shown with examples');
+    await p.getByRole('button', { name: 'Dotted rings' }).click();
+    ok((await p.locator('[data-testid=glance] svg circle').count()) > 30, 'dotted ring drawn');
+    await p.getByRole('button', { name: 'Bars' }).click();
+    await p.getByRole('button', { name: 'Hexagon', exact: true }).first().click();
+    await p.getByRole('button', { name: 'Serif', exact: true }).click();
+    const ff = await p.locator('[data-testid=glance]').evaluate((e) => getComputedStyle(e).fontFamily);
+    ok(/serif|Georgia/i.test(ff), 'font applied: ' + ff);
+    const clip = await p.locator('[data-testid=glance-apps] a span').first().evaluate((e) => getComputedStyle(e).clipPath);
+    ok(/polygon/.test(clip), 'hex shape applied: ' + clip);
+    // move + hide a block
+    const idx = async () => p.locator('[data-block]').evaluateAll((els) => els.map((e) => e.getAttribute('data-block')));
+    const o1 = await idx(); ok(o1.indexOf('cards') === 5 || o1.indexOf('quick') === 4, 'default order ' + o1);
+    await p.getByRole('button', { name: 'Move Quick links up' }).click();
+    const o2 = await idx(); ok(o2.indexOf('quick') === 3, 'quick moved up: ' + o2);
+    await p.getByRole('button', { name: 'Hide Due reminders' }).click();
+    // quick links
+    await p.locator('#ql-label').fill('Tasks');
+    await p.locator('#ql-to').fill('/tasks');
+    await p.getByRole('button', { name: 'Add quick link' }).click();
+    await p.locator('#ql-label').fill('Docs');
+    await p.locator('#ql-to').fill('javascript:alert(1)');
+    await p.getByRole('button', { name: 'Add quick link' }).click();
+    await p.getByRole('alert').filter({ hasText: 'app page' }).waitFor({ state: 'visible', timeout: 3000 });
+    await p.locator('#ql-to').fill('example.com');
+    await p.getByRole('button', { name: 'Add quick link' }).click();
+    await until(async () => (await p.locator('[data-testid=quick-list] li').count()) === 2, 'two quick links');
+    await p.locator('[data-testid=glance-edit]').click();
+    const q = p.locator('[data-testid=glance-quick] a');
+    ok((await q.count()) === 2, 'quick links on home');
+    ok((await p.locator('[data-testid=glance-quick] a[href^="https://example.com"][target=_blank][rel*=noopener]').count()) === 1, 'external link opens safely');
+    await p.reload(); await p.waitForTimeout(300);
+    ok((await p.locator('[data-testid=glance-quick] a').count()) === 2, 'quick links persisted');
+    ok((await p.locator('[data-testid=glance-pills]').count()) === 0, 'hidden block stays hidden');
+    await noHScroll();
+    // reset
+    await p.locator('[data-testid=glance-edit]').click();
+    await p.getByRole('button', { name: 'Reset style' }).click();
+    await p.getByRole('button', { name: 'Remove Tasks' }).click();
+    await p.getByRole('button', { name: 'Remove Docs' }).click();
+    await p.getByRole('button', { name: 'Done', exact: true }).last().click();
+  });
+
   await step(S('encryption: on, stored as ciphertext, locks, wrong passphrase refused, unlock, lock now'), async () => {
     await go('/kb/new');
     await p.getByLabel('Title').fill('Zebra quartz unique title');

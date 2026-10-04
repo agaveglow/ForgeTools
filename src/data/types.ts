@@ -292,6 +292,22 @@ export interface CustomWidget {
 
 /** A bubble on the Glance home screen. When none are saved the built-in set is used. */
 export interface GlanceAppSetting { id: string; label: string; to: string; icon: string; color?: string }
+/** A quick link under the stock bubbles: an app page (/tasks) or an https address. */
+export interface GlanceLink { id: string; label: string; to: string; icon: string; color?: string }
+export type GlanceShape = 'circle' | 'squircle' | 'square' | 'hex' | 'pill';
+export type GlanceRingDesign = 'classic' | 'thin' | 'bold' | 'dots' | 'segments' | 'bars';
+/** How the home screen looks. Presentation only. */
+export interface GlanceStyle {
+  ring?: GlanceRingDesign;
+  bubbleShape?: GlanceShape; bubbleSize?: 'sm' | 'md' | 'lg';
+  quickShape?: GlanceShape;
+  tileShape?: 'rounded' | 'sharp' | 'pill' | 'outline';
+  font?: 'default' | 'sans' | 'serif' | 'mono' | 'rounded';
+  clockColor?: string; labelColor?: string; tileColor?: string;
+  /** Hide the date under the clock, or the clock itself. */
+  hideDate?: boolean;
+}
+export interface GlanceBlocks { order: string[]; hidden: string[] }
 
 /** One general daily job. 'job' is ticked once a day. 'watch' is something to keep checking, with a reminder interval. */
 export interface DailyJob {
@@ -326,6 +342,9 @@ export interface Settings {
   /** Glance bubbles as the person arranged them, and the colours of its three rings. */
   glanceApps?: GlanceAppSetting[];
   glanceRings?: Partial<Record<'jobs' | 'checks' | 'week', string>>;
+  glanceStyle?: GlanceStyle;
+  glanceLinks?: GlanceLink[];
+  glanceBlocks?: GlanceBlocks;
   /** The user's own general daily jobs (clock in, watching the inbox and ticket queue, clock out...). */
   dailyJobs?: DailyJob[];
   /** The learning plan components as named in Aptem (the person's own list). */

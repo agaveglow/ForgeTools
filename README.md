@@ -291,7 +291,9 @@ The home page opens in **Glance**, a calm watch-style view: three nested rings a
 
 ### Editing the Glance home screen
 
-On the Glance home screen tap **Edit home**. You can change the colour of each ring, add, rename, recolour, reorder or remove bubbles (any page can be a bubble), and add your own cards (note, checklist, counter, progress bar, countdown, shortcuts) with a colour of your choice. Cards can also be shown or hidden from the All widgets view. Everything saves as you go and stays on the device; text is checked for secrets and personal details like all other notes.
+On the Glance home screen tap **Edit home**. You can change the colour of each ring, add, rename, recolour, reorder or remove bubbles (any page can be a bubble), and add your own cards (note, checklist, counter, progress bar, countdown, shortcuts) with a colour of your choice. Cards can also be shown or hidden from the All widgets view.
+
+Also in **Edit home**: every block of the home screen (clock and rings, ring numbers, due reminders, stock bubbles, quick links, your cards) has Up, Down and Hide buttons right on the page, so you can reorder or hide each one. The **Look of the home screen** card has six ring designs shown as live examples (classic, thin, bold, dotted, segmented, bars), five bubble shapes (circle, soft square, square, hexagon, pill), three bubble sizes, number-tile styles, a font choice, and colours for the clock, labels and tile edges. **Quick links** sit under the stock bubbles: each can open any page in the app or an https website (opens in a new tab), with its own name, icon, colour and order. Link text is checked for customer details and tokens. Moving is by arrow buttons, not drag and drop. Per-page styling of every other page is not built yet. Everything saves as you go and stays on the device; text is checked for secrets and personal details like all other notes.
 
 ### Terminal look
 

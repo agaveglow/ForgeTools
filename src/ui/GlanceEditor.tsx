@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { store, useSettings } from '../data/hooks';
-import type { CustomWidget, GlanceAppSetting } from '../data/types';
-import { cleanLabel, defaultAppSettings, moveItem, newBubbleId, pageChoices } from '../lib/glance';
-import { Badge, Button, Card, Field, SectionTitle, Select, TextInput } from './primitives';
+import type { CustomWidget, GlanceAppSetting, GlanceLink, GlanceStyle } from '../data/types';
+import { GLANCE_FONTS, GLANCE_ICONS, RING_DESIGNS, SHAPES, cleanLabel, defaultAppSettings, moveItem, newBubbleId, newLinkId, normalizeLinkTarget, pageChoices, shapeStyle } from '../lib/glance';
+import { scanText } from '../lib/sensitive';
+import { RingFace } from './GlanceRings';
+import { Badge, Button, Card, Checkbox, Field, SectionTitle, Select, TextInput } from './primitives';
 import { ColourField } from './ColourField';
 import { blankWidget, CustomWidgetEditor, WIDGET_TYPES } from './CustomWidgets';
 import { Icon } from './Bubble';
@@ -28,6 +30,23 @@ export function GlanceEditor({ onDone }: { onDone: () => void }) {
     const a = customs.findIndex((c) => c.id === ids[i]), b = customs.findIndex((c) => c.id === ids[j]);
     const out = customs.slice(); [out[a], out[b]] = [out[b], out[a]]; saveCustoms(out);
   };
+  const st: GlanceStyle = s.glanceStyle ?? {};
+  const setStyle = (patch: Partial<GlanceStyle>) => store.updateSettings({ glanceStyle: { ...st, ...patch } });
+  const links: GlanceLink[] = s.glanceLinks ?? [];
+  const saveLinks = (next: GlanceLink[]) => store.updateSettings({ glanceLinks: next });
+  const [qLabel, setQLabel] = useState(''), [qTo, setQTo] = useState(''), [qIcon, setQIcon] = useState('star'), [qErr, setQErr] = useState('');
+  const addLink = () => {
+    const to = normalizeLinkTarget(qTo);
+    if (!to) { setQErr('Use an app page such as /tasks, or an https address such as https://example.com.'); return; }
+    if (scanText(qLabel + ' ' + qTo).length) { setQErr('That looks like it holds customer or secret details. Keep links generic: no names, numbers or tokens in the address.'); return; }
+    saveLinks([...links, { id: newLinkId(), label: cleanLabel(qLabel) || 'Link', to, icon: qIcon }]); setQLabel(''); setQTo(''); setQErr('');
+  };
+  const sample = [{ id: 'jobs', label: 'Jobs', v: 3, m: 5, color: s.glanceRings?.jobs ?? '#d9531e' }, { id: 'checks', label: 'Checks', v: 2, m: 4, color: s.glanceRings?.checks ?? '#16a34a' }, { id: 'week', label: 'Week', v: 1, m: 3, color: s.glanceRings?.week ?? '#2563eb' }];
+  const Pick = ({ label, value, options, onPick }: { label: string; value: string; options: Array<{ id: string; label: string }>; onPick: (id: string) => void }) => (
+    <fieldset className="space-y-1"><legend className="text-sm font-medium">{label}</legend>
+      <div className="flex flex-wrap gap-1.5">{options.map((o) => <button key={o.id} type="button" aria-pressed={value === o.id} onClick={() => onPick(o.id)} className={'min-h-9 px-3 rounded-full border text-sm ' + (value === o.id ? 'border-accent bg-accent/10 font-semibold' : 'border-line')}>{o.label}</button>)}</div>
+    </fieldset>
+  );
   const choices = pageChoices().filter((p) => !apps.some((a) => a.to === p.to));
 
   return (
@@ -39,6 +58,59 @@ export function GlanceEditor({ onDone }: { onDone: () => void }) {
         {RING_LABELS.map(([k, label]) => (
           <ColourField key={k} label={label} value={s.glanceRings?.[k]} defaultLabel="Default" onChange={(c) => store.updateSettings({ glanceRings: { ...(s.glanceRings ?? {}), [k]: c } })} />
         ))}
+      </Card>
+
+      <Card className="p-3 space-y-4" data-testid="style-card">
+        <SectionTitle action={<Button size="sm" variant="ghost" onClick={() => store.updateSettings({ glanceStyle: undefined })}>Reset style</Button>}>Look of the home screen</SectionTitle>
+        <p className="text-sm text-muted">Tap a design to see it. Each one applies straight away.</p>
+        <fieldset className="space-y-1.5"><legend className="text-sm font-medium">Ring design</legend>
+          <ul className="grid grid-cols-3 gap-2" data-testid="ring-designs">{RING_DESIGNS.map((d) => (
+            <li key={d.id}><button type="button" aria-pressed={(st.ring ?? 'classic') === d.id} aria-label={d.label} onClick={() => setStyle({ ring: d.id })} className={'w-full rounded-lg border p-1 ' + ((st.ring ?? 'classic') === d.id ? 'border-accent bg-accent/10' : 'border-line')}>
+              <span className="block w-full max-w-[96px] mx-auto"><RingFace rings={sample} design={d.id} time="09:41" date="" hideDate /></span>
+              <span className="block text-xs mt-0.5">{d.label}</span></button></li>
+          ))}</ul>
+        </fieldset>
+        <Pick label="Bubble shape" value={st.bubbleShape ?? 'circle'} options={SHAPES} onPick={(id) => setStyle({ bubbleShape: id as GlanceStyle['bubbleShape'] })} />
+        <div className="flex gap-2 items-center" aria-hidden>{SHAPES.map((o) => <span key={o.id} className="grid place-items-center border border-line bg-surface2 text-accent" style={shapeStyle(o.id, 40)}><Icon name="star" size={16} /></span>)}</div>
+        <Pick label="Bubble size" value={st.bubbleSize ?? 'md'} options={[{ id: 'sm', label: 'Small' }, { id: 'md', label: 'Medium' }, { id: 'lg', label: 'Large' }]} onPick={(id) => setStyle({ bubbleSize: id as GlanceStyle['bubbleSize'] })} />
+        <Pick label="Quick link shape" value={st.quickShape ?? st.bubbleShape ?? 'circle'} options={SHAPES} onPick={(id) => setStyle({ quickShape: id as GlanceStyle['quickShape'] })} />
+        <Pick label="Number tiles" value={st.tileShape ?? 'rounded'} options={[{ id: 'rounded', label: 'Rounded' }, { id: 'sharp', label: 'Sharp' }, { id: 'pill', label: 'Pill' }, { id: 'outline', label: 'Outline' }]} onPick={(id) => setStyle({ tileShape: id as GlanceStyle['tileShape'] })} />
+        <Pick label="Font" value={st.font ?? 'default'} options={Object.entries(GLANCE_FONTS).map(([id, f]) => ({ id, label: f.label }))} onPick={(id) => setStyle({ font: id as GlanceStyle['font'] })} />
+        <Checkbox label="Hide the date under the clock" checked={!!st.hideDate} onChange={(v) => setStyle({ hideDate: v })} />
+        <ColourField label="Clock colour" value={st.clockColor} onChange={(c) => setStyle({ clockColor: c })} />
+        <ColourField label="Label colour" value={st.labelColor} onChange={(c) => setStyle({ labelColor: c })} />
+        <ColourField label="Number tile edge" value={st.tileColor} onChange={(c) => setStyle({ tileColor: c })} />
+      </Card>
+
+      <Card className="p-3 space-y-3" data-testid="quick-editor">
+        <SectionTitle>Quick links</SectionTitle>
+        <p className="text-sm text-muted">Shown under the stock bubbles. Link to any page in the app or to a website. Keep addresses free of customer details and tokens.</p>
+        <ul className="space-y-2" data-testid="quick-list">
+          {links.map((l, i) => (
+            <li key={l.id} className="rounded-md border border-line p-2 space-y-2">
+              <div className="flex items-center gap-2">
+                <TextInput aria-label={`Name of quick link ${i + 1}`} value={l.label} maxLength={20} onChange={(e: { target: { value: string } }) => saveLinks(links.map((x) => (x.id === l.id ? { ...x, label: e.target.value } : x)))} />
+                <span className="text-xs text-muted wrap-any max-w-[40%]">{l.to}</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                <Button size="sm" aria-label={`Move ${l.label} earlier`} disabled={i === 0} onClick={() => saveLinks(moveItem(links, l.id, -1))}>Earlier</Button>
+                <Button size="sm" aria-label={`Move ${l.label} later`} disabled={i === links.length - 1} onClick={() => saveLinks(moveItem(links, l.id, 1))}>Later</Button>
+                <Button size="sm" variant="danger" aria-label={`Remove ${l.label}`} onClick={() => saveLinks(links.filter((x) => x.id !== l.id))}>Remove</Button>
+              </div>
+              <details><summary className="cursor-pointer min-h-9 flex items-center text-sm">Colour and icon</summary><div className="pt-1 space-y-2">
+                <ColourField label={`Colour of ${l.label}`} value={l.color} onChange={(c) => saveLinks(links.map((x) => (x.id === l.id ? { ...x, color: c } : x)))} />
+                <Select aria-label={`Icon of ${l.label}`} value={l.icon} onChange={(e: { target: { value: string } }) => saveLinks(links.map((x) => (x.id === l.id ? { ...x, icon: e.target.value } : x)))}>{Object.keys(GLANCE_ICONS).map((k) => <option key={k} value={k}>{k}</option>)}</Select>
+              </div></details>
+            </li>
+          ))}
+        </ul>
+        <div className="space-y-2">
+          <Field label="Name" htmlFor="ql-label"><TextInput id="ql-label" value={qLabel} maxLength={20} onChange={(e: { target: { value: string } }) => setQLabel(e.target.value)} /></Field>
+          <Field label="Page or website" htmlFor="ql-to" hint="For example /tasks or https://example.com"><TextInput id="ql-to" value={qTo} onChange={(e: { target: { value: string } }) => { setQTo(e.target.value); setQErr(''); }} /></Field>
+          <Field label="Icon" htmlFor="ql-icon"><Select id="ql-icon" value={qIcon} onChange={(e: { target: { value: string } }) => setQIcon(e.target.value)}>{Object.keys(GLANCE_ICONS).map((k) => <option key={k} value={k}>{k}</option>)}</Select></Field>
+          {qErr && <p role="alert" className="text-sm text-bad">{qErr}</p>}
+          <Button onClick={addLink} disabled={!qTo.trim()}>Add quick link</Button>
+        </div>
       </Card>
 
       <Card className="p-3 space-y-3">

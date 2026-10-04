@@ -90,3 +90,65 @@ export function moveItem<T extends { id: string }>(list: T[], id: string, dir: -
 
 /** CSS colour for an icon: the custom colour drawn a little towards the text colour so it stays readable in both themes. */
 export const readableTint = (hex: string): string => `color-mix(in srgb, ${hex} 72%, var(--c-ink))`;
+
+// ---------- layout, styles and quick links ----------
+
+import type { GlanceBlocks, GlanceLink, GlanceRingDesign, GlanceShape, GlanceStyle } from '../data/types';
+
+export const BLOCKS: Array<{ id: string; label: string }> = [
+  { id: 'clock', label: 'Clock and rings' }, { id: 'legend', label: 'Ring numbers' }, { id: 'pills', label: 'Due reminders' },
+  { id: 'apps', label: 'Stock bubbles' }, { id: 'quick', label: 'Quick links' }, { id: 'cards', label: 'Your cards' },
+];
+
+/** Block order and visibility. Unknown ids are dropped and any new block is added at the end, so old saves keep working. */
+export function resolveBlocks(saved: GlanceBlocks | undefined): Array<{ id: string; label: string; hidden: boolean }> {
+  const known = BLOCKS.map((b) => b.id);
+  const order = [...(saved?.order ?? []).filter((id, i, a) => known.includes(id) && a.indexOf(id) === i), ...known.filter((id) => !(saved?.order ?? []).includes(id))];
+  return order.map((id) => ({ id, label: BLOCKS.find((b) => b.id === id)!.label, hidden: !!saved?.hidden?.includes(id) }));
+}
+export function moveBlock(saved: GlanceBlocks | undefined, id: string, dir: -1 | 1): GlanceBlocks {
+  const cur = resolveBlocks(saved).map((b) => ({ id: b.id }));
+  return { order: moveItem(cur, id, dir).map((b) => b.id), hidden: saved?.hidden ?? [] };
+}
+export function toggleBlock(saved: GlanceBlocks | undefined, id: string): GlanceBlocks {
+  const hidden = saved?.hidden ?? [];
+  return { order: resolveBlocks(saved).map((b) => b.id), hidden: hidden.includes(id) ? hidden.filter((h) => h !== id) : [...hidden, id] };
+}
+
+export const RING_DESIGNS: Array<{ id: GlanceRingDesign; label: string }> = [
+  { id: 'classic', label: 'Classic rings' }, { id: 'thin', label: 'Thin rings' }, { id: 'bold', label: 'Bold rings' },
+  { id: 'dots', label: 'Dotted rings' }, { id: 'segments', label: 'Segmented rings' }, { id: 'bars', label: 'Bars' },
+];
+export const SHAPES: Array<{ id: GlanceShape; label: string }> = [
+  { id: 'circle', label: 'Circle' }, { id: 'squircle', label: 'Soft square' }, { id: 'square', label: 'Square' }, { id: 'hex', label: 'Hexagon' }, { id: 'pill', label: 'Pill' },
+];
+export const GLANCE_FONTS: Record<NonNullable<GlanceStyle['font']>, { label: string; stack?: string }> = {
+  default: { label: 'App font' },
+  sans: { label: 'Clean', stack: "'Inter', ui-sans-serif, system-ui, sans-serif" },
+  serif: { label: 'Serif', stack: "ui-serif, Georgia, 'Times New Roman', serif" },
+  mono: { label: 'Technical', stack: "ui-monospace, 'Cascadia Code', SFMono-Regular, Menlo, Consolas, monospace" },
+  rounded: { label: 'Rounded', stack: "ui-rounded, 'SF Pro Rounded', 'Nunito', 'Segoe UI', system-ui, sans-serif" },
+};
+export const BUBBLE_PX = { sm: 56, md: 68, lg: 84 } as const;
+
+/** Inline style that gives a bubble its shape. Hexagon uses a clip so it has no border. */
+export function shapeStyle(shape: GlanceShape | undefined, px: number): { width: number; height: number; borderRadius?: string; clipPath?: string } {
+  switch (shape ?? 'circle') {
+    case 'squircle': return { width: px, height: px, borderRadius: '32%' };
+    case 'square': return { width: px, height: px, borderRadius: '10px' };
+    case 'hex': return { width: px, height: px, clipPath: 'polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0 50%)' };
+    case 'pill': return { width: Math.round(px * 1.35), height: Math.round(px * 0.8), borderRadius: '9999px' };
+    default: return { width: px, height: px, borderRadius: '9999px' };
+  }
+}
+
+/** A quick link may be an app page ("/tasks") or an https address. Anything else is refused. */
+export function normalizeLinkTarget(raw: string): string | null {
+  const t = raw.trim();
+  if (/^\/[A-Za-z0-9/_\-.:?=&#]*$/.test(t) && !t.startsWith('//')) return t;
+  try { const u = new URL(/^[a-z]+:/i.test(t) ? t : 'https://' + t); return u.protocol === 'https:' && u.hostname.includes('.') ? u.toString() : null; } catch { return null; }
+}
+export const isExternal = (to: string): boolean => /^https:\/\//i.test(to);
+export const newLinkId = (): string => 'q' + Math.random().toString(36).slice(2, 8);
+export const cleanLinks = (list: GlanceLink[] | undefined): GlanceLink[] =>
+  (list ?? []).filter((l) => l && normalizeLinkTarget(l.to)).map((l) => ({ ...l, label: cleanLabel(l.label) || 'Link', icon: l.icon in GLANCE_ICONS ? l.icon : 'star', color: normalizeHex(l.color) }));
