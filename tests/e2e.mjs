@@ -1477,6 +1477,48 @@ async function run(label, viewport) {
     await p.getByRole('button', { name: 'Done', exact: true }).last().click();
   });
 
+  await step(S('page customiser: toolbox + area page + Today: move, hide, rename, style, reset, persist'), async () => {
+    await go('/tools');
+    const order = async () => p.locator('[data-testid=customizer-toolbox] [data-block]').evaluateAll((els) => els.map((e) => e.getAttribute('data-block')));
+    const o0 = await order(); ok(o0.length === 7, 'seven toolbox sections: ' + o0);
+    await p.locator('[data-testid=customize-toggle]').click();
+    await p.locator('[data-testid=customizer-toolbox] [data-block=' + o0[1] + '] button[aria-label^="Move"][aria-label$="up"]').click();
+    const o1 = await order(); ok(o1[0] === o0[1], 'section moved up: ' + o1);
+    await p.locator('[data-testid=customizer-toolbox] [data-block=' + o0[2] + '] button[aria-label^="Hide"]').click();
+    await p.locator('[data-testid=customizer-toolbox] [data-block=' + o0[3] + '] summary').click();
+    await p.locator('[data-testid=customizer-toolbox] [data-block=' + o0[3] + '] input[aria-label^="Title of"]').fill('My renamed section');
+    await p.locator('[data-testid=customizer-toolbox] [data-block=' + o0[3] + '] select').first().selectOption('pill');
+    await p.locator('[data-testid=customizer-toolbox] [data-block=' + o0[3] + '] input[aria-label^="Title of"]').fill('Customer Jane Smith 07700 900123');
+    await p.locator('[data-testid=customizer-toolbox] [data-block=' + o0[3] + '] select').first().focus();
+    await p.getByRole('alert').filter({ hasText: 'customer or secret' }).waitFor({ state: 'visible', timeout: 3000 });
+    await p.locator('[data-testid=customizer-toolbox] [data-block=' + o0[3] + '] input[aria-label^="Title of"]').fill('My renamed section');
+    await p.locator('[data-testid=customizer-toolbox] [data-block=' + o0[3] + '] select').first().focus();
+    await p.locator('[data-testid=customize-toggle]').click();
+    await p.getByRole('heading', { name: /My renamed section/ }).waitFor({ state: 'visible', timeout: 3000 });
+    ok((await order()).length === 6, 'hidden section gone when not editing');
+    ok((await p.locator('[data-testid=customizer-toolbox] [data-framed]').count()) === 1, 'one framed block');
+    await p.reload(); await p.waitForTimeout(300);
+    ok((await order())[0] === o0[1], 'order persisted');
+    await p.locator('[data-testid=customize-toggle]').click();
+    await p.getByRole('button', { name: 'Reset page' }).click();
+    await until(async () => (await order()).join() === o0.join(), 'reset restores order');
+    await p.locator('[data-testid=customize-toggle]').click();
+    // area page
+    await go('/a/fix');
+    const n = await p.locator('[data-testid=customizer-area\\:fix] [data-block]').count(); ok(n >= 6, 'area cards are blocks: ' + n);
+    // today
+    await go('/today');
+    await p.locator('[data-testid=customize-toggle]').click();
+    await p.getByRole('button', { name: 'Hide Keep watching' }).click();
+    await p.locator('[data-testid=customize-toggle]').click();
+    ok((await p.locator('[data-testid=watches]').count()) === 0, 'watch card hidden');
+    await p.locator('[data-testid=customize-toggle]').click();
+    await p.getByRole('button', { name: 'Reset page' }).click();
+    await p.locator('[data-testid=customize-toggle]').click();
+    await p.locator('[data-testid=watches]').waitFor({ state: 'visible', timeout: 3000 });
+    await noHScroll();
+  });
+
   await step(S('encryption: on, stored as ciphertext, locks, wrong passphrase refused, unlock, lock now'), async () => {
     await go('/kb/new');
     await p.getByLabel('Title').fill('Zebra quartz unique title');

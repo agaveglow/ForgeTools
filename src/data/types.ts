@@ -307,6 +307,10 @@ export interface GlanceStyle {
   /** Hide the date under the clock, or the clock itself. */
   hideDate?: boolean;
 }
+/** How one block on a page looks. Presentation only. */
+export interface PageBlockStyle { shape?: 'rounded' | 'sharp' | 'pill' | 'outline'; color?: string; font?: 'sans' | 'serif' | 'mono' | 'rounded'; size?: 'sm' | 'md' | 'lg' }
+/** One page's arrangement: block order, hidden blocks, renamed titles and per-block looks. */
+export interface PageLayout { order?: string[]; hidden?: string[]; titles?: Record<string, string>; styles?: Record<string, PageBlockStyle> }
 export interface GlanceBlocks { order: string[]; hidden: string[] }
 
 /** One general daily job. 'job' is ticked once a day. 'watch' is something to keep checking, with a reminder interval. */
@@ -345,6 +349,8 @@ export interface Settings {
   glanceStyle?: GlanceStyle;
   glanceLinks?: GlanceLink[];
   glanceBlocks?: GlanceBlocks;
+  /** Per-page layouts, keyed by a page key such as 'area:today' or 'toolbox'. */
+  pageLayouts?: Record<string, PageLayout>;
   /** The user's own general daily jobs (clock in, watching the inbox and ticket queue, clock out...). */
   dailyJobs?: DailyJob[];
   /** The learning plan components as named in Aptem (the person's own list). */

@@ -8,6 +8,7 @@ import { activeTasks, taskDone, toggleTask } from '../lib/progress';
 import { nowIso, uid } from '../lib/util';
 import { Badge, Button, Card, Checkbox, Empty, Field, PageHeader, SectionTitle, Select, TextInput } from '../ui/primitives';
 import { Link } from '../ui/router';
+import { PageCustomizer } from '../ui/PageCustomizer';
 import { PrivacyNote, SensitivePanel, useSaveGuard } from '../ui/SensitivePanel';
 import { useTitle } from '../ui/hooks';
 
@@ -64,8 +65,10 @@ export function TodayPage() {
 
       {editing ? <JobEditor jobs={jobs} onSave={saveJobs} onReset={() => saveJobs(DEFAULT_DAILY_JOBS)} /> : (
         <>
+          <PageCustomizer pageKey="today" className="space-y-5" label="Daily jobs" blocks={[
+    { id: 'start', title: 'Start and finish', render: (title: string) => (
           <Card className="p-3 space-y-2">
-            <div className="flex items-center justify-between gap-2"><SectionTitle>Start and finish</SectionTitle><Badge tone={progress.total && progress.done === progress.total ? 'ok' : 'neutral'}>{progress.done}/{progress.total}</Badge></div>
+            <div className="flex items-center justify-between gap-2"><SectionTitle>{title}</SectionTitle><Badge tone={progress.total && progress.done === progress.total ? 'ok' : 'neutral'}>{progress.done}/{progress.total}</Badge></div>
             {plain.length === 0 ? <p className="text-sm text-muted">No jobs yet. Use Edit my jobs to add some.</p> : (
               <ul className="space-y-1" data-testid="jobs">{plain.map((j) => (
                 <li key={j.id} className="flex items-center justify-between gap-2">
@@ -76,9 +79,10 @@ export function TodayPage() {
             )}
             <p className="text-xs text-muted">The time is noted from your own tick on this device. It doesn’t talk to BrightHR, so clock in and out there as normal.</p>
           </Card>
-
+    ) },
+    { id: 'watch', title: 'Keep watching', render: (title: string) => (
           <Card className="p-3 space-y-2">
-            <SectionTitle>Keep watching</SectionTitle>
+            <SectionTitle>{title}</SectionTitle>
             {watches.length === 0 ? <p className="text-sm text-muted">Nothing to watch. Use Edit my jobs to add your inbox or ticket queue.</p> : (
               <ul className="space-y-2" data-testid="watches">{watches.map((w) => {
                 const s = watchState(w, st.checked[w.id], now);
@@ -101,9 +105,10 @@ export function TodayPage() {
             )}
             <p className="text-xs text-muted">Tap Checked each time you look. The reminder shows when it has been longer than the interval. Keep this page open or pinned to see it. It won’t send alerts when closed.</p>
           </Card>
-
+    ) },
+    { id: 'checks', title: 'Daily checks', render: (title: string) => (
           <Card className="p-3 space-y-2">
-            <div className="flex items-center justify-between gap-2"><SectionTitle>Daily checks</SectionTitle><Badge tone={dailyTasks.length && tasksDone === dailyTasks.length ? 'ok' : 'neutral'}>{tasksDone}/{dailyTasks.length}</Badge></div>
+            <div className="flex items-center justify-between gap-2"><SectionTitle>{title}</SectionTitle><Badge tone={dailyTasks.length && tasksDone === dailyTasks.length ? 'ok' : 'neutral'}>{tasksDone}/{dailyTasks.length}</Badge></div>
             {dailyTasks.length === 0 ? <Empty title="No daily checks yet.">Add the starter list in <Link to="/tasks" className="underline">Tasks</Link>.</Empty> : (
               <ul className="space-y-1" data-testid="daily-checks">{dailyTasks.map((t) => {
                 const g = guideForTitle(t.title);
@@ -116,6 +121,8 @@ export function TodayPage() {
               })}</ul>
             )}
           </Card>
+    ) },
+          ]} />
           <p className="text-xs text-muted" role="note">Ticks and times here belong to today and clear tomorrow. Daily checks are your Tasks, so they stay in step with the rest of the app. For the full day plan see <Link to="/workflow" className="underline">Daily workflow</Link>, and use <Link to="/live" className="underline">Live notes</Link> for the paper trail.</p>
         </>
       )}

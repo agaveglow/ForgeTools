@@ -7,6 +7,7 @@ import { activeTasks, taskDone, weekHours } from '../lib/progress';
 import { plural } from '../lib/util';
 import { useSettings } from '../data/hooks';
 import { Empty } from '../ui/primitives';
+import { PageCustomizer } from '../ui/PageCustomizer';
 import { Icon, RoundIcon } from '../ui/Bubble';
 import { Link } from '../ui/router';
 import { useTitle } from '../ui/hooks';
@@ -50,19 +51,13 @@ export function AreaHub({ id }: { id: string }) {
         <RoundIcon name={area.icon} hue={area.hue} size={56} />
         <div><h1 className="text-2xl font-semibold tracking-tight">{area.label}</h1><p className="text-sm text-muted">{area.blurb}</p></div>
       </header>
-      <ul className="grid gap-3 sm:grid-cols-2">
-        {area.pages.map((pg) => (
-          <li key={pg.to}>
-            <Link to={pg.to} className="flex items-center gap-3 rounded-3xl border border-line bg-surface p-4 min-h-20 hover:bg-surface2 active:scale-[.98] transition-transform focus-visible:outline-2 focus-visible:outline-accent">
+      <PageCustomizer pageKey={`area:${area.id}`} as="ul" className="grid gap-3 sm:grid-cols-2" label={`the ${area.label} page`} blocks={area.pages.map((pg) => ({ id: pg.to, title: pg.label, render: (title: string) => (<Link to={pg.to} className="flex items-center gap-3 rounded-3xl border border-line bg-surface p-4 min-h-20 hover:bg-surface2 active:scale-[.98] transition-transform focus-visible:outline-2 focus-visible:outline-accent">
               <RoundIcon name={pg.icon} hue={area.hue} />
               <span className="min-w-0">
-                <span className="block text-base font-semibold leading-tight">{pg.label}</span>
+                <span className="block text-base font-semibold leading-tight">{title}</span>
                 <span className="block text-sm text-muted wrap-any">{stats[pg.to] ?? pg.blurb}</span>
               </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+            </Link>) }))} />
     </div>
   );
 }

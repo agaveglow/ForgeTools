@@ -10,6 +10,7 @@ import { vault } from '../data/hooks';
 import { Badge, Button, Card, Checkbox, Chip, CopyButton, Field, PageHeader, SectionTitle, Select, TextArea, TextInput } from '../ui/primitives';
 import { PrivacyNote, SensitivePanel, useSaveGuard } from '../ui/SensitivePanel';
 import { Link } from '../ui/router';
+import { PageCustomizer } from '../ui/PageCustomizer';
 import { useTitle } from '../ui/hooks';
 
 const onVal = (set: (v: string) => void) => (e: { target: { value: string } }) => set(e.target.value);
@@ -63,10 +64,10 @@ export function ToolsHub() {
         {TOOL_GROUPS.map((g) => <a key={g.id} href={`#tool-${g.id}`} onClick={(e: { preventDefault(): void }) => { e.preventDefault(); document.getElementById(`tool-${g.id}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }); }} className="inline-flex items-center min-h-9 px-3 rounded-sm border border-line bg-surface text-sm hover:bg-surface2">{g.title}</a>)}
       </nav>
       {groups.length === 0 && <p className="text-sm text-muted">No tools match.</p>}
-      {groups.map((g) => (
+      <PageCustomizer pageKey="toolbox" className="space-y-5" label="the Toolbox" blocks={groups.map((g) => ({ id: g.id, title: g.title, render: (title: string) => (
         <section key={g.id} id={`tool-${g.id}`} aria-labelledby={`tool-h-${g.id}`} data-testid={`tool-section-${g.id}`} className="scroll-mt-20">
           <div className="mb-2 border-b border-dashed border-line pb-1">
-            <h2 id={`tool-h-${g.id}`} className="font-semibold">{g.title} <span className="text-xs font-normal text-muted">({g.tools.length})</span></h2>
+            <h2 id={`tool-h-${g.id}`} className="font-semibold">{title} <span className="text-xs font-normal text-muted">({g.tools.length})</span></h2>
             <p className="text-xs text-muted">{g.blurb}</p>
           </div>
           <ul className="grid gap-2 sm:grid-cols-2">
@@ -75,7 +76,7 @@ export function ToolsHub() {
             ))}
           </ul>
         </section>
-      ))}
+      ) }))} />
       {!ql && <p className="text-sm text-muted border-t border-dashed border-line pt-3">Looking for something else? Step-by-step jobs are in <Link to="/procedures" className="underline">Procedures</Link>, fault finding in <Link to="/troubleshoot" className="underline">Troubleshooting</Link>, asking how to do something in the <Link to="/agent" className="underline">Guide agent</Link>, and study material in the <Link to="/library" className="underline">Study library</Link>.</p>}
     </div>
   );
