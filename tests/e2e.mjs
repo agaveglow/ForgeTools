@@ -45,12 +45,12 @@ async function run(label, viewport) {
   const errs = [];
   p.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
   p.on('pageerror', (e) => errs.push('PAGEERROR ' + e.message));
-  const go = async (route) => { await p.goto(BASE + '#/__blank'); await p.goto(BASE + '#' + route); await p.waitForTimeout(150); };
+  const go = async (route) => { await p.goto(BASE + '#/__blank'); await p.goto(BASE + '#' + (route === '/' ? '/?view=full' : route)); await p.waitForTimeout(150); };
   const S = (n) => `${label}: ${n}`;
   const shot = (n) => p.screenshot({ path: `${SHOTS}/${label}-${n}.png` });
   const noHScroll = async () => ok(await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'horizontal overflow');
 
-  await p.goto(BASE);
+  await p.goto(BASE + '#/?view=full');
   await p.waitForSelector('h1');
 
   await step(S('dashboard starts empty with no sample data'), async () => {
@@ -699,6 +699,36 @@ async function run(label, viewport) {
     await p.getByRole('button', { name: 'Done editing' }).click();
     await noHScroll();
     await shot('daily-jobs');
+  });
+
+  await step(S('glance home: watch-style rings, legend, app bubbles, switch to all widgets'), async () => {
+    await p.goto(BASE + '#/__blank'); await p.goto(BASE + '#/');
+    await p.locator('[data-testid=glance]').waitFor({ state: 'visible', timeout: 5000 });
+    ok(/\d{1,2}:\d\d/.test((await p.locator('[data-testid=glance-time]').textContent()) ?? ''), 'the time is the watch face');
+    eq(await p.locator('[data-testid=glance-apps] a').count(), 14, 'fourteen app bubbles');
+    eq(await p.locator('[data-testid=glance-legend] li').count(), 3, 'three ring counts');
+    for (const a of await p.locator('[data-testid=glance-apps] a').all()) ok(((await a.boundingBox())?.width ?? 0) >= 44, 'bubble is at least 44px wide');
+    await noHScroll();
+    await shot('glance');
+    // ticking a daily job moves the Jobs ring count
+    await go('/today');
+    await p.getByLabel('Clock in on BrightHR').check();
+    await p.goto(BASE + '#/__blank'); await p.goto(BASE + '#/');
+    await p.locator('[data-testid=glance]').waitFor({ state: 'visible', timeout: 5000 });
+    ok((await p.locator('[data-testid=glance-legend]').innerText()).includes('1/2'), 'Jobs shows 1/2');
+    // a bubble opens its page
+    await p.getByRole('link', { name: 'Printer guides', exact: true }).last().click();
+    await p.getByRole('heading', { name: 'Printer guides' }).waitFor({ state: 'visible', timeout: 5000 });
+    // the switch to all widgets sticks, and back again
+    await p.goto(BASE + '#/__blank'); await p.goto(BASE + '#/');
+    await p.getByRole('button', { name: 'All widgets' }).click();
+    await p.getByText('Daily routine').first().waitFor({ state: 'attached', timeout: 5000 }).catch(() => undefined);
+    eq(await p.locator('[data-testid=glance]').count(), 0, 'glance hidden');
+    await p.reload();
+    await p.waitForSelector('h1');
+    eq(await p.locator('[data-testid=glance]').count(), 0, 'all widgets view remembered');
+    await p.getByRole('button', { name: 'Glance', exact: true }).click();
+    await p.locator('[data-testid=glance]').waitFor({ state: 'visible', timeout: 5000 });
   });
 
   await step(S('daily workflow: sections, ticks persist for today, clear'), async () => {

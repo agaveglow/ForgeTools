@@ -65,3 +65,21 @@ describe('local administrator how-to', () => {
     expect(w.documentation.join(' ')).toContain('Do not record the password');
   });
 });
+
+import { GLANCE_APPS, GLANCE_ICONS, honeycombRows, ringDash, ringFraction } from '../../src/lib/glance';
+describe('glance home', () => {
+  test('bubbles stagger 3,4,3,4 and every app has an icon and a unique route', () => {
+    expect(honeycombRows(GLANCE_APPS).map((r) => r.length)).toEqual([3, 4, 3, 4]);
+    expect(GLANCE_APPS.every((a) => GLANCE_ICONS[a.icon]?.length > 0)).toBe(true);
+    expect(new Set(GLANCE_APPS.map((a) => a.to)).size).toBe(GLANCE_APPS.length);
+    expect(honeycombRows([1, 2, 3, 4, 5], [2])).toEqual([[1, 2], [3, 4], [5]]);
+  });
+  test('ring maths clamps and never divides by zero', () => {
+    expect(ringFraction(3, 4)).toBe(0.75);
+    expect(ringFraction(9, 4)).toBe(1);
+    expect(ringFraction(1, 0)).toBe(0);
+    expect(ringFraction(-2, 4)).toBe(0);
+    const c = 2 * Math.PI * 50;
+    expect(ringDash(50, 0.5)).toBe(`${(c / 2).toFixed(2)} ${c.toFixed(2)}`);
+  });
+});

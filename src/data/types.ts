@@ -293,6 +293,8 @@ export interface Settings {
   dashboardTitle?: string;
   /** Dashboard layout: widget order, hidden widgets, sizes (1 to 3 columns wide) and renamed titles. */
   dashboard?: DashboardLayout;
+  /** Home screen style: a calm glanceable watch-style view, or every widget. */
+  dashboardView?: 'glance' | 'full';
   customWidgets?: CustomWidget[];
   /** The user's own general daily jobs (clock in, watching the inbox and ticket queue, clock out...). */
   dailyJobs?: DailyJob[];

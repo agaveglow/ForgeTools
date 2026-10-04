@@ -16,7 +16,8 @@ import type { ResolvedWidget, WidgetSize } from '../lib/widgets';
 import type { ReactNode } from 'react';
 import type { CustomWidget } from '../data/types';
 import { blankWidget, CustomWidgetBody, CustomWidgetEditor, WIDGET_TYPES } from '../ui/CustomWidgets';
-import { Link, navigate } from '../ui/router';
+import { Link, currentQuery, navigate } from '../ui/router';
+import { Glance } from '../ui/Glance';
 import { useTitle } from '../ui/hooks';
 import { LogRow } from './LogsPage';
 import { summarise } from './SecurityPage';
@@ -27,7 +28,7 @@ const QUICK: Array<[string, string]> = [
 ];
 const DAY = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-export function Dashboard() {
+function FullDashboard() {
   useTitle('Dashboard');
   const s = useSettings();
   const logs = useCollection('workLogs');
@@ -315,5 +316,26 @@ export function Dashboard() {
         </section>
       )}
     </div>
+  );
+}
+
+/** Home screen: a calm watch-style view by default, with every widget one tap away. */
+export function Dashboard() {
+  const s = useSettings();
+  const forced = currentQuery().get('view');
+  const view: 'glance' | 'full' = forced === 'full' || forced === 'glance' ? forced : s.dashboardView ?? 'glance';
+  useTitle('Dashboard');
+  const set = (v: 'glance' | 'full') => { store.updateSettings({ dashboardView: v }); if (forced) navigate('/', { replace: true }); };
+  return (
+    <>
+      <div className="flex justify-end mb-2" role="group" aria-label="Home screen style">
+        <div className="inline-flex rounded-full border border-line bg-surface p-0.5">
+          {([['glance', 'Glance'], ['full', 'All widgets']] as const).map(([v, label]) => (
+            <button key={v} type="button" aria-pressed={view === v} onClick={() => set(v)} className={'min-h-9 px-3.5 rounded-full text-sm ' + (view === v ? 'bg-accent text-accent-ink' : 'text-muted hover:text-ink')}>{label}</button>
+          ))}
+        </div>
+      </div>
+      {view === 'glance' ? <Glance /> : <FullDashboard />}
+    </>
   );
 }

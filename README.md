@@ -194,3 +194,7 @@ The PDF reader is Mozilla PDF.js 3.2.146 (Apache-2.0), pre-built, in `public/ven
 ## Daily jobs
 
 **Daily jobs** is the page for the general jobs of the day, next to your daily checks. The starting list is: clock in on BrightHR, check Outlook emails, check ITarian tickets, clock out on BrightHR. Edit it to suit: add, rename, reorder or delete jobs. Once-a-day jobs can note the time you ticked them. "Keep watching" jobs (inbox, ticket queue) show when you last checked and turn amber when you are past your chosen interval. The page never connects to BrightHR, Outlook or ITarian: the ticks and times are your own, kept on this device, and clear themselves the next day. The reminder only shows while the page is open.
+
+## Home screen: Glance
+
+The home page opens in **Glance**, a calm watch-style view: three nested rings around the time (daily jobs, daily checks, weekly checks), the three counts under it, amber pills when something needs checking, and a staggered grid of round app bubbles. Tap the rings for Daily jobs, or any bubble to open that part of the app. The switch at the top right changes to **All widgets**, the full customisable dashboard, and remembers your choice.
