@@ -45,3 +45,23 @@ describe('daily workflow content', () => {
     expect([WORKFLOW_PRIORITIES.length, WORKFLOW_LOOP.length, WORKFLOW_MONITOR.length, WORKFLOW_QUICK.length]).toEqual([4, 5, 9, 6]);
   });
 });
+
+import { analyseTopic } from '../../src/lib/agent';
+import { COMMANDS } from '../../src/content/commands';
+import { WORKFLOWS } from '../../src/content/workflows';
+describe('local administrator how-to', () => {
+  const ask = (q: string) => analyseTopic(q, { logs: [], kb: [] } as never);
+  test('asking how to add a local admin gets the create procedure, not the audit', () => {
+    for (const q of ['how to add a local admin account on a users device', 'create a local administrator account', 'add admin account to customer pc']) {
+      expect(ask(q).matches[0].workflow.id).toBe('win-create-local-admin');
+    }
+    expect(ask('local admin review least privilege').matches[0].workflow.id).toBe('sec-local-admin-review');
+  });
+  test('the nine steps follow the supplied procedure, in order', () => {
+    const w = WORKFLOWS.find((x) => x.id === 'win-create-local-admin')!;
+    expect(w.steps.map((s) => s.commandIds?.[0])).toEqual(['whoami', 'hostname', 'net-user', 'net-localgroup-administrators', 'dsregcmd-status', 'net-user-add', 'net-localgroup-add', 'net-user', 'net-localgroup-administrators']);
+    expect(COMMANDS.find((c) => c.id === 'net-user-add')!.example).toBe('net user ITSupport * /add');
+    expect(COMMANDS.find((c) => c.id === 'net-localgroup-add')!.example).toBe('net localgroup Administrators ITSupport /add');
+    expect(w.documentation.join(' ')).toContain('Do not record the password');
+  });
+});

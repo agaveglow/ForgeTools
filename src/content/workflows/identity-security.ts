@@ -387,6 +387,55 @@ export const IDENTITY_SECURITY_WORKFLOWS: Workflow[] = [
     skills: ['incident-response', 'endpoint-security', 'investigation', 'windows'],
   },
   {
+    id: 'win-create-local-admin',
+    category: 'Windows',
+    title: 'Create a local administrator account on a device',
+    summary:
+      'Add a new local administrator account to an authorised Windows device with Command Prompt: check the device first, create the account, add it to Administrators, verify it and record the change. Only where there is an authorised support requirement.',
+    tags: ['add local admin account', 'create local administrator', 'new local admin', 'add admin account', 'create admin account', 'net user add', 'local administrator account', 'users device'],
+    symptoms: [
+      'A support job needs a local administrator account on a user’s device',
+      'Remote support needs a local admin sign-in that does not depend on the user’s own account',
+      'Need to add a local admin account to a customer device',
+    ],
+    initialChecks: [
+      'Is there an authorised business or support requirement for this account? Do not create privileged access without one.',
+      'Are you connected to the right device using the approved remote-support software?',
+      'Is Command Prompt open with Run as administrator?',
+      'Which account name has been approved for this job?',
+    ],
+    steps: [
+      { id: 's1', title: 'Check the account you are using', detail: 'Run `whoami` to see the account you are signed in with.', commandIds: ['whoami'], lookFor: 'The account you expect for this session.', meaning: 'Confirms you are signed in as the account you meant to use.' },
+      { id: 's2', title: 'Check the device name', detail: 'Run `hostname` to confirm the computer name.', commandIds: ['hostname'], lookFor: 'The name matches the device in the job.', meaning: 'Working on the wrong device is the most costly mistake in remote support.', ifAbnormal: 'Stop. You may be on the wrong device.' },
+      { id: 's3', title: 'List the local accounts', detail: 'Run `net user` to see the existing local accounts.', commandIds: ['net-user'], lookFor: 'Whether the account you plan to create already exists, and any unfamiliar accounts.', meaning: 'An existing name means you should check that account rather than create it.', ifAbnormal: 'If the name already exists, do not create it again. Check its status instead.' },
+      { id: 's4', title: 'List the current local administrators', detail: 'Run `net localgroup Administrators` to see who already has admin rights.', commandIds: ['net-localgroup-administrators'], lookFor: 'Existing administrator accounts.', meaning: 'If a suitable account already exists, you may not need a new one.' },
+      { id: 's5', title: 'Check how the device is joined', detail: 'Run `dsregcmd /status` to see whether it is joined to Microsoft Entra ID or a domain.', commandIds: ['dsregcmd-status'], lookFor: 'AzureAdJoined and DomainJoined values.', meaning: 'Joined devices may have admin rights controlled centrally. Do not fight a managed setup locally.' },
+      { id: 's6', title: 'Create the local account', detail: 'Run `net user ITSupport * /add`, replacing ITSupport with the approved username. The * makes Windows ask for the password, so it is not shown in the command.', commandIds: ['net-user-add'], lookFor: 'A hidden password prompt, then "The command completed successfully."', meaning: 'The account now exists but has no admin rights yet.', ifAbnormal: 'Access denied: reopen Command Prompt as administrator. Account exists: choose the approved name or check the existing one.' },
+      { id: 's7', title: 'Add it to Local Administrators', detail: 'Run `net localgroup Administrators ITSupport /add`, with the same username.', commandIds: ['net-localgroup-add'], lookFor: '"The command completed successfully."', meaning: 'The account now has local administrator rights.' },
+      { id: 's8', title: 'Check the account’s status', detail: 'Run `net user ITSupport` and check the account is active.', commandIds: ['net-user'], lookFor: 'Account active: Yes, and the expected group membership.', meaning: 'An inactive account cannot be used to sign in.' },
+      { id: 's9', title: 'Confirm it is an administrator', detail: 'Run `net localgroup Administrators` again.', commandIds: ['net-localgroup-administrators'], lookFor: 'The new account is listed.', meaning: 'If required, carry out an approved administrative test to confirm the account has the expected permissions.' },
+    ],
+    causes: [
+      { cause: 'A support or maintenance task needs a separate local admin sign-in', indicators: 'An approved request that names the account to create.' },
+      { cause: 'The existing admin account is missing, disabled or not shared with support', indicators: 'It does not appear in net user or net localgroup Administrators.' },
+    ],
+    remediation: [
+      { title: 'Create the account and grant administrator rights', detail: 'Follow steps 6 and 7. Use the approved username and type the password at the prompt.', caution: 'Needs authorisation. Never write the password in the command, ticket or notes.', commandIds: ['net-user-add', 'net-localgroup-add'] },
+    ],
+    verification: [
+      'net user <name> shows the account is active',
+      'net localgroup Administrators lists the account',
+      'If required, an approved administrative test passed',
+    ],
+    documentation: [
+      'The device, the account created and the reason for creating it',
+      'Date and time, and the verification you performed',
+      'Who authorised it, in the relevant ticket or documentation',
+      'Do not record the password. Store credentials using the approved password or credential-management process.',
+    ],
+    skills: ['identity-access', 'windows', 'documentation'],
+  },
+  {
     id: 'sec-local-admin-review',
     category: 'Cybersecurity',
     title: 'Local administrator review and least privilege',
