@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Block, Blocks } from '../ui/PageCustomizer';
 import { store, useCollection, useSettings } from '../data/hooks';
 import type { ApprenticeEntry } from '../data/types';
 import { hoursIn, totalHours, weekDays, weekHours, ymd, parseYmd } from '../lib/progress';
@@ -182,11 +183,15 @@ export function ApprenticeshipPage() {
     <div className="max-w-3xl pb-10 space-y-5">
       <PageHeader title="Apprenticeship" sub="Log an activity the way Aptem asks for it, then copy it across." />
 
+      <Blocks pageKey="ApprenticeshipPage" group="ApprenticeshipPage" className="space-y-5">
+        <Block title="Progress">
       <section aria-label="Progress" className="grid gap-3 sm:grid-cols-3">
         <Stat label="This week (off-the-job)" value={`${wk} h`} sub={s.otjWeeklyHours ? `Target ${s.otjWeeklyHours} h` : 'No weekly target set'} />
         <Stat label="Total (off-the-job)" value={`${tot} h`} sub={s.otjTotalHours ? `Target ${s.otjTotalHours} h` : 'No total target set'} />
         <Stat label="Accepted by tutor" value={`${accepted} h`} sub="Only accepted entries count as verified" />
       </section>
+        </Block>
+      </Blocks>
       {(s.otjWeeklyHours || s.otjTotalHours) && (
         <Card className="p-3 space-y-3">
           {!!s.otjWeeklyHours && <div><div className="flex justify-between text-sm mb-1"><span>This week</span><span className="text-muted">{wk} / {s.otjWeeklyHours} h</span></div><Bar value={wk} max={s.otjWeeklyHours} label="Hours this week against target" /></div>}
@@ -194,6 +199,8 @@ export function ApprenticeshipPage() {
         </Card>
       )}
 
+      <Blocks pageKey="ApprenticeshipPage-2" group="ApprenticeshipPage" toolbar={false} className="space-y-5">
+        <Block title="Link or evidence (optional)">
       <Card className="p-4">
         <form className="space-y-5" noValidate onSubmit={(e: { preventDefault(): void }) => { e.preventDefault(); save(); }}>
           <h2 className="font-semibold text-lg">{editing ? 'Edit entry' : 'Activity details'}</h2>
@@ -250,8 +257,11 @@ export function ApprenticeshipPage() {
           {saved && <p role="status" className="text-sm text-ok">{saved}</p>}
         </form>
       </Card>
+        </Block>
+        <Block title="Section 3">
       <PrivacyNote />
-
+        </Block>
+        <Block title="Log from a video link (YouTube)">
       <Collapsible title="Log from a video link (YouTube)">
         <div className="space-y-3">
           <p className="text-xs text-muted">Paste a YouTube link. ForgeTools reads only the public title and channel name, then starts an entry for you. It can’t watch the video, so what you learned is yours to write. Nothing is saved until you press Add entry.</p>
@@ -269,7 +279,8 @@ export function ApprenticeshipPage() {
           <Button variant="primary" disabled={!vId || !vTitle.trim() || !vGuard.canSave} onClick={startFromVideo}>Start an entry from this video</Button>
         </div>
       </Collapsible>
-
+        </Block>
+        <Block title="Which entries to show">
       <section>
         <SectionTitle action={<CopyButton text={weeklySummary(entries, now, reqTitle)} label="Copy this week’s summary" size="md" />}>Entries · {plural(entries.length, 'entry', 'entries')}</SectionTitle>
         {entries.length === 0 ? <Empty title="No entries yet.">Log your first activity above.</Empty> : (
@@ -307,7 +318,8 @@ export function ApprenticeshipPage() {
           </>
         )}
       </section>
-
+        </Block>
+        <Block title="Component names, one per line">
       <Collapsible title="My component list">
         <div className="space-y-2">
           <p className="text-xs text-muted">The learning plan components as they are named in Aptem, one per line. The starting list was copied from your screenshots and may not be complete. Add any that are missing. These are kept on this device only.</p>
@@ -318,7 +330,8 @@ export function ApprenticeshipPage() {
           </div>
         </div>
       </Collapsible>
-
+        </Block>
+        <Block title="Targets and dates">
       <Collapsible title="Targets and dates">
         <p className="text-xs text-muted mb-2">Enter the figures from your own apprenticeship plan. ForgeTools doesn’t assume any, and your provider or employer is the authority on them.</p>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -329,7 +342,8 @@ export function ApprenticeshipPage() {
         </div>
         {daysLeft !== null && <p className="text-xs text-muted mt-2">{daysLeft < 0 ? 'Apprenticeship end date has passed.' : `${daysLeft} days left.`}</p>}
       </Collapsible>
-
+        </Block>
+      </Blocks>
       {del && <Modal title="Delete this entry?" onClose={() => setDel(null)} footer={<><Button onClick={() => setDel(null)}>Cancel</Button><Button variant="danger" onClick={() => { store.remove('apprenticeLogs', del.id); setDel(null); }}>Delete</Button></>}><p className="text-sm wrap-any">{del.title || typeLabel(del.aptemType)}, {timeText(minutesOf(del))} on {del.date}.</p></Modal>}
     </div>
   );

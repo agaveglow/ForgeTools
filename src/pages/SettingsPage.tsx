@@ -1,3 +1,4 @@
+import { PageCustomizer } from '../ui/PageCustomizer';
 import { useEffect, useRef, useState } from 'react';
 import { store, useSettings, useStoreVersion, useVault } from '../data/hooks';
 import { COLLECTIONS } from '../data/types';
@@ -93,8 +94,10 @@ export function SettingsPage() {
     <div className="max-w-3xl space-y-5 pb-8">
       <PageHeader title="Settings and data" sub="Everything is stored in this browser on this device. There is no account and no server." />
 
+      <PageCustomizer pageKey="settings" className="space-y-5" label="Settings" blocks={[
+        { id: 'look', title: 'Appearance and behaviour', render: (title: string) => (
       <section>
-        <SectionTitle>Appearance and behaviour</SectionTitle>
+        <SectionTitle>{title}</SectionTitle>
         <Card className="p-4 space-y-4">
           <div>
             <p className="text-sm font-medium mb-1">Style</p>
@@ -114,9 +117,10 @@ export function SettingsPage() {
           </div>
         </Card>
       </section>
-
+        ) },
+        { id: 'security', title: 'Security', render: (title: string) => (
       <section>
-        <SectionTitle>Security</SectionTitle>
+        <SectionTitle>{title}</SectionTitle>
         <Card className="p-4 space-y-3">
           <Checkbox checked={s.privacyShield !== false} onChange={(v) => store.updateSettings({ privacyShield: v })} label="Hide the screen when the app is in the background (app switcher shows nothing)" />
           {vault.state === 'off' ? (
@@ -149,9 +153,10 @@ export function SettingsPage() {
           <p className="text-xs text-muted">Limits: this protects data stored on the device while locked. It cannot protect against malware on your phone, someone watching you type, or a weak passphrase. Cleared or lost site data also removes your data, so keep an encrypted backup.</p>
         </Card>
       </section>
-
+        ) },
+        { id: 'backup', title: 'Backup', render: (title: string) => (
       <section>
-        <SectionTitle>Backup</SectionTitle>
+        <SectionTitle>{title}</SectionTitle>
         <Card className="p-4 space-y-3">
           <p className="text-sm">{store.persistent ? 'Data is saved in this browser. Clearing site data, using a private window or switching browser will lose it, so export a backup regularly.' : <strong className="text-bad">This browser is not allowing storage. Changes will be lost when you close the tab. Export a backup before leaving.</strong>}</p>
           <p className="text-sm text-muted">Your records: {total === 0 ? 'none yet' : counts.filter(([, c]) => c).map(([n, c]) => `${c} ${n}`).join(', ')}. {s.lastExportAt ? `Last backup ${timeAgo(s.lastExportAt)}.` : 'No backup made yet.'}</p>
@@ -166,9 +171,10 @@ export function SettingsPage() {
         </Card>
         <FolderBackup />
       </section>
-
+        ) },
+        { id: 'voice', title: 'Voice transcription', render: (title: string) => (
       <section>
-        <SectionTitle>Voice transcription</SectionTitle>
+        <SectionTitle>{title}</SectionTitle>
         <Card className="p-4 space-y-3">
           <p className="text-sm text-muted">Optional. To turn an uploaded <em>audio</em> file into text, give the address of a speech-to-text service that accepts the OpenAI-style <code>/audio/transcriptions</code> upload. <strong>The audio is sent to that address.</strong> Transcript files and dictation work without this. Not tested against a live service.</p>
           <Field label="Service address" htmlFor="st-url" hint="For example https://api.openai.com/v1/audio/transcriptions or your own server."><TextInput id="st-url" inputMode="url" value={s.transcribeUrl ?? ''} onChange={(e: { target: { value: string } }) => store.updateSettings({ transcribeUrl: e.target.value.trim() || undefined })} placeholder="https://…" /></Field>
@@ -176,9 +182,10 @@ export function SettingsPage() {
           <Field label="Access key (this session only)" htmlFor="st-key" hint="Kept in memory and forgotten when you close or reload the app. It is never saved or included in backups."><TextInput id="st-key" type="password" autoComplete="off" value={tKey} onChange={(e: { target: { value: string } }) => { setTKey(e.target.value); setTranscribeKey(e.target.value); }} /></Field>
         </Card>
       </section>
-
+        ) },
+        { id: 'privacy', title: 'Privacy', render: (title: string) => (
       <section>
-        <SectionTitle>Privacy</SectionTitle>
+        <SectionTitle>{title}</SectionTitle>
         <Card className="p-4 text-sm space-y-2">
           <p>ForgeTools checks what you type for passwords, keys, tokens, card numbers and personal details before saving. Secrets are blocked outright. Other details need your confirmation.</p>
           <p className="font-medium">Do not enter:</p>
@@ -187,14 +194,17 @@ export function SettingsPage() {
           <ul className="space-y-1">{REDACTION_EXAMPLES.map((r) => <li key={r.use} className="wrap-any"><span className="text-bad line-through">{r.instead}</span><br /><span className="text-ok">{r.use}</span></li>)}</ul>
         </Card>
       </section>
-
+        ) },
+        { id: 'erase', title: 'Erase', render: (title: string) => (
       <section>
-        <SectionTitle>Erase</SectionTitle>
+        <SectionTitle>{title}</SectionTitle>
         <Card className="p-4 space-y-3">
           <p className="text-sm">Delete every record on this device. Files in the Files page and your encryption setting are not affected.</p>
           <Button variant="danger" onClick={() => setConfirm('reset')}>Erase everything…</Button>
         </Card>
       </section>
+        ) },
+      ]} />
 
       {env && (
         <Modal title="Encrypted backup" onClose={() => { setEnv(null); setImpPass(''); }} footer={<><Button onClick={() => { setEnv(null); setImpPass(''); }}>Cancel</Button><Button variant="primary" disabled={!impPass} onClick={decryptImport}>Decrypt</Button></>}>

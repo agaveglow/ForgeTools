@@ -1519,6 +1519,35 @@ async function run(label, viewport) {
     await noHScroll();
   });
 
+  await step(S('page customiser everywhere: Settings, SLA and Cable pages hide/move/reset; no page lost its toggle'), async () => {
+    for (const r of ['/settings', '/sla', '/tools/cable', '/tools/calc', '/tools/ports', '/tasks', '/requirements', '/tools/say', '/tools/lab', '/commands']) {
+      await go(r);
+      ok((await p.locator('[data-testid=customize-toggle]').count()) >= 1, 'customise button on ' + r);
+    }
+    await go('/sla');
+    const ids = async () => p.locator('[data-block]').evaluateAll((els) => els.map((e) => e.getAttribute('data-block')));
+    await p.locator('[data-testid=customize-toggle]').first().click();
+    const before = await ids(); ok(before.length >= 3, 'sla blocks: ' + before);
+    await p.locator('[data-block=' + before[1] + '] button[aria-label^="Hide"]').click();
+    await p.locator('[data-testid=customize-toggle]').first().click();
+    ok((await ids()).length === before.length - 1, 'one block hidden');
+    await p.reload(); await p.waitForTimeout(300);
+    ok((await ids()).length === before.length - 1, 'hidden persisted');
+    await p.locator('[data-testid=customize-toggle]').first().click();
+    await p.getByRole('button', { name: 'Reset page' }).first().click();
+    await until(async () => (await ids()).length === before.length, 'reset restores');
+    await p.locator('[data-testid=customize-toggle]').first().click();
+    await go('/settings');
+    await p.locator('[data-testid=customize-toggle]').first().click();
+    await p.getByRole('button', { name: 'Hide Erase' }).click();
+    await p.locator('[data-testid=customize-toggle]').first().click();
+    ok((await p.getByText('Erase everything').count()) === 0 && (await p.getByRole('button', { name: /^Erase/ }).count()) === 0, 'erase section hidden');
+    await p.locator('[data-testid=customize-toggle]').first().click();
+    await p.getByRole('button', { name: 'Reset page' }).first().click();
+    await p.locator('[data-testid=customize-toggle]').first().click();
+    await noHScroll();
+  });
+
   await step(S('encryption: on, stored as ciphertext, locks, wrong passphrase refused, unlock, lock now'), async () => {
     await go('/kb/new');
     await p.getByLabel('Title').fill('Zebra quartz unique title');

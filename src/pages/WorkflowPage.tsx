@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Block, Blocks } from '../ui/PageCustomizer';
 import { CORE_PRINCIPLE, WORKFLOW_LISTS, WORKFLOW_LOOP, WORKFLOW_MONITOR, WORKFLOW_PRIORITIES, WORKFLOW_QUICK } from '../content/workflow';
 import { Badge, Button, Card, Checkbox, Collapsible, PageHeader, SectionTitle } from '../ui/primitives';
 import { Link } from '../ui/router';
@@ -25,15 +26,20 @@ export function WorkflowPage() {
   return (
     <div className="max-w-3xl pb-10 space-y-5">
       <PageHeader title="Daily workflow" sub="Your daily operating guide: start, prioritise, work the loop, document, close." actions={<><Link to="/checks"><Button>Check guides</Button></Link><Link to="/sla"><Button>Response times</Button></Link></>} />
+      <Blocks pageKey="WorkflowPage" group="WorkflowPage" className="space-y-5">
+        <Block title="Section 1">
       <div className="rounded-md border border-accent/50 bg-accent/5 p-3" role="note">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted">Core principle</p>
         <p className="text-sm font-medium mt-0.5">{CORE_PRINCIPLE}</p>
       </div>
+        </Block>
+        <Block title="Section 2">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm" aria-live="polite" data-testid="wf-count">{done} of {total} ticked today</p>
         <Button size="sm" variant="ghost" disabled={!done} onClick={() => setTicks([])}>Clear today’s ticks</Button>
       </div>
-
+        </Block>
+        <Block title="2. Prioritise: what comes first">
       <Collapsible title="2. Prioritise: what comes first" defaultOpen>
         <p className="text-sm text-muted mb-2">Restore or protect service first, then return to planned work.</p>
         <ul className="space-y-2" data-testid="wf-priorities">{WORKFLOW_PRIORITIES.map((p) => (
@@ -45,11 +51,13 @@ export function WorkflowPage() {
         ))}</ul>
         <p className="text-xs text-muted mt-2">These are your working priorities. For contract response and update times use <Link to="/sla" className="underline">Response times</Link>.</p>
       </Collapsible>
-
+        </Block>
+        <Block title="Start of day">
       <section aria-label="Start of day">
         <ChecklistCard list={WORKFLOW_LISTS[0]} ticks={ticks} toggle={toggle} keyOf={key} />
       </section>
-
+        </Block>
+        <Block title="Operating loop">
       <section aria-label="Operating loop">
         <SectionTitle>3. During the day: the operating loop</SectionTitle>
         <p className="text-sm text-muted mb-2">Always a clear next action, while staying available to respond.</p>
@@ -60,22 +68,29 @@ export function WorkflowPage() {
           </li>
         ))}</ol>
       </section>
-
+        </Block>
+        <Block title="4. What to monitor continuously">
       <Collapsible title="4. What to monitor continuously">
         <ul className="space-y-2" data-testid="wf-monitor">{WORKFLOW_MONITOR.map((m) => (
           <li key={m.area} className="border border-line rounded-md p-2.5"><span className="block text-sm font-semibold">{m.area}</span><span className="block text-xs text-muted wrap-any">{m.look}</span></li>
         ))}</ul>
       </Collapsible>
-
+        </Block>
+      </Blocks>
       {WORKFLOW_LISTS.slice(1).map((l) => <section key={l.id} aria-label={l.title}><ChecklistCard list={l} ticks={ticks} toggle={toggle} keyOf={key} /></section>)}
 
+      <Blocks pageKey="WorkflowPage-2" group="WorkflowPage" toolbar={false} className="space-y-5">
+        <Block title="9. Quick daily reference">
       <Collapsible title="9. Quick daily reference">
         <ul className="space-y-2" data-testid="wf-quick">{WORKFLOW_QUICK.map((q) => (
           <li key={q.when} className="border border-line rounded-md p-2.5 text-sm"><span className="font-semibold">{q.when}</span><span className="block text-xs text-muted">Check: {q.check}</span><span className="block">Then: {q.then}</span></li>
         ))}</ul>
       </Collapsible>
-
+        </Block>
+        <Block title="Note">
       <p className="text-xs text-muted" role="note">The ticks only count today and clear themselves tomorrow. Nothing about customers or tickets is stored here. Use <Link to="/live" className="underline">Live notes</Link> to keep the paper trail while you work.</p>
+        </Block>
+      </Blocks>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Block, Blocks } from '../ui/PageCustomizer';
 import { store, useCollection } from '../data/hooks';
 import { LOG_CATEGORIES } from '../data/types';
 import type { LogCategory } from '../data/types';
@@ -218,8 +219,11 @@ export function AgentPage() {
   return (
     <div className="max-w-3xl pb-10">
       <PageHeader title="Guide agent" sub="Ask how to do something or describe a problem. Get a guide and keep it." actions={analysis ? <Button onClick={reset}>New question</Button> : undefined} />
+      <Blocks pageKey="AgentPage" group="AgentPage" className="space-y-4">
+        <Block title="Note">
       <p className="text-xs text-muted mb-3" role="note">The guide is built on this device from your troubleshooting library, command reference, notes and past logs. It is not a cloud AI and does not diagnose. The optional web lookup below is the only part that uses the internet.</p>
-
+        </Block>
+        <Block title="Examples">
       <Card className="p-4 space-y-3">
         <Field label="What do you need?" htmlFor="ag-text" hint="A how-to, a command, or a problem. Leave out names, passwords and other details you don’t need.">
           <TextArea id="ag-text" rows={analysis ? 2 : 4} value={text} onChange={(e: { target: { value: string } }) => setText(e.target.value)} placeholder="e.g. How do I clear a stuck print queue?" />
@@ -232,8 +236,11 @@ export function AgentPage() {
         <SensitivePanel guard={guard} fieldLabels={{ text: 'Your question' }} onRedactAll={() => redact(guard.redactAll({ text }))} onRedactKind={(k) => redact(guard.redactOneKind({ text }, k))} />
         <Button variant="primary" disabled={!text.trim()} onClick={() => generate()}>{analysis ? 'Generate again' : 'Generate guide'}</Button>
       </Card>
+        </Block>
+        <Block title="Section 3">
       <div className="mt-2"><PrivacyNote /></div>
-
+        </Block>
+      </Blocks>
       {analysis && !guide && analysis.confidence === 'none' && <Builder key={analysis.text} analysis={analysis} text={analysis.text} onBuild={(g) => { setGuide(g); setSavedId(undefined); setFilePath(''); }} onOutline={() => setGuide(buildGuide(analysis))} />}
 
       {analysis && guide && (
@@ -288,6 +295,8 @@ export function AgentPage() {
         </>
       )}
 
+      <Blocks pageKey="AgentPage-2" group="AgentPage" toolbar={false} className="space-y-4">
+        <Block title="Knowledge base">
       <div className="mt-8">
         <SectionTitle action={<Link to="/kb" className="text-sm underline inline-flex items-center min-h-9 px-1">Knowledge base</Link>}>Saved guides</SectionTitle>
         {saved.length === 0 ? <Empty title="No saved guides yet.">Generate a guide and save it. It is kept in your Knowledge base, tagged “generated”, and as a file.</Empty> : (
@@ -298,6 +307,8 @@ export function AgentPage() {
           </ul>
         )}
       </div>
+        </Block>
+      </Blocks>
     </div>
   );
 }

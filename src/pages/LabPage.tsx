@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Block, Blocks } from '../ui/PageCustomizer';
 import { baseNet, SCENARIOS } from '../content/lab';
 import { banner, cableUp, dev, goalMet, isIp, maskValid, runCommand } from '../lib/netsim';
 import type { Dev, Kind, Net, Session } from '../lib/netsim';
@@ -171,11 +172,14 @@ export function LabPage() {
   return (
     <div className="max-w-5xl pb-10 space-y-4" data-testid="lab">
       <PageHeader title="Network lab" sub="A practice network and command prompt. Break it, read the output, fix it." actions={<Link to="/tools"><Button>Toolbox</Button></Link>} />
+      <Blocks pageKey="LabPage" group="LabPage" className="space-y-4">
+        <Block title="Section 1">
       <Card className="p-4 text-sm space-y-1">
         <p><strong>This is a simulation.</strong> The command prompt answers from a made-up network, not from a real one. It cannot run real commands or reach any real device, and real output will differ in detail.</p>
         <p className="text-muted">Use made-up addresses only. Do not type customer addresses or names. Nothing is saved or sent, and the lab resets when you leave this page.</p>
       </Card>
-
+        </Block>
+        <Block title="Pick a problem">
       <Card className="p-4 space-y-3">
         <SectionTitle>Pick a problem</SectionTitle>
         <Field label="Scenario" htmlFor="lab-scenario">
@@ -189,7 +193,8 @@ export function LabPage() {
         <Collapsible title="Show the answer"><p className="text-sm" data-testid="lab-solution">{scenario.solution}</p></Collapsible>
         <Button size="sm" onClick={() => load(sid)} data-testid="lab-reset">Reset this scenario</Button>
       </Card>
-
+        </Block>
+        <Block title="Network diagram">
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="p-3 space-y-2">
           <SectionTitle>Network diagram</SectionTitle>
@@ -202,7 +207,8 @@ export function LabPage() {
         </Card>
         {selected && <Editor net={net} d={selected} setNet={setNet} remove={() => remove(selected.id)} />}
       </div>
-
+        </Block>
+        <Block title="Command prompt output">
       <Card className="p-3 space-y-2">
         <SectionTitle>Command prompt</SectionTitle>
         <Field label="You are sitting at" htmlFor="lab-seat">
@@ -223,11 +229,14 @@ export function LabPage() {
         </div>
         <div className="flex gap-1.5 flex-wrap" aria-label="Quick commands" role="group">{QUICK.map(q => <Chip key={q} onClick={() => exec(q)}>{q}</Chip>)}</div>
       </Card>
-
+        </Block>
+        <Block title="Reading the output">
       <Card className="p-4 space-y-2">
         <SectionTitle>Reading the output</SectionTitle>
         <ul className="space-y-2 text-sm">{INTRO.map(([a, b]) => <li key={a}><span className="font-medium">{a}.</span> <span className="text-muted">{b}</span></li>)}</ul>
       </Card>
+        </Block>
+      </Blocks>
     </div>
   );
 }

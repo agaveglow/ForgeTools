@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Block, Blocks } from '../ui/PageCustomizer';
 import { store, useCollection, useSettings } from '../data/hooks';
 import { saveCreatedFile } from '../data/files';
 import { guideToText } from '../lib/agent';
@@ -112,8 +113,11 @@ export function VoicePage() {
   return (
     <div className="max-w-3xl pb-10">
       <PageHeader title="Voice notes" sub="Record or upload, get a step-by-step walkthrough you can keep." />
+      <Blocks pageKey="VoicePage" group="VoicePage" className="space-y-4">
+        <Block title="Note">
       <p className="text-xs text-muted mb-3" role="note">Turning speech into text needs a speech service, so there are three routes below. The walkthrough itself is built on this device. It only reorganises what was said and never adds steps.</p>
-
+        </Block>
+        <Block title="Upload recording or transcript">
       <Card className="p-4 space-y-4">
         <div>
           <p className="text-sm font-medium mb-1">1. Add what was said</p>
@@ -144,8 +148,11 @@ export function VoicePage() {
         <SensitivePanel guard={guard} fieldLabels={{ transcript: 'Transcript', title: 'Title' }} onRedactAll={() => redact(guard.redactAll(fields))} onRedactKind={(k) => redact(guard.redactOneKind(fields, k))} />
         <Button variant="primary" disabled={!transcript.trim()} onClick={make}>{made ? 'Rebuild walkthrough' : '3. Make walkthrough'}</Button>
       </Card>
+        </Block>
+        <Block title="Section 3">
       <div className="mt-2"><PrivacyNote /></div>
-
+        </Block>
+      </Blocks>
       {made && guide && (
         <div className="mt-4" data-testid="walkthrough">
           <SectionTitle>Walkthrough</SectionTitle>

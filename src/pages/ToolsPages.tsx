@@ -10,7 +10,7 @@ import { vault } from '../data/hooks';
 import { Badge, Button, Card, Checkbox, Chip, CopyButton, Field, PageHeader, SectionTitle, Select, TextArea, TextInput } from '../ui/primitives';
 import { PrivacyNote, SensitivePanel, useSaveGuard } from '../ui/SensitivePanel';
 import { Link } from '../ui/router';
-import { PageCustomizer } from '../ui/PageCustomizer';
+import { Block, Blocks, PageCustomizer } from '../ui/PageCustomizer';
 import { useTitle } from '../ui/hooks';
 
 const onVal = (set: (v: string) => void) => (e: { target: { value: string } }) => set(e.target.value);
@@ -120,6 +120,8 @@ export function CablePage() {
   return (
     <div className="max-w-3xl pb-10 space-y-5">
       <PageHeader title="Cable guide" sub="Wire and test an Ethernet cable, and read the faults." actions={<Link to="/tools"><Button>Toolbox</Button></Link>} />
+      <Blocks pageKey="CablePage" group="CablePage" className="space-y-5">
+        <Block title="Cable type">
       <Card className="p-4 space-y-3">
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Cable type">
           <Chip active={kind === 'straight'} onClick={() => setKind('straight')}>Straight-through</Chip>
@@ -136,21 +138,34 @@ export function CablePage() {
         <p className="text-sm rounded-md border border-line bg-surface2 p-2" role="note">{HOLD}</p>
         {kind === 'crossover' && <p className="text-sm text-muted">What changes: pins 1 and 2 swap with pins 3 and 6, so transmit meets receive. Pins 4, 5, 7 and 8 stay the same.</p>}
       </Card>
-
+        </Block>
+        <Block title="How to terminate">
       <section aria-label="How to terminate"><SectionTitle>Terminate and test</SectionTitle>
         <ol className="list-decimal pl-5 space-y-1.5 text-sm">{STEPS.map((s) => <li key={s} className="wrap-any">{s}</li>)}</ol>
       </section>
-
+        </Block>
+        <Block title="Pairs">
       <section aria-label="Pairs"><SectionTitle>The four pairs</SectionTitle>
         <ul className="grid gap-1.5 sm:grid-cols-2 text-sm">{PAIRS.map(([p, t]) => <li key={p} className="rounded-md border border-line p-2"><span className="font-medium">{p}</span>: {t}</li>)}</ul>
         <p className="text-xs text-muted mt-1">Pair 2 is pins 1 and 2. In both standards pins 4 and 5 are the blue pair and 7 and 8 are the brown pair. Pins 3 and 6 split from the pair they belong to, which is why wire order matters.</p>
       </section>
-
+        </Block>
+        <Block title="Faults and what they mean">
       <Table title="Faults and what they mean" head={['Fault', 'Likely cause and fix']} rows={FAULTS} />
+        </Block>
+        <Block title="Cable categories">
       <Table title="Cable categories" head={['Category', 'Typical use']} rows={CATEGORIES} />
+        </Block>
+        <Block title="Power over Ethernet">
       <Table title="Power over Ethernet" head={['Standard', 'Power']} rows={POE} />
+        </Block>
+        <Block title="Other connectors">
       <Table title="Other connectors" head={['Connector', 'Notes']} rows={OTHER_CONNECTORS} />
+        </Block>
+        <Block title="Limits and good practice">
       <section aria-label="Limits and good practice"><SectionTitle>Limits and good practice</SectionTitle><ul className="list-disc pl-5 space-y-1 text-sm">{LIMITS.map((s) => <li key={s} className="wrap-any">{s}</li>)}</ul></section>
+        </Block>
+      </Blocks>
     </div>
   );
 }
@@ -186,6 +201,8 @@ export function CalcPage() {
   return (
     <div className="max-w-3xl pb-10 space-y-5">
       <PageHeader title="Calculators" sub="Quick sums for site work. Nothing is saved." actions={<Link to="/tools"><Button>Toolbox</Button></Link>} />
+      <Blocks pageKey="CalcPage" group="CalcPage" className="space-y-5">
+        <Block title="Subnet calculator">
       <Card className="p-4 space-y-3" aria-label="Subnet calculator">
         <SectionTitle>Subnet calculator</SectionTitle>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -209,13 +226,15 @@ export function CalcPage() {
           <p className="text-sm self-end min-h-11 flex items-center" role="status" data-testid="sn-need-out">{need ? (needPre === null ? 'Enter a number from 1 to 4,294,967,294.' : `Use /${needPre}: ${(2 ** (32 - needPre) - 2).toLocaleString('en-GB')} usable hosts.`) : ''}</p>
         </div>
       </Card>
-
+        </Block>
+        <Block title="Number converter">
       <Card className="p-4 space-y-3" aria-label="Number converter">
         <SectionTitle>Number converter</SectionTitle>
         <Field label="Number" htmlFor="cv-num" hint="Decimal, 0x for hex or 0b for binary"><TextInput id="cv-num" value={num} onChange={onVal(setNum)} /></Field>
         {'error' in conv ? <p role="alert" className="text-sm text-bad">{conv.error}</p> : <dl className="text-sm" data-testid="cv-result"><Row k="Decimal" v={conv.dec} /><Row k="Hex" v={conv.hex} /><Row k="Binary" v={conv.bin} /></dl>}
       </Card>
-
+        </Block>
+        <Block title="Transfer time">
       <Card className="p-4 space-y-3" aria-label="Transfer time">
         <SectionTitle>Transfer time</SectionTitle>
         <div className="grid gap-3 sm:grid-cols-4">
@@ -227,7 +246,8 @@ export function CalcPage() {
         <p className="text-sm" role="status" data-testid="tt-out">{secs === null ? 'Enter a size and a speed.' : `About ${humanDuration(secs)} at full speed.`}</p>
         <p className="text-xs text-muted">Real transfers are slower than the line speed because of overheads and other traffic.</p>
       </Card>
-
+        </Block>
+        <Block title="Cost per page">
       <Card className="p-4 space-y-3" aria-label="Cost per page">
         <SectionTitle>Cost per page</SectionTitle>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -236,6 +256,8 @@ export function CalcPage() {
         </div>
         <p className="text-sm" role="status" data-testid="cp-out">{cpp === null ? 'Enter a price and a yield.' : `${cpp.toFixed(4)} per page, or ${(cpp * 1000).toFixed(2)} per 1,000 pages.`}</p>
       </Card>
+        </Block>
+      </Blocks>
     </div>
   );
 }
@@ -254,6 +276,8 @@ export function NotePage() {
   return (
     <div className="max-w-3xl pb-10 space-y-4">
       <PageHeader title="Ticket note builder" sub="Fill in what you know. Leave blanks out. Copy the result into your ticketing system." actions={<Link to="/tools"><Button>Toolbox</Button></Link>} />
+      <Blocks pageKey="NotePage" group="NotePage" className="space-y-4">
+        <Block title="Section 1">
       <Card className="p-4 space-y-3">
         <Field label="What was reported" htmlFor="nb-rep"><TextInput id="nb-rep" value={f.reported} onChange={set('reported')} placeholder="Scan to folder stopped working" /></Field>
         <Field label="Scope" htmlFor="nb-scope" hint="One user, several, one device, whole site"><TextInput id="nb-scope" value={f.scope} onChange={set('scope')} /></Field>
@@ -266,14 +290,20 @@ export function NotePage() {
         <SensitivePanel guard={guard} fieldLabels={{ reported: 'Reported', scope: 'Scope', checks: 'Checks', cause: 'Cause', action: 'Action', test: 'Test', followUp: 'Follow-up' }} onRedactAll={() => apply(guard.redactAll(text))} onRedactKind={(k) => apply(guard.redactOneKind(text, k))} />
         <div className="flex justify-between items-center"><PrivacyNote /><Button variant="ghost" onClick={() => { setF(EMPTY_NOTE); guard.setConfirmed(false); }}>Clear</Button></div>
       </Card>
+        </Block>
+        <Block title="Closure note">
       <Card className="p-4 space-y-2" aria-label="Closure note">
         <SectionTitle action={ok ? <CopyButton text={note} label="Copy note" /> : undefined}>Closure note</SectionTitle>
         <pre className="text-sm whitespace-pre-wrap wrap-any" data-testid="nb-note">{empty ? 'Fill in a box above and the note appears here.' : note}</pre>
       </Card>
+        </Block>
+        <Block title="Customer update">
       <Card className="p-4 space-y-2" aria-label="Customer update">
         <SectionTitle action={ok ? <CopyButton text={update} label="Copy update" /> : undefined}>Customer update</SectionTitle>
         <pre className="text-sm whitespace-pre-wrap wrap-any" data-testid="nb-update">{empty ? 'Fill in a box above and the update appears here.' : update}</pre>
       </Card>
+        </Block>
+      </Blocks>
       {!empty && !guard.canSave && <p role="status" className="text-sm text-warn">Copying is off until the details flagged above are removed or confirmed.</p>}
     </div>
   );

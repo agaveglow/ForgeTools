@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Block, Blocks } from '../ui/PageCustomizer';
 import { ALERT_TYPES, HARDENING, PHISHING } from '../content/hardening';
 import type { CheckList } from '../content/hardening';
 import { EVENTS, EVENT_COMMANDS, EVENT_GROUPS, FAIL_CODES, LOGON_TYPES } from '../content/events';
@@ -19,6 +20,8 @@ export function EventsPage() {
   return (
     <div className="max-w-3xl pb-10 space-y-4">
       <PageHeader title="Security events" sub="What common Windows event IDs mean and what to look at next." actions={<Back />} />
+      <Blocks pageKey="EventsPage" group="EventsPage" className="space-y-4">
+        <Block title="Event group">
       <Card className="p-4 space-y-3">
         <Field label="Search by ID or words" htmlFor="ev-q"><TextInput id="ev-q" value={q} placeholder="4625, locked, service" onChange={(e: { target: { value: string } }) => setQ(e.target.value)} /></Field>
         <div className="flex flex-wrap gap-2" role="group" aria-label="Event group">
@@ -26,7 +29,11 @@ export function EventsPage() {
           {EVENT_GROUPS.map((x) => <Chip key={x} active={g === x} onClick={() => setG(g === x ? '' : x)}>{x}</Chip>)}
         </div>
       </Card>
+        </Block>
+        <Block title="Note">
       <p className="text-xs text-muted" aria-live="polite" data-testid="ev-count">{rows.length} event{rows.length === 1 ? '' : 's'}</p>
+        </Block>
+        <Block title="Section 3">
       <ul className="space-y-2" data-testid="event-list">
         {rows.map((e) => (
           <li key={e.log + e.id}><Card className="p-3 space-y-1">
@@ -37,16 +44,28 @@ export function EventsPage() {
           </Card></li>
         ))}
       </ul>
+        </Block>
+      </Blocks>
       {!rows.length && <p className="text-sm text-muted">Nothing matches. Try a number or a shorter word.</p>}
+      <Blocks pageKey="EventsPage-2" group="EventsPage" toolbar={false} className="space-y-4">
+        <Block title="Logon types in event 4624">
       <Card className="p-4 space-y-2"><SectionTitle>Logon types in event 4624</SectionTitle>
         <dl className="text-sm grid grid-cols-[3rem_1fr] gap-x-3 gap-y-1">{LOGON_TYPES.map(([k, v]) => <div key={k} className="contents"><dt className="font-mono">{k}</dt><dd>{v}</dd></div>)}</dl></Card>
+        </Block>
+        <Block title="Failed logon codes in event 4625">
       <Card className="p-4 space-y-2"><SectionTitle>Failed logon codes in event 4625</SectionTitle>
         <dl className="text-sm grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1">{FAIL_CODES.map(([k, v]) => <div key={k} className="contents"><dt className="font-mono">{k}</dt><dd>{v}</dd></div>)}</dl></Card>
+        </Block>
+        <Block title="Common alert types">
       <Card className="p-4 space-y-2"><SectionTitle>Common alert types</SectionTitle>
         <ul className="space-y-2 text-sm">{ALERT_TYPES.map(([a, b, c]) => <li key={a}><span className="font-medium">{a}.</span> {b}. <span className="text-muted">{c}.</span></li>)}</ul></Card>
+        </Block>
+        <Block title="Read the logs in PowerShell">
       <Card className="p-4 space-y-2"><SectionTitle>Read the logs in PowerShell</SectionTitle>
         {EVENT_COMMANDS.map(([t, c]) => <div key={t} className="space-y-1"><p className="text-sm font-medium">{t}</p><CodeBlock code={c} /></div>)}
         <p className="text-xs text-muted">Reading the Security log needs an administrator window.</p></Card>
+        </Block>
+      </Blocks>
     </div>
   );
 }
@@ -70,6 +89,8 @@ export function HashPage() {
   return (
     <div className="max-w-3xl pb-10 space-y-4">
       <PageHeader title="File hash checker" sub="Check a download against the hash the publisher gives. The file stays on this device." actions={<Back />} />
+      <Blocks pageKey="HashPage" group="HashPage" className="space-y-4">
+        <Block title="Choose a file to hash">
       <Card className="p-4 space-y-3">
         <Field label="Choose a file" htmlFor="hs-file"><input id="hs-file" type="file" aria-label="Choose a file to hash" onChange={pick as never} className="block w-full text-sm" /></Field>
         <Field label="Algorithm" htmlFor="hs-alg"><Select id="hs-alg" value={alg} onChange={(e: { target: { value: string } }) => { const a = e.target.value as HashAlg; setAlg(a); if (buf) void run(buf, a); }}>{HASH_ALGS.map((a) => <option key={a}>{a}</option>)}</Select></Field>
@@ -77,6 +98,8 @@ export function HashPage() {
         {err && <p role="alert" className="text-sm text-bad">{err}</p>}
         {hash && <div className="space-y-1"><p className="text-sm font-medium">{name} <span className="text-muted font-normal">({size.toLocaleString()} bytes)</span></p><CodeBlock code={hash} /></div>}
       </Card>
+        </Block>
+        <Block title="Section 2">
       <Card className="p-4 space-y-3">
         <Field label="Published hash to compare" htmlFor="hs-exp" hint="Spaces, colons and capitals are ignored."><TextInput id="hs-exp" value={expected} onChange={(e: { target: { value: string } }) => setExpected(e.target.value)} /></Field>
         {guess && guess !== alg && guess !== 'MD5' && <p className="text-sm text-warn" role="status">That hash looks like {guess}. Switch the algorithm above.</p>}
@@ -88,6 +111,8 @@ export function HashPage() {
         </div>
         <p className="text-xs text-muted">A match proves the file is the same as the one the hash came from. Get the hash from the publisher&apos;s own site, not the page that hosts the download.</p>
       </Card>
+        </Block>
+      </Blocks>
     </div>
   );
 }
@@ -101,11 +126,15 @@ export function HeaderPage() {
   return (
     <div className="max-w-3xl pb-10 space-y-4">
       <PageHeader title="Email header reader" sub="Paste a full header to see the route and the sender checks. Nothing is saved or sent." actions={<Back />} />
+      <Blocks pageKey="HeaderPage" group="HeaderPage" className="space-y-4">
+        <Block title="Section 1">
       <Card className="p-4 space-y-3">
         <Field label="Email header" htmlFor="hd-text" hint="In Outlook: open the message, then File, Properties. The text is only held on this page and is cleared when you leave."><TextArea id="hd-text" rows={8} value={raw} onChange={(e: { target: { value: string } }) => setRaw(e.target.value)} spellCheck={false} /></Field>
         <Button variant="ghost" disabled={!raw} onClick={() => setRaw('')}>Clear</Button>
         {r && 'error' in r && <p role="alert" className="text-sm text-warn">{r.error}</p>}
       </Card>
+        </Block>
+      </Blocks>
       {rep && <div className="space-y-4" data-testid="header-report">
         <Card className="p-4 space-y-2"><SectionTitle action={<CopyButton text={safeSummary(rep)} label="Copy summary" />}>Checks</SectionTitle>
           <ul className="space-y-1">{rep.flags.map((f) => <li key={f.text} className="flex gap-2 items-start text-sm"><Badge tone={WORST[f.level]}>{f.level === 'ok' ? 'OK' : f.level === 'bad' ? 'Problem' : 'Check'}</Badge><span>{f.text}</span></li>)}</ul>
@@ -118,7 +147,11 @@ export function HeaderPage() {
         <Card className="p-4 space-y-2"><SectionTitle>Route taken, first hop first</SectionTitle>
           {rep.hops.length ? <ol className="list-decimal pl-5 space-y-1 text-sm wrap-any">{rep.hops.map((h, i) => <li key={i}>{h.from || 'unknown'} <span className="text-muted">to</span> {h.by || 'unknown'} <span className="text-muted">{h.date}</span></li>)}</ol> : <p className="text-sm text-muted">No Received lines found.</p>}</Card>
       </div>}
+      <Blocks pageKey="HeaderPage-2" group="HeaderPage" toolbar={false} className="space-y-4">
+        <Block title="Section 2">
       <ChecklistCard list={PHISHING} />
+        </Block>
+      </Blocks>
     </div>
   );
 }

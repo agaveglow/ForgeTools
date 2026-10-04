@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Block, Blocks } from '../ui/PageCustomizer';
 import { store, useCollection } from '../data/hooks';
 import { REQUIREMENT_KIND_LABEL, REQUIREMENT_STATUS_LABEL } from '../data/types';
 import type { Requirement, RequirementKind, RequirementStatus } from '../data/types';
@@ -107,8 +108,14 @@ export function RequirementsPage() {
   return (
     <div className="max-w-3xl pb-10 space-y-5">
       <PageHeader title="Requirements" sub="What your job and apprenticeship expect of you, and how far along each is." />
+      <Blocks pageKey="RequirementsPage" group="RequirementsPage" className="space-y-5">
+        <Block title="Note">
       <p className="text-xs text-muted" role="note">ForgeTools doesn’t ship a requirements list. Enter yours from your job description and apprenticeship plan, using your own wording. Status is your judgement; link tasks and apprenticeship entries to show the evidence.</p>
+        </Block>
+        <Block title="Section 2">
       <SuggestedGoals />
+        </Block>
+        <Block title="Type">
       <Card className="p-4">
         <form className="space-y-3" onSubmit={(e: { preventDefault(): void }) => { e.preventDefault(); save(); }}>
           <div className="flex flex-wrap gap-1.5" role="group" aria-label="Type">{(Object.keys(REQUIREMENT_KIND_LABEL) as RequirementKind[]).map((k) => <Chip key={k} active={kind === k} onClick={() => setKind(k)}>{REQUIREMENT_KIND_LABEL[k]}</Chip>)}</div>
@@ -122,9 +129,14 @@ export function RequirementsPage() {
           <div className="flex gap-2"><Button variant="primary" type="submit" disabled={!title.trim() || !guard.canSave}>{editing ? 'Save requirement' : 'Add requirement'}</Button>{editing && <Button onClick={reset}>Cancel</Button>}</div>
         </form>
       </Card>
+        </Block>
+        <Block title="Section 4">
       <PrivacyNote />
-
+        </Block>
+        <Block title="Show">
       <div className="flex flex-wrap gap-1.5" role="group" aria-label="Show">{([['all', 'All'], ['job', 'Job'], ['apprenticeship', 'Apprenticeship']] as const).map(([v, l]) => <Chip key={v} active={filter === v} onClick={() => setFilter(v)}>{l}</Chip>)}</div>
+        </Block>
+      </Blocks>
       {section('job')}
       {section('apprenticeship')}
       {reqs.length === 0 && <Empty title="No requirements yet.">Add the first one above.</Empty>}

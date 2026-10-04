@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Block, Blocks } from '../ui/PageCustomizer';
 import { COMMANDS } from '../content/commands';
 import type { CommandEntry, CommandGroup, Risk } from '../content/types';
 import { store } from '../data/hooks';
@@ -69,11 +70,17 @@ export function CommandsPage({ id }: { id?: string }) {
   return (
     <div className="max-w-4xl">
       <PageHeader title="CMD and PowerShell reference" sub={`${COMMANDS.length} commands. Examples use fictional hosts and names.`} />
+      <Blocks pageKey="CommandsPage" group="CommandsPage" className="space-y-4">
+        <Block title="Search commands">
       <TextInput type="search" aria-label="Search commands" placeholder="Search commands, e.g. dns, spooler, bitlocker…" value={q} onChange={(e: { target: { value: string } }) => setQ(e.target.value)} />
+        </Block>
+        <Block title="Filter by group">
       <div className="flex gap-1.5 overflow-x-auto py-2 -mx-1 px-1" role="group" aria-label="Filter by group">
         <Chip active={group === 'All'} onClick={() => setGroup('All')}>All</Chip>
         {GROUPS.map((g) => <Chip key={g} active={group === g} onClick={() => setGroup(g)}>{g}</Chip>)}
       </div>
+        </Block>
+      </Blocks>
       {rows.length === 0 ? <Empty title="No commands match." /> : (
         <ul className="space-y-2 mt-1">
           {rows.map((c) => {
@@ -92,7 +99,11 @@ export function CommandsPage({ id }: { id?: string }) {
           })}
         </ul>
       )}
+      <Blocks pageKey="CommandsPage-2" group="CommandsPage" toolbar={false} className="space-y-4">
+        <Block title="Note">
       <p className="text-xs text-muted mt-4">Run commands only on devices you are authorised to administer. ForgeTools does not execute anything.</p>
+        </Block>
+      </Blocks>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Block, Blocks } from '../ui/PageCustomizer';
 import { store, useCollection } from '../data/hooks';
 import { TASK_KIND_LABEL } from '../data/types';
 import type { Task, TaskKind } from '../data/types';
@@ -76,6 +77,8 @@ export function TasksPage() {
   return (
     <div className="max-w-3xl pb-10 space-y-5">
       <PageHeader title="Tasks" sub="Daily, weekly, monthly and quarterly routines, and one-off jobs." actions={<Link to="/board"><Button>Open task board</Button></Link>} />
+      <Blocks pageKey="TasksPage" group="TasksPage" className="space-y-5">
+        <Block title="How often">
       <Card className="p-4 space-y-3">
         <form className="space-y-3" onSubmit={(e: { preventDefault(): void }) => { e.preventDefault(); add(); }}>
           <Field label={editing ? 'Edit task' : 'New task'} htmlFor="tk-title" hint="Describe the routine, not the customer. Leave out names and numbers.">
@@ -90,14 +93,29 @@ export function TasksPage() {
           <div className="flex gap-2"><Button variant="primary" type="submit" disabled={!title.trim() || !guard.canSave}>{editing ? 'Save task' : 'Add task'}</Button>{editing && <Button onClick={() => { setEditing(null); setTitle(''); setDue(''); setReq(''); }}>Cancel</Button>}</div>
         </form>
       </Card>
+        </Block>
+        <Block title="Section 2">
       <PrivacyNote />
+        </Block>
+        <Block title="Section 3">
       <BulkAdd existing={tasks.map((t) => t.title.toLowerCase())} />
-
+        </Block>
+        <Block title="Every day">
       <section><SectionTitle>Every day</SectionTitle><Card className="p-3">{list('daily', 'No daily tasks yet. Add routines such as checking alerts or reviewing open jobs.')}</Card></section>
+        </Block>
+        <Block title="Every week">
       <section><SectionTitle>Every week</SectionTitle><Card className="p-3">{list('weekly', 'No weekly tasks yet. Add things like a backup check or a review with your mentor.')}</Card></section>
+        </Block>
+        <Block title="Every month">
       <section><SectionTitle>Every month</SectionTitle><Card className="p-3">{list('monthly', 'No monthly checks yet. Add the starter list or paste your own below.')}</Card></section>
+        </Block>
+        <Block title="Every quarter">
       <section><SectionTitle>Every quarter</SectionTitle><Card className="p-3">{list('quarterly', 'No quarterly checks yet. Add the starter list or paste your own below.')}</Card></section>
+        </Block>
+        <Block title="One-off">
       <section><SectionTitle>One-off</SectionTitle><Card className="p-3">{list('once', 'Nothing open.')}</Card></section>
+        </Block>
+      </Blocks>
       {finished.length > 0 && (
         <Collapsible title="Completed one-off tasks" badge={<Badge>{finished.length}</Badge>}>
           <ul className="divide-y divide-line">{finished.map((t) => <li key={t.id}><TaskRow t={t} now={now} /></li>)}</ul>

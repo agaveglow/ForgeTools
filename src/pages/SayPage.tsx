@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Block, Blocks } from '../ui/PageCustomizer';
 import { CLOSINGS, NEEDS, PHRASES, STAGES } from '../content/say';
 import { EMPTY_COMPOSE, EMPTY_VARS, compose, fill, phraseText, wrapText } from '../lib/say';
 import type { SayVars, Tone } from '../lib/say';
@@ -61,11 +62,14 @@ export function SayPage() {
   return (
     <div className="max-w-3xl pb-10 space-y-4" data-testid="say">
       <PageHeader title="Remote session messages" sub="Quick, clean wording to paste into a text window on the user's screen while you work." actions={<Link to="/tools"><Button>Toolbox</Button></Link>} />
+      <Blocks pageKey="SayPage" group="SayPage" className="space-y-4">
+        <Block title="Section 1">
       <Card className="p-4 text-sm space-y-1">
         <p>Build a message below, or copy a ready-made line from the library. <strong>Only send what is true</strong>: check each line matches what you are actually doing.</p>
         <p className="text-muted">The boxes are not saved and nothing is sent anywhere. Do not type passwords, account numbers or other customer details.</p>
       </Card>
-
+        </Block>
+        <Block title="Tone">
       <Card className="p-4 space-y-3">
         <SectionTitle>Message builder</SectionTitle>
         <div className="grid sm:grid-cols-2 gap-3">
@@ -91,13 +95,15 @@ export function SayPage() {
         <SensitivePanel guard={guard} fieldLabels={{ name: 'Name', me: 'Your name', issue: 'About', action: 'Doing', app: 'Application' }} onRedactAll={() => apply(guard.redactAll(text))} onRedactKind={(k) => apply(guard.redactOneKind(text, k))} />
         <div className="flex justify-between items-center"><PrivacyNote /><Button variant="ghost" onClick={() => { setV(EMPTY_VARS); setAction(''); setNeeds([]); setClosing(''); setOpening(true); setAskTime(false); setPrivacy(false); setThanks(false); guard.setConfirmed(false); }}>Clear</Button></div>
       </Card>
-
+        </Block>
+        <Block title="Your message">
       <Card className="p-4 space-y-2" aria-label="Your message">
         <SectionTitle action={out && ok ? <CopyButton text={out} label="Copy message" /> : undefined}>Your message</SectionTitle>
         <pre className="text-sm whitespace-pre-wrap wrap-any" data-testid="say-out">{out || 'Choose something above and the message appears here.'}</pre>
         {out && !ok && <p role="status" className="text-sm text-warn">Copying is off until the details flagged above are removed or confirmed.</p>}
       </Card>
-
+        </Block>
+        <Block title="Ready-made lines">
       <Card className="p-4 space-y-3">
         <SectionTitle>Ready-made lines</SectionTitle>
         <Field label="Search the lines" htmlFor="say-q"><TextInput id="say-q" value={q} placeholder="restart, password, test" onChange={(e: Chg) => setQ(e.target.value)} /></Field>
@@ -119,7 +125,8 @@ export function SayPage() {
           );
         })}
       </Card>
-
+        </Block>
+        <Block title="My own lines">
       <Card className="p-4 space-y-3" data-testid="say-mine">
         <SectionTitle>My own lines</SectionTitle>
         <p className="text-xs text-muted">Saved on this device only (encrypted if encryption is on). Use {'{name}'}, {'{issue}'}, {'{time}'} and {'{app}'} where the details go. Names and numbers are refused.</p>
@@ -139,6 +146,8 @@ export function SayPage() {
           <Button type="submit" disabled={!draft.title.trim() || !draft.text.trim()}>Save this line</Button>
         </form>
       </Card>
+        </Block>
+      </Blocks>
     </div>
   );
 }

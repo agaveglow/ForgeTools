@@ -35,6 +35,7 @@ declare module 'react' {
   export function useContext<T>(ctx: { Provider: FC<{ value: T; children?: ReactNode }> }): T;
   export function memo<T>(c: T): T;
   export const Fragment: FC<{ children?: ReactNode }>;
+  export const Children: { toArray(c: ReactNode): ReactElement[] };
   export const StrictMode: FC<{ children?: ReactNode }>;
 }
 

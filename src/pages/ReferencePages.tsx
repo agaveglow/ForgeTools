@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Block, Blocks } from '../ui/PageCustomizer';
 import { DMARC_TAGS, DNS_COMMANDS, RECORD_TYPES, SPF_TERMS, TTL_NOTES } from '../content/dns';
 import { OPS_CHECKS } from '../content/checks';
 import { ENG_GROUPS, ENG_TOOLS } from '../content/engtools';
@@ -27,8 +28,14 @@ export function PortsPage() {
   return (
     <div className="max-w-3xl pb-10 space-y-4">
       <PageHeader title="Ports and services" sub="What common ports are for, and which ones need care." actions={<Back />} />
+      <Blocks pageKey="PortsPage" group="PortsPage" className="space-y-4">
+        <Block title="Section 1">
       <Card className="p-4"><Field label="Search by number or name" htmlFor="pt-q"><TextInput id="pt-q" value={q} placeholder="445, printing, mail" onChange={(e: Chg) => setQ(e.target.value)} /></Field></Card>
+        </Block>
+        <Block title="Note">
       <p className="text-xs text-muted" aria-live="polite" data-testid="pt-count">{rows.length} port{rows.length === 1 ? '' : 's'}</p>
+        </Block>
+        <Block title="Section 3">
       <ul className="space-y-2" data-testid="port-list">
         {rows.map((p) => <li key={p.port + p.name}><Card className="p-3 space-y-0.5">
           <div className="flex flex-wrap items-center gap-2"><Badge tone="accent">{p.port}</Badge><Badge>{p.proto}</Badge><span className="font-medium">{p.name}</span></div>
@@ -36,10 +43,18 @@ export function PortsPage() {
           {p.care && <p className="text-sm text-warn">{p.care}</p>}
         </Card></li>)}
       </ul>
+        </Block>
+      </Blocks>
       {!rows.length && <p className="text-sm text-muted">Nothing matches.</p>}
+      <Blocks pageKey="PortsPage-2" group="PortsPage" toolbar={false} className="space-y-4">
+        <Block title="Port number ranges">
       <Card className="p-4 space-y-1"><SectionTitle>Port number ranges</SectionTitle>
         <dl className="text-sm grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1">{PORT_RANGES.map(([a, b]) => <div key={a} className="contents"><dt className="font-mono">{a}</dt><dd>{b}</dd></div>)}</dl></Card>
+        </Block>
+        <Block title="Check ports from Windows">
       <Card className="p-4 space-y-2"><SectionTitle>Check ports from Windows</SectionTitle>{PORT_COMMANDS.map(([t, c]) => <div key={t} className="space-y-1"><p className="text-sm font-medium">{t}</p><CodeBlock code={c} /></div>)}</Card>
+        </Block>
+      </Blocks>
     </div>
   );
 }
@@ -51,22 +66,38 @@ export function DnsPage() {
   return (
     <div className="max-w-3xl pb-10 space-y-4">
       <PageHeader title="DNS and mail records" sub="Record types, mail records explained, and a checker for SPF and DMARC. Nothing is saved." actions={<Back />} />
+      <Blocks pageKey="DnsPage" group="DnsPage" className="space-y-4">
+        <Block title="Check an SPF record">
       <Card className="p-4 space-y-3">
         <SectionTitle>Check an SPF record</SectionTitle>
         <Field label="SPF record text" htmlFor="dn-spf" hint="Read it with nslookup -type=TXT yourdomain"><TextInput id="dn-spf" value={spf} onChange={(e: Chg) => setSpf(e.target.value)} placeholder="v=spf1 include:mail.example.net -all" /></Field>
         <div aria-live="polite" data-testid="spf-result">{s && ('error' in s ? <p className="text-sm text-warn" role="alert">{s.error}</p> : <Findings items={s.findings} />)}</div>
       </Card>
+        </Block>
+        <Block title="Check a DMARC record">
       <Card className="p-4 space-y-3">
         <SectionTitle>Check a DMARC record</SectionTitle>
         <Field label="DMARC record text" htmlFor="dn-dm" hint="It lives at _dmarc.yourdomain"><TextInput id="dn-dm" value={dm} onChange={(e: Chg) => setDm(e.target.value)} placeholder="v=DMARC1; p=quarantine; rua=mailto:reports@example.com" /></Field>
         <div aria-live="polite" data-testid="dmarc-result">{d && ('error' in d ? <p className="text-sm text-warn" role="alert">{d.error}</p> : <Findings items={d.findings} />)}</div>
       </Card>
+        </Block>
+        <Block title="Record types">
       <Card className="p-4 space-y-2"><SectionTitle>Record types</SectionTitle>
         <ul className="space-y-3">{RECORD_TYPES.map((r) => <li key={r.type} className="text-sm space-y-0.5"><div className="flex gap-2 items-center"><Badge tone="accent">{r.type}</Badge><span className="font-medium">{r.use}</span></div><p className="font-mono text-xs wrap-any text-muted">{r.example}</p><p>{r.tip}</p></li>)}</ul></Card>
+        </Block>
+        <Block title="Reading SPF">
       <Card className="p-4 space-y-2"><SectionTitle>Reading SPF</SectionTitle><dl className="text-sm space-y-1">{SPF_TERMS.map(([a, b]) => <div key={a}><dt className="font-mono inline">{a}</dt> <dd className="inline">{b}</dd></div>)}</dl></Card>
+        </Block>
+        <Block title="Reading DMARC">
       <Card className="p-4 space-y-2"><SectionTitle>Reading DMARC</SectionTitle><dl className="text-sm space-y-1">{DMARC_TAGS.map(([a, b]) => <div key={a}><dt className="font-mono inline">{a}</dt> <dd className="inline">{b}</dd></div>)}</dl></Card>
+        </Block>
+        <Block title="Time to live">
       <Card className="p-4 space-y-2"><SectionTitle>Time to live</SectionTitle><dl className="text-sm space-y-1">{TTL_NOTES.map(([a, b]) => <div key={a}><dt className="font-medium inline">{a}.</dt> <dd className="inline">{b}</dd></div>)}</dl></Card>
+        </Block>
+        <Block title="Commands">
       <Card className="p-4 space-y-2"><SectionTitle>Commands</SectionTitle>{DNS_COMMANDS.map(([t, c]) => <div key={t} className="space-y-1"><p className="text-sm font-medium">{t}</p><CodeBlock code={c} /></div>)}</Card>
+        </Block>
+      </Blocks>
     </div>
   );
 }
@@ -82,6 +113,8 @@ export function PasswordPage() {
   return (
     <div className="max-w-3xl pb-10 space-y-4">
       <PageHeader title="Password tools" sub="Make a random password or test how guessable one is. Nothing is stored or sent." actions={<Back />} />
+      <Blocks pageKey="PasswordPage" group="PasswordPage" className="space-y-4">
+        <Block title="Generate">
       <Card className="p-4 space-y-3">
         <SectionTitle>Generate</SectionTitle>
         <Field label={`Length: ${o.length}`} htmlFor="pg-len"><input id="pg-len" type="range" min={8} max={64} value={o.length} onChange={(e: Chg) => set({ length: Number(e.target.value) })} className="w-full" /></Field>
@@ -96,12 +129,16 @@ export function PasswordPage() {
         <div className="flex flex-wrap gap-2 items-center"><Button onClick={() => set({})} disabled={none}>Generate another</Button>{!none && <Badge tone={est.bits >= 60 ? 'ok' : 'warn'}>{est.label}, about {est.bits} bits</Badge>}</div>
         <p className="text-xs text-muted">Passwords here are made with your browser&apos;s secure random numbers. Put them straight into the approved password manager. Do not type them into tickets or notes.</p>
       </Card>
+        </Block>
+        <Block title="Test a password">
       <Card className="p-4 space-y-3">
         <SectionTitle>Test a password</SectionTitle>
         <Field label="Password to test" htmlFor="pg-test" hint="Held only on this page. Better to test a similar one than a real one."><TextInput id="pg-test" type="password" autoComplete="off" value={test} onChange={(e: Chg) => setTest(e.target.value)} /></Field>
         <div aria-live="polite" data-testid="pg-test-result">{test && <><Badge tone={t.bits >= 60 ? 'ok' : t.bits >= 45 ? 'warn' : 'bad'}>{t.label}, about {t.bits} bits</Badge>{t.notes.length > 0 && <ul className="list-disc pl-5 text-sm mt-2">{t.notes.map((n) => <li key={n}>{n}</li>)}</ul>}</>}</div>
         <p className="text-xs text-muted">This is a rough guide. Length and randomness matter most. A long random password from a manager beats anything a person can remember. Use multi-factor sign-in as well.</p>
       </Card>
+        </Block>
+      </Blocks>
     </div>
   );
 }
@@ -119,12 +156,16 @@ export function ConvertPage() {
   return (
     <div className="max-w-3xl pb-10 space-y-4">
       <PageHeader title="Converters" sub="Decode text, read timestamps and reformat MAC addresses. Runs on this page only." actions={<Back />} />
+      <Blocks pageKey="ConvertPage" group="ConvertPage" className="space-y-4">
+        <Block title="Text encoding">
       <Card className="p-4 space-y-3">
         <SectionTitle>Text encoding</SectionTitle>
         <Field label="Format" htmlFor="cv-mode"><Select id="cv-mode" value={mode} onChange={(e: Chg) => setMode(e.target.value)}><option value="b64">Base64</option><option value="hex">Hex</option><option value="url">URL encoding</option></Select></Field>
         <Field label="Text" htmlFor="cv-text" hint="Useful for reading an encoded link or script. Decoding does not make it safe to run."><TextArea id="cv-text" rows={3} value={text} onChange={(e: Chg) => setText(e.target.value)} spellCheck={false} /></Field>
         {text && <div className="space-y-2" data-testid="cv-out"><Out label="Encoded" value={enc} />{dec === null ? <p className="text-sm text-muted">That text is not valid {mode === 'b64' ? 'Base64' : mode === 'hex' ? 'hex' : 'URL encoding'}, so it cannot be decoded.</p> : <Out label="Decoded" value={dec} />}</div>}
       </Card>
+        </Block>
+        <Block title="Timestamps">
       <Card className="p-4 space-y-3">
         <SectionTitle>Timestamps</SectionTitle>
         <Field label="Time" htmlFor="cv-time" hint="Unix seconds or milliseconds, a Windows FILETIME, or a date like 2026-09-01T10:00:00Z"><TextInput id="cv-time" value={time} onChange={(e: Chg) => setTime(e.target.value)} /></Field>
@@ -132,12 +173,16 @@ export function ConvertPage() {
         {time && !tv && <p className="text-sm text-warn" role="alert">Not a time I can read.</p>}
         {tv && <div className="space-y-2" data-testid="cv-time-out"><Out label="UTC (ISO)" value={tv.iso} /><Out label="On this device" value={tv.local} /><Out label="Unix seconds" value={String(tv.unixSeconds)} /><Out label="Unix milliseconds" value={String(tv.unixMillis)} /><Out label="Windows FILETIME" value={tv.filetime} /></div>}
       </Card>
+        </Block>
+        <Block title="MAC address formats">
       <Card className="p-4 space-y-3">
         <SectionTitle>MAC address formats</SectionTitle>
         <Field label="MAC address" htmlFor="cv-mac"><TextInput id="cv-mac" value={mac} onChange={(e: Chg) => setMac(e.target.value)} placeholder="00-1A-2B-3C-4D-5E" /></Field>
         {mac.trim() && !macs && <p className="text-sm text-warn" role="alert">A MAC address has 12 hex digits.</p>}
         {macs && <div className="space-y-1" data-testid="cv-mac-out">{macs.map((m) => <div key={m} className="flex items-center gap-2"><code className="font-mono text-sm flex-1 wrap-any">{m}</code><CopyButton text={m} /></div>)}</div>}
       </Card>
+        </Block>
+      </Blocks>
     </div>
   );
 }
@@ -157,14 +202,24 @@ export function PrintPage() {
   return (
     <div className="max-w-3xl pb-10 space-y-4">
       <PageHeader title="Print and scan reference" sub="Where to look first, what the ports and protocols do, and tick-through checks for scan and queue problems." actions={<Back />} />
+      <Blocks pageKey="PrintPage" group="PrintPage" className="space-y-4">
+        <Block title="What you see and where to look">
       <Card className="p-4 space-y-2"><SectionTitle>What you see and where to look</SectionTitle>
         <ul className="space-y-2 text-sm" data-testid="print-first">{PRINT_FIRST.map(([a, b]) => <li key={a}><span className="font-medium">{a}.</span> <span className="text-muted">{b}</span></li>)}</ul></Card>
+        </Block>
+        <Block title="Protocols and ports">
       <Card className="p-4 space-y-2"><SectionTitle>Protocols and ports</SectionTitle>
         <ul className="space-y-2 text-sm">{PRINT_PROTOCOLS.map(([a, b, c]) => <li key={a}><span className="font-medium">{a}.</span> {b} <span className="text-muted">Often fails because: {c}.</span></li>)}</ul>
         <p className="text-xs text-muted">Printing and scanning are separate functions. A printer can print perfectly while scan-to-email is broken. Diagnose the exact function reported.</p></Card>
+        </Block>
+      </Blocks>
       {PRINT_CHECKS.map((l) => <ChecklistCard key={l.id} list={l} />)}
+      <Blocks pageKey="PrintPage-2" group="PrintPage" toolbar={false} className="space-y-4">
+        <Block title="Do not change without approval">
       <Card className="p-4 text-sm space-y-1"><SectionTitle>Do not change without approval</SectionTitle>
         <ul className="list-disc pl-5"><li>The printer administrator password</li><li>Addresses, subnet, gateway or name servers</li><li>Firmware</li><li>Mail sign-in or security settings</li><li>File-sharing security level</li><li>Factory defaults</li><li>Queues and drivers on a shared print server</li></ul></Card>
+        </Block>
+      </Blocks>
     </div>
   );
 }
@@ -178,12 +233,20 @@ export function EngToolsPage() {
   return (
     <div className="max-w-3xl pb-10 space-y-4" data-testid="eng-tools">
       <PageHeader title="Engineer tool guide" sub="What well-known tools are for, when to reach for them, and starter commands." actions={<Back />} />
+      <Blocks pageKey="EngToolsPage" group="EngToolsPage" className="space-y-4">
+        <Block title="Section 1">
       <Card className="p-4 text-sm space-y-1">
         <p>Short orientation notes from your own research list, not manuals. Examples use made-up documentation addresses (192.0.2.x).</p>
         <p className="text-muted">Check each tool's licence and your employer's software policy before installing anything on a work device. Use scanning and capture tools only where you are authorised.</p>
       </Card>
+        </Block>
+        <Block title="Section 2">
       <Card className="p-4"><Field label="Search the guide" htmlFor="eng-q"><TextInput id="eng-q" value={q} placeholder="tunnel, scan, backup" onChange={(e: Chg) => setQ(e.target.value)} /></Field></Card>
+        </Block>
+        <Block title="Note">
       <p className="text-xs text-muted" aria-live="polite" data-testid="eng-count">{shown.length} tool{shown.length === 1 ? '' : 's'}</p>
+        </Block>
+      </Blocks>
       {ENG_GROUPS.map((g) => {
         const items = shown.filter((t) => t.group === g);
         if (!items.length) return null;

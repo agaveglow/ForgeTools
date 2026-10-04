@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Block, Blocks } from '../ui/PageCustomizer';
 import { PRIORITIES, deadlines } from '../lib/sla';
 import type { Priority } from '../lib/sla';
 import { ymd } from '../lib/progress';
@@ -20,8 +21,11 @@ export function SlaPage() {
   return (
     <div className="max-w-3xl pb-10 space-y-5">
       <PageHeader title="Priorities and response times" sub="Call priorities, targets and update frequency, with a clock for the deadlines." actions={<Link to="/checks"><Button>Check guides</Button></Link>} />
+      <Blocks pageKey="SlaPage" group="SlaPage" className="space-y-5">
+        <Block title="Note">
       <p className="text-xs text-muted" role="note">From your Tasks checklist. Times are counted on business days between 09:00 and 17:00 and do not allow for public holidays. This is a planning helper: check the wording and times against the current agreement.</p>
-
+        </Block>
+        <Block title="Deadline clock">
       <Card className="p-4 space-y-3" aria-label="Deadline clock">
         <SectionTitle>Deadline clock</SectionTitle>
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Priority">{PRIORITIES.map((x) => <Chip key={x.id} active={pri === x.id} onClick={() => setPri(x.id)}>{x.label}</Chip>)}</div>
@@ -34,7 +38,8 @@ export function SlaPage() {
         </dl>
         <p className="text-xs text-muted">The 24-hour update is counted as the same time on the next business day. Then keep updating at that interval until it is resolved.</p>
       </Card>
-
+        </Block>
+        <Block title="Response table">
       <section aria-label="Response table">
         <SectionTitle>Response and update times</SectionTitle>
         <div className="overflow-x-auto"><table className="w-full text-sm border border-line rounded-md">
@@ -43,7 +48,8 @@ export function SlaPage() {
         </table></div>
         <p className="text-xs text-muted mt-1">On business days between 09:00 and 17:00.</p>
       </section>
-
+        </Block>
+        <Block title="What each priority means">
       <section aria-label="What each priority means">
         <SectionTitle>What each priority means</SectionTitle>
         <ul className="space-y-2">{PRIORITIES.map((x) => (
@@ -53,6 +59,8 @@ export function SlaPage() {
           </Card></li>
         ))}</ul>
       </section>
+        </Block>
+      </Blocks>
     </div>
   );
 }
