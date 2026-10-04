@@ -215,7 +215,7 @@ On the Glance home screen tap **Edit home**. You can change the colour of each r
 
 ## Toolbox
 
-Fix & guides → **Toolbox**: a cable guide with a drawn T568A/T568B pinout (straight and crossover, faults, limits, PoE), calculators (subnet, number converter, transfer time, cost per page), a screenshot redactor (covered areas are burned into a new image, nothing is uploaded), a ticket note builder (copy is withheld while a secret is present) and kit checklists (ticks and your own items stay on this device).
+Fix & guides → **Toolbox**: a cable guide with a drawn T568A/T568B pinout (straight and crossover, faults, limits, PoE), calculators (subnet, number converter, transfer time, cost per page), a screenshot redactor (covered areas are burned into a new image, nothing is uploaded), a ticket note builder (copy is withheld while a secret is present) and kit checklists (ticks and your own items stay on this device), a security event reference (Windows event IDs, logon types, failed-logon codes, alert types), a file hash checker (calculated in the browser, compared with the published value), an email header reader with phishing triage (shows the route and SPF/DKIM/DMARC results, flags mismatched domains, nothing saved), and tickable hardening checklists (Windows, Microsoft 365, firewall, printer admin). A Home button in the top bar returns to the Glance home from anywhere.
 
 ## Packs and PDF import
 

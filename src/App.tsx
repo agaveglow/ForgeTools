@@ -24,6 +24,7 @@ import { WorkflowPage } from './pages/WorkflowPage';
 import { ManualReaderPage, ManualsPage } from './pages/ManualsPage';
 import { GuideList, GuideView } from './pages/GuidesPage';
 import { CablePage, CalcPage, KitPage, NotePage, ToolsHub } from './pages/ToolsPages';
+import { EventsPage, HardenPage, HashPage, HeaderPage } from './pages/SecurityPages';
 import { RedactPage } from './pages/RedactPage';
 import { SlaPage } from './pages/SlaPage';
 import { BoardPage } from './pages/BoardPage';
@@ -66,6 +67,10 @@ function route(path: string): ReactNode {
   if (path === '/tools/notes') return <NotePage />;
   if (path === '/tools/kit') return <KitPage />;
   if (path === '/tools/redact') return <RedactPage />;
+  if (path === '/tools/events') return <EventsPage />;
+  if (path === '/tools/hash') return <HashPage />;
+  if (path === '/tools/header') return <HeaderPage />;
+  if (path === '/tools/harden') return <HardenPage />;
   if (path === '/procedures') return <GuideList set="procedures" />;
   if (path === '/library') return <GuideList set="library" />;
   if ((p = match('/procedures/:id', path))) return <GuideView id={p.id} />;
@@ -157,7 +162,7 @@ function Shell() {
   const editing = path === '/logs/new' || /^\/logs\/[^/]+\/edit$/.test(path) || path === '/kb/new' || /^\/kb\/[^/]+\/edit$/.test(path);
   const parent = parentPath(path);
   const area = areaOfPath(path);
-  const pill = 'min-h-11 px-4 inline-flex items-center gap-1.5 rounded-full border border-line bg-surface text-sm hover:bg-surface2 focus-visible:outline-2 focus-visible:outline-accent';
+  const pill = 'min-h-11 px-3 sm:px-4 inline-flex items-center gap-1.5 rounded-full border border-line bg-surface text-sm hover:bg-surface2 focus-visible:outline-2 focus-visible:outline-accent';
 
   return (
     <div className="min-h-dvh flex flex-col">
@@ -166,8 +171,9 @@ function Shell() {
       <header className="sticky top-0 z-30 bg-surface/95 backdrop-blur border-b border-line pt-safe">
         <div className="mx-auto max-w-5xl flex items-center gap-2 px-3 h-14">
           {parent !== null && <Link to={parent} aria-label="Back" className="grid place-items-center size-11 rounded-full border border-line bg-surface hover:bg-surface2 shrink-0"><Icon name="back" size={20} /></Link>}
-          <Link to="/" className="flex items-center gap-2 font-semibold min-h-11 min-w-0"><span className="inline-grid place-items-center size-8 rounded-full bg-accent text-accent-ink font-mono text-sm shrink-0">{(appName || 'F').charAt(0).toUpperCase()}</span><span className={clsx('truncate', parent !== null && 'hidden sm:inline')}>{appName || 'ForgeTools'}</span>{parent !== null && <span className="sr-only sm:hidden">Home</span>}</Link>
+          <Link to="/" className={clsx('items-center gap-2 font-semibold min-h-11 min-w-0', parent !== null ? 'hidden sm:flex' : 'flex')}><span className="inline-grid place-items-center size-8 rounded-full bg-accent text-accent-ink font-mono text-sm shrink-0">{(appName || 'F').charAt(0).toUpperCase()}</span><span className={clsx('truncate', parent !== null && 'hidden sm:inline')}>{appName || 'ForgeTools'}</span></Link>
           <div className="ml-auto flex items-center gap-2">
+            <Link to="/" aria-label="Home" aria-current={path === '/' ? 'page' : undefined} data-testid="home-button" className={clsx('grid place-items-center size-11 rounded-full border bg-surface hover:bg-surface2', path === '/' ? 'border-accent text-accent' : 'border-line')}><Icon name="home" size={20} /></Link>
             <Link to="/live" aria-label={hasOpenNote ? 'Live note, one is open' : 'Live notes'} className={clsx(pill, hasOpenNote && 'border-accent text-accent')}>{hasOpenNote && <span aria-hidden className="size-2 rounded-full bg-accent" />}Note</Link>
             <button type="button" aria-label="Search" onClick={() => setSearchOpen(true)} className={pill}>Search</button>
             <Link to="/apps" aria-label="All apps" className="grid place-items-center size-11 rounded-full border border-line bg-surface hover:bg-surface2"><Icon name="grid" size={20} /></Link>

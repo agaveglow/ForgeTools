@@ -42,6 +42,7 @@ export const GLANCE_ICONS: Record<string, string[]> = {
   tools: ['M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.4 2.4-2.6-.6-.6-2.6z'],
   grid: ['M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z'],
   back: ['M15 5l-7 7 7 7'],
+  home: ['M4 11l8-7 8 7', 'M6 10v10h12V10', 'M10 20v-6h4v6'],
 };
 
 /** Splits items into alternating rows (3, 4, 3, 4...) so the bubbles stagger like a watch app screen. */

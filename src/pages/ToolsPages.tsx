@@ -20,6 +20,10 @@ const TOOLS = [
   { to: '/tools/redact', title: 'Screenshot redactor', blurb: 'Black out names and numbers before you keep an image' },
   { to: '/tools/notes', title: 'Ticket note builder', blurb: 'A closure note and a customer update from a few boxes' },
   { to: '/tools/kit', title: 'Kit checklists', blurb: 'Tools, spares and before-you-leave checks' },
+  { to: '/tools/events', title: 'Security events', blurb: 'What Windows event IDs mean, failed-logon codes, alert types' },
+  { to: '/tools/hash', title: 'File hash checker', blurb: 'Check a download against the published hash, on this device' },
+  { to: '/tools/header', title: 'Email header reader', blurb: 'Route, SPF, DKIM, DMARC and mismatches, plus phishing triage' },
+  { to: '/tools/harden', title: 'Hardening checklists', blurb: 'Windows, Microsoft 365, firewall and printer settings to tick through' },
 ];
 export function ToolsHub() {
   useTitle('Toolbox');

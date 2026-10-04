@@ -1055,7 +1055,7 @@ async function run(label, viewport) {
 
   await step(S('toolbox: cable pinout, subnet maths, note builder guard, kit ticks persist'), async () => {
     await go('/tools');
-    eq(await p.locator('[data-testid=tool-list] a').count(), 5, 'five tools');
+    eq(await p.locator('[data-testid=tool-list] a').count(), 9, 'nine tools');
     await go('/tools/cable');
     await p.locator('[data-testid=pinouts] svg').first().waitFor({ state: 'visible', timeout: 3000 });
     ok((await p.locator('[data-testid=pinouts] svg').first().getAttribute('aria-label')).includes('Pin 1 White/Orange'), 'T568B pin 1 is white/orange');
@@ -1121,6 +1121,42 @@ async function run(label, viewport) {
     await p.getByRole('button', { name: 'Save to Files' }).click();
     await p.locator('[data-testid=redact-note]').waitFor({ state: 'visible', timeout: 5000 });
     await noHScroll();
+  });
+
+  await step(S('security tools: event search, hash match and mismatch, header flags, hardening ticks'), async () => {
+    await go('/tools/events');
+    await p.locator('#ev-q').fill('4625');
+    await until(async () => (await p.locator('[data-testid=event-list]').innerText()).includes('Failed logon'), 'event 4625 found');
+    await p.locator('#ev-q').fill('zzzz-none');
+    eq(await p.locator('[data-testid=event-list] li').count(), 0, 'no events for junk');
+    await noHScroll();
+    await go('/tools/hash');
+    await p.locator('#hs-file').setInputFiles({ name: 'abc.txt', mimeType: 'text/plain', buffer: Buffer.from('abc') });
+    await p.getByText('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad').first().waitFor({ state: 'visible', timeout: 4000 });
+    await p.locator('#hs-exp').fill('BA7816BF 8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD');
+    await until(async () => (await p.locator('[data-testid=hash-result]').innerText()).includes('Match'), 'hash matches');
+    await p.locator('#hs-exp').fill('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ae');
+    await until(async () => (await p.locator('[data-testid=hash-result]').innerText()).includes('Does not match'), 'hash mismatch flagged');
+    await go('/tools/header');
+    await p.locator('#hd-text').fill('Received: from a.example.org by b.example.net; Tue, 1 Sep 2026 10:00:00 +0000\nAuthentication-Results: b.example.net; spf=fail; dkim=none; dmarc=fail\nFrom: "Help" <help@one.test>\nReply-To: <x@two.test>\nSubject: Urgent');
+    await p.locator('[data-testid=header-report]').waitFor({ state: 'visible', timeout: 3000 });
+    const t = await p.locator('[data-testid=header-report]').innerText();
+    ok(t.includes('SPF: fail') && t.includes('Replies would go'), 'header flags shown');
+    await noHScroll();
+    await p.getByLabel('Do not click links or open attachments to investigate').check();
+    ok((await p.locator('[data-testid=ck-phish]').innerText()).startsWith('1 of'), 'phishing tick counted');
+    await go('/tools/harden');
+    await p.getByRole('checkbox').first().check();
+    ok((await p.locator('[data-testid=ck-win]').innerText()).startsWith('1 of'), 'hardening tick counted');
+  });
+
+  await step(S('home button: on every page, returns to the Glance home, fits the header'), async () => {
+    await go('/tools/cable');
+    await p.locator('[data-testid=home-button]').click();
+    await until(async () => (await p.evaluate(() => location.hash)).replace('#', '') === '/' || (await p.evaluate(() => location.hash)) === '', 'back at home');
+    await p.locator('[data-testid=glance-edit]').waitFor({ state: 'visible', timeout: 3000 });
+    await go('/settings'); await noHScroll();
+    ok(await p.locator('[data-testid=home-button]').isVisible(), 'home button visible on settings');
   });
 
   await step(S('glance home: edit mode, add a coloured card, add/rename/recolour/remove a bubble, ring colour, persists'), async () => {
