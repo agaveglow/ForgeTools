@@ -134,6 +134,8 @@ export interface KbEntry extends BaseRecord {
   lastUsedAt?: string;
   /** Photos and screenshots attached to steps. The image data lives in Files (images/). */
   images?: KbImage[];
+  /** Set when this entry is the person's edited copy of a built-in guide (its id). */
+  basedOn?: string;
 }
 
 export interface KbImage {

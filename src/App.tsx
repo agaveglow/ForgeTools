@@ -26,6 +26,7 @@ import { ManualReaderPage, ManualsPage } from './pages/ManualsPage';
 import { GuideList, GuideView } from './pages/GuidesPage';
 import { CablePage, CalcPage, KitPage, NotePage, ToolsHub } from './pages/ToolsPages';
 import { EventsPage, HardenPage, HashPage, HeaderPage } from './pages/SecurityPages';
+import { GuideLibraryPage } from './pages/GuideLibraryPage';
 import { SayPage } from './pages/SayPage';
 import { LabPage } from './pages/LabPage';
 import { ConvertPage, DnsPage, OpsChecksPage, PasswordPage, PortsPage, PrintPage, EngToolsPage } from './pages/ReferencePages';
@@ -96,7 +97,9 @@ function route(path: string): ReactNode {
   if (path === '/requirements') return <RequirementsPage />;
   if (path === '/apprenticeship') return <ApprenticeshipPage />;
   if (path === '/kb') return <KbList />;
+  if (path === '/guides') return <GuideLibraryPage />;
   if (path === '/kb/new') return <KbEditor />;
+  if ((p = match('/kb/from/:gid', path))) return <KbEditor fromGuide={p.gid} key={p.gid} />;
   if ((p = match('/kb/:id/edit', path))) return <KbEditor id={p.id} key={p.id} />;
   if ((p = match('/kb/:id', path))) return <KbDetail id={p.id} />;
   if (path === '/skills') return <SkillsPage />;

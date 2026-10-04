@@ -2,6 +2,9 @@ import { useMemo, useState } from 'react';
 import { LIBRARY, PROCEDURES, guideById, guideText } from '../content/library';
 import type { Block, LibGuide } from '../content/library';
 import { useCollection } from '../data/hooks';
+import { copyOf } from '../lib/guideLibrary';
+import { Button } from '../ui/primitives';
+import { navigate } from '../ui/router';
 import { Badge, Card, CopyButton, Empty, PageHeader, SectionTitle, TextInput } from '../ui/primitives';
 import { Link } from '../ui/router';
 import { useTitle } from '../ui/hooks';
@@ -24,7 +27,7 @@ export function GuideList({ set }: { set: Set }) {
   const list = useMemo(() => m.list.filter((g) => matches(g, q)), [m, q]);
   return (
     <div className="max-w-3xl pb-10">
-      <PageHeader title={m.title} sub={m.sub} />
+      <PageHeader title={m.title} sub={m.sub} actions={<Link to="/guides"><Button>Guide library</Button></Link>} />
       <TextInput aria-label={`Search ${m.title.toLowerCase()}`} placeholder="Search" value={q} onChange={(e: { target: { value: string } }) => setQ(e.target.value)} className="mb-3" />
       {list.length === 0 ? <Empty title="Nothing matches">Try a different word.</Empty> : (
         <ul className="space-y-2" data-testid="guide-list">
@@ -100,13 +103,22 @@ export function GuideView({ id }: { id: string }) {
   const g = guideById(id);
   useTitle(g?.title ?? 'Guide');
   if (!g) return <Empty title="Guide not found"><Link to="/procedures" className="underline">Back to procedures</Link></Empty>;
+  return <BuiltinGuide g={g} />;
+}
+
+function BuiltinGuide({ g }: { g: LibGuide }) {
+  const kb = useCollection('kbEntries');
   const m = META[g.set];
+  const mine = copyOf(kb, g.id);
+  // The copy is only made when it is saved in the editor, so opening it and cancelling changes nothing.
+  const edit = () => navigate(mine ? `/kb/${mine.id}/edit` : `/kb/from/${g.id}`);
   return (
     <div className="max-w-3xl pb-10 space-y-4">
-      <PageHeader title={g.title} sub={g.summary} actions={<CopyButton text={guideText(g)} label="Copy guide" size="md" />} />
+      <PageHeader title={g.title} sub={g.summary} actions={<><CopyButton text={guideText(g)} label="Copy guide" size="md" /><Button onClick={edit} data-testid="edit-copy">{mine ? 'Edit your copy' : 'Edit or add photos'}</Button></>} />
+      {mine && <Card className="p-3 text-sm" data-testid="has-copy">You have your own edited copy of this guide. <Link to={`/kb/${mine.id}`} className="underline">Open it</Link>. This is the original.</Card>}
       <div className="flex flex-wrap gap-1.5"><Badge tone="accent">{g.set === 'procedures' ? 'Procedure' : 'Study'}</Badge>{g.tags.map((t) => <Badge key={t}>{t}</Badge>)}</div>
       {g.blocks.map((b, i) => <BlockView key={b.title + i} b={b} gid={g.id} idx={i} />)}
-      <Card className="p-3 text-sm text-muted">General practice written for this app. Follow your own company's procedures and the manufacturer's documents where they differ. <Link to={m.base} className="underline">Back to {m.title.toLowerCase()}</Link></Card>
+      <Card className="p-3 text-sm text-muted">General practice written for this app. Follow your own company's procedures and the manufacturer's documents where they differ. <Link to={m.base} className="underline">Back to {m.title.toLowerCase()}</Link>. <Link to="/guides" className="underline">Guide library</Link></Card>
     </div>
   );
 }

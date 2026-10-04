@@ -65,7 +65,7 @@ describe('glance editing helpers', () => {
   test('page choices include areas and pages, once each, with known icons', () => {
     const c = pageChoices(); const tos = c.map((p) => p.to);
     expect(new Set(tos).size).toBe(tos.length);
-    expect(tos).toContain('/tools'); expect(tos).toContain('/a/fix'); expect(tos).toContain('/procedures');
+    expect(tos).toContain('/tools'); expect(tos).toContain('/a/fix'); expect(tos).toContain('/guides');
   });
   test('move and clean', () => {
     const l = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];

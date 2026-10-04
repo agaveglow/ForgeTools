@@ -15,11 +15,10 @@ export const AREAS: Area[] = [
   { id: 'fix', to: '/a/fix', label: 'Fix & guides', blurb: 'Find the steps for a job or a fault.', icon: 'tools', hue: 'warn', pages: [
     { to: '/agent', label: 'Guide agent', blurb: 'Ask how to do something', icon: 'spark' },
     { to: '/troubleshoot', label: 'Troubleshooting', blurb: 'Step-by-step fault finding', icon: 'search' },
-    { to: '/procedures', label: 'Procedures', blurb: 'Build, install, reset, onboard', icon: 'list' },
+    { to: '/guides', label: 'Guide library', blurb: 'Procedures, study, troubleshooting and your own, with photos', icon: 'book' },
     { to: '/commands', label: 'Commands', blurb: 'What each command does', icon: 'terminal' },
     { to: '/manuals', label: 'Printer guides', blurb: 'Your manuals, page by page', icon: 'book' },
     { to: '/security', label: 'Security checklist', blurb: 'Checks for a device or account', icon: 'shield' },
-    { to: '/kb', label: 'Knowledge base', blurb: 'Guides you have saved', icon: 'mark' },
     { to: '/tools', label: 'Toolbox', blurb: 'Print, network, security and desk tools, plus the lab', icon: 'tools' },
   ] },
   { id: 'notes', to: '/a/notes', label: 'Notes', blurb: 'Keep the paper trail.', icon: 'file', hue: 'info', pages: [
@@ -31,7 +30,6 @@ export const AREAS: Area[] = [
   ] },
   { id: 'learn', to: '/a/learn', label: 'Learning', blurb: 'Apprenticeship hours and goals.', icon: 'cap', hue: 'ok', pages: [
     { to: '/apprenticeship', label: 'Apprenticeship', blurb: 'Log hours, from a video too', icon: 'cap' },
-    { to: '/library', label: 'Study library', blurb: 'Networking, copiers, Windows', icon: 'book' },
     { to: '/requirements', label: 'Requirements', blurb: 'Your job and course goals', icon: 'target' },
     { to: '/skills', label: 'Skills profile', blurb: 'Skills you can evidence', icon: 'star' },
   ] },
@@ -42,9 +40,11 @@ export const AREAS: Area[] = [
 
 /** Pages that belong to a page's area even though their path starts differently. */
 const ALIAS: Array<[RegExp, string]> = [[/^\/session(\/|$)/, '/troubleshoot']];
+/** The old guide pages now live in the Guide library area, but keep their own addresses. */
+const AREA_ALIAS: Array<[RegExp, string]> = [[/^\/(procedures|library|kb)(\/|$)/, '/guides']];
 
 export function areaOfPath(path: string): Area | undefined {
-  const a = ALIAS.find(([re]) => re.test(path));
+  const a = ALIAS.find(([re]) => re.test(path)) ?? AREA_ALIAS.find(([re]) => re.test(path));
   const p = a ? a[1] : path;
   return AREAS.find((ar) => ar.pages.some((pg) => p === pg.to || p.startsWith(pg.to + '/')));
 }
@@ -55,6 +55,7 @@ export function parentPath(path: string): string | null {
   const a = ALIAS.find(([re]) => re.test(path));
   if (a) return a[1];
   if (path === '/apps' || path.startsWith('/a/') || path === '/settings') return '/';
+  if (path === '/procedures' || path === '/library' || path === '/kb') return '/guides';
   const segs = path.split('/').filter(Boolean);
   if (segs.length > 1) return '/' + segs.slice(0, -1).join('/');
   const area = areaOfPath(path);

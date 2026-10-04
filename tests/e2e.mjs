@@ -233,7 +233,6 @@ async function run(label, viewport) {
     await p.getByRole('button', { name: 'Save guide' }).click();
     await p.getByRole('link', { name: 'Open in Knowledge base' }).click();
     await p.waitForURL(/#\/kb\/[^/]+$/);
-    await p.getByRole('tab', { name: 'Photos' }).click();
     const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
     await p.getByLabel('Add photo or screenshot').setInputFiles({ name: 'shot.png', mimeType: 'image/png', buffer: png });
     await p.getByAltText('Preview of the image you are about to attach').waitFor({ state: 'visible', timeout: 5000 });
@@ -245,7 +244,7 @@ async function run(label, viewport) {
     await p.getByRole('button', { name: 'Attach' }).click();
     await p.getByAltText('Tray 2 latch').first().waitFor({ state: 'visible', timeout: 5000 });
     await p.getByRole('tab', { name: 'Play' }).click();
-    await p.getByAltText('Tray 2 latch').waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByAltText('Tray 2 latch').first().waitFor({ state: 'visible', timeout: 3000 });
     await p.waitForTimeout(600); await shot('visual');
     await go('/files');
     await p.getByText(/images/).first().waitFor({ state: 'visible', timeout: 3000 });
@@ -318,7 +317,7 @@ async function run(label, viewport) {
     await p.getByLabel('Title').fill('Reset print spooler');
     await p.getByLabel('Tags').fill('printing, spooler');
     await p.getByLabel('Content').fill('Steps:\n```\nnet stop spooler\nnet start spooler\n```');
-    await p.getByRole('button', { name: 'Save entry' }).click();
+    await p.getByRole('button', { name: 'Save guide' }).click();
     await p.waitForURL(/#\/kb\/[^/]+$/);
     await p.locator('pre').first().waitFor({ state: 'visible', timeout: 3000 });
     await p.getByRole('button', { name: 'Pin' }).click();
@@ -878,7 +877,7 @@ async function run(label, viewport) {
     // all apps lists every page
     await p.getByRole('link', { name: 'All apps', exact: true }).click();
     await p.locator('[data-testid=all-apps]').waitFor({ state: 'visible', timeout: 5000 });
-    eq(await p.locator('[data-testid=all-apps] li').count(), 24, 'twenty-four pages');
+    eq(await p.locator('[data-testid=all-apps] li').count(), 22, 'twenty-two pages');
     await noHScroll();
     await shot('all-apps');
     await go('/a/today'); await noHScroll(); await shot('area-today');
@@ -946,7 +945,7 @@ async function run(label, viewport) {
     await go('/kb/new');
     await p.locator('#kb-title').fill('Rear cover jam test guide');
     await p.locator('#kb-body').fill('1. Open the rear cover\n2. Remove the paper');
-    await p.getByRole('button', { name: 'Save entry' }).click();
+    await p.getByRole('button', { name: 'Save guide' }).click();
     await p.waitForTimeout(400);
     await go('/manuals');
     await p.locator('a[href^="#/manuals/"]').first().click();
@@ -1136,6 +1135,59 @@ async function run(label, viewport) {
     await p.getByRole('button', { name: 'Save this line' }).click();
     ok((await p.locator('[data-testid=say-mine] [role=alert]').count()) === 1, 'secret refused');
     eq(await p.locator('[data-testid=say-mine-item]').count(), 1);
+  });
+
+  await step(S('guide library: merged list, edit a built-in as my copy, photo, restore the original'), async () => {
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+    await go('/guides');
+    await p.locator('[data-testid=guide-library]').waitFor({ state: 'visible', timeout: 5000 });
+    const total = Number((await p.locator('[data-testid=gl-count]').innerText()).split(' ')[0]);
+    ok(total > 50, 'procedures, study and troubleshooting are all listed (' + total + ')');
+    await p.getByRole('button', { name: /^Procedures \(/ }).click();
+    ok((await p.locator('[data-testid=gl-list] li').count()) > 5, 'procedures filter');
+    await p.getByRole('button', { name: /^All \(/ }).click();
+    await p.getByLabel('Search the guide library').fill('shared mailbox');
+    await p.locator('[data-testid=gl-list] a').first().click();
+    await p.locator('[data-testid=edit-copy]').waitFor({ state: 'visible', timeout: 5000 });
+    const before = await p.locator('h1').first().innerText();
+    await p.locator('[data-testid=edit-copy]').click();
+    await p.locator('#kb-title').waitFor({ state: 'visible', timeout: 5000 });
+    // cancelling must not leave a copy behind
+    await p.getByRole('button', { name: 'Cancel' }).click();
+    await go('/guides');
+    eq(await p.getByRole('button', { name: /^Edited \(/ }).innerText(), 'Edited (0)');
+    await p.getByLabel('Search the guide library').fill('shared mailbox');
+    await p.locator('[data-testid=gl-list] a').first().click();
+    await p.locator('[data-testid=edit-copy]').click();
+    await p.locator('#kb-title').fill(before + ' (my version)');
+    await p.locator('#kb-body').fill((await p.locator('#kb-body').inputValue()) + '\n\nLocal note: use the team naming rule.');
+    await p.getByRole('button', { name: 'Save guide' }).click();
+    await p.locator('[data-testid=edited-note]').waitFor({ state: 'visible', timeout: 5000 });
+    ok((await p.locator('h1').first().innerText()).includes('(my version)'), 'edited title shown');
+    await p.getByLabel('Add photo or screenshot').setInputFiles({ name: 'shot.png', mimeType: 'image/png', buffer: png });
+    await p.getByAltText('Preview of the image you are about to attach').waitFor({ state: 'visible', timeout: 5000 });
+    await p.getByRole('checkbox', { name: /checked this image/ }).check();
+    await p.getByLabel('Caption (optional)').fill('Mailbox properties');
+    await p.getByRole('button', { name: 'Attach' }).click();
+    await p.getByAltText('Mailbox properties').first().waitFor({ state: 'visible', timeout: 5000 });
+    await go('/guides');
+    await p.getByLabel('Search the guide library').fill('shared mailbox');
+    const row = p.locator('[data-testid=gl-list] li', { hasText: 'Edited by you' });
+    eq(await row.count(), 1, 'one edited guide');
+    ok((await row.innerText()).includes('Photos'), 'list shows photos');
+    eq(await p.locator('[data-testid=gl-list] li p.font-medium', { hasText: new RegExp('^' + before.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$') }).count(), 0, 'the original is replaced, not duplicated');
+    await row.locator('a').click();
+    await p.getByRole('button', { name: 'Restore the original' }).first().click();
+    await p.getByRole('dialog').getByRole('button', { name: 'Restore the original' }).click();
+    await p.locator('[data-testid=edit-copy]').waitFor({ state: 'visible', timeout: 5000 });
+    ok((await p.locator('h1').first().innerText()) === before, 'original is back');
+    await go('/guides');
+    eq(await p.getByRole('button', { name: /^Edited \(/ }).innerText(), 'Edited (0)');
+    await p.locator('a', { hasText: 'New guide' }).click();
+    await p.locator('#kb-title').fill('My own guide');
+    await p.locator('#kb-body').fill('My own guide\n\nSTEPS\n1. First\n2. Second');
+    await p.getByRole('button', { name: 'Save guide' }).click();
+    await p.locator('[data-testid=guide-photos]').waitFor({ state: 'visible', timeout: 5000 });
   });
 
   await step(S('toolbox: cable pinout, subnet maths, note builder guard, kit ticks persist'), async () => {
@@ -1381,7 +1433,7 @@ async function run(label, viewport) {
     await go('/kb/new');
     await p.getByLabel('Title').fill('Zebra quartz unique title');
     await p.getByLabel('Content').fill('plain body words');
-    await p.getByRole('button', { name: 'Save entry' }).click();
+    await p.getByRole('button', { name: 'Save guide' }).click();
     await p.waitForURL(/#\/kb\/[^/]+$/);
     await go('/settings');
     await p.getByLabel('New passphrase').fill('purple-tractor-lamp-9');

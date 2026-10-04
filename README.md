@@ -27,9 +27,9 @@ The home screen opens five areas. Every page belongs to exactly one. The Toolbox
 | Area | Pages |
 | --- | --- |
 | **Today** | Daily jobs, Daily workflow, Tasks, Task board, Check guides, Response times |
-| **Fix & guides** | Guide agent, Troubleshooting, Procedures, Commands, Printer guides, Security checklist, Knowledge base, Toolbox |
+| **Fix & guides** | Guide agent, Troubleshooting, Guide library (procedures, study, troubleshooting flows and your own guides), Commands, Printer guides, Security checklist, Toolbox |
 | **Notes** | Live notes, Work logs, Voice notes, Import documents, Files |
-| **Learning** | Apprenticeship, Study library, Requirements, Skills profile |
+| **Learning** | Apprenticeship, Requirements, Skills profile |
 | **Settings** | Appearance, Security, Backup (including the encrypted folder copy), Voice transcription, Privacy, Erase |
 
 **Toolbox sections:** Managed print · Networking · Security · Remote session messages · IT service desk · Calculate and convert · Practice and reference (see [Toolbox](#toolbox)).
@@ -172,6 +172,16 @@ The dashboard is built for tracking your own progress: today's daily routine and
 It is local and rules-based, not a language model. To add a real model, implement `AgentProvider` and keep the save guard in front of anything sent off-device.
 
 The guide agent only offers a library guide when it really covers what you asked, not just because one word (such as "Outlook") matches. It now also searches the built-in Procedures and Study library, so a request like "how to whitelist a domain in Outlook" finds the built-in allow-list procedure. When nothing covers the request it says so, names the words nothing matched, lists loosely related guides as "related, not the answer", and asks a few questions (the job, the area, whether admin rights are needed, the steps if you know them, how you know it worked, what to watch for). **Build my guide** then assembles a new guide from your own answers; it never invents steps, and with no steps typed it makes an outline and says the steps are still to be added. You can then add pages from the online lookup, save it to the Knowledge base, and it appears under **Procedures > Your own guides**.
+
+### Guide library
+
+Fix & guides → **Guide library** (`/guides`) is one list for every guide: the built-in Procedures, the Study library, the troubleshooting flows and your own guides (including ones from the guide agent). Filter by kind, or search across all of them.
+
+- **Edit a built-in guide:** open it and choose **Edit or add photos**. The editor opens with a copy of the guide's words. The built-in guide is never changed. Your copy is only made when you press **Save guide**, and it takes the original's place in the library, marked "Edited by you". **Restore the original** removes your copy and its photos.
+- **Add your own:** **New guide**. Use a heading line such as `STEPS` in capitals followed by numbered lines to get the visual guide; wrap commands in triple backticks.
+- **Photos:** every guide of yours has a Photos section, and the editor has one too. Images are re-drawn as JPEG (smaller, rotation fixed, location removed), stored in Files, and each needs a tick that you checked it for passwords and private details.
+- Troubleshooting flows are interactive and open as they are; they are not editable.
+- The old addresses (`/procedures`, `/library`, `/kb`) still work.
 
 ### Procedures
 

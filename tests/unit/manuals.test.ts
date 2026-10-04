@@ -89,7 +89,7 @@ describe('areas and navigation', () => {
   test('every page is in exactly one area, with an icon', () => {
     const all = AREAS.flatMap((a) => a.pages.map((p) => p.to));
     expect(new Set(all).size).toBe(all.length);
-    expect(all.length).toBe(24);
+    expect(all.length).toBe(22);
     for (const a of AREAS) for (const p of a.pages) expect(GLANCE_ICONS[p.icon]?.length).toBeGreaterThan(0);
   });
   test('paths belong to the right area', () => {
@@ -97,6 +97,7 @@ describe('areas and navigation', () => {
     expect(areaOfPath('/checks/qbr')?.id).toBe('today');
     expect(areaOfPath('/session/abc')?.id).toBe('fix');
     expect(areaOfPath('/kb/xyz/edit')?.id).toBe('fix');
+    expect(areaOfPath('/guides')?.id).toBe('fix'); expect(areaOfPath('/procedures/abc')?.id).toBe('fix'); expect(areaOfPath('/library/abc')?.id).toBe('fix');
     expect(areaOfPath('/logs/new')?.id).toBe('notes');
     expect(areaOfPath('/nowhere')).toBeUndefined();
   });
@@ -110,6 +111,7 @@ describe('areas and navigation', () => {
     expect(parentPath('/logs/abc/edit')).toBe('/logs/abc');
     expect(parentPath('/session/abc')).toBe('/troubleshoot');
     expect(parentPath('/unknown')).toBe('/');
+    expect(parentPath('/kb')).toBe('/guides'); expect(parentPath('/kb/abc')).toBe('/kb'); expect(parentPath('/guides')).toBe('/a/fix');
   });
 });
 

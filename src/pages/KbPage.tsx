@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { store, useCollection, useRecord } from '../data/hooks';
+import { guideById } from '../content/library';
+import { copyFromGuide } from '../lib/guideLibrary';
 import { KB_CATEGORIES } from '../data/types';
 import type { KbCategory, KbEntry } from '../data/types';
 import { parseTags, timeAgo } from '../lib/util';
@@ -91,35 +93,55 @@ function KbDetailView({ en, confirmDel, setConfirmDel }: { en: KbEntry; confirmD
   const model = useMemo(() => modelFromText(en.title, en.body), [en.title, en.body]);
   const imgs = useEntryImages(en);
   const imgMap = useMemo(() => Object.fromEntries(Object.entries(imgs).map(([k, v]) => [Number(k), v.map(({ src, caption }) => ({ src, caption }))])), [imgs]);
+  const original = en.basedOn ? guideById(en.basedOn) : undefined;
+  const originalPath = original ? `/${original.set === 'procedures' ? 'procedures' : 'library'}/${original.id}` : '';
+  const remove = () => {
+    (en.images ?? []).forEach((i) => files().remove(i.path).catch(() => undefined));
+    store.remove('kbEntries', en.id); notifyFilesChanged();
+    navigate(original ? originalPath : '/guides');
+  };
   return (
     <div className="max-w-3xl">
-      <PageHeader title={en.title} sub={<span className="inline-flex flex-wrap gap-1.5 items-center"><Badge>{en.category}</Badge>{en.tags.map((t) => <Badge key={t} tone="info">#{t}</Badge>)}<span>· {timeAgo(en.updatedAt)}</span></span>} actions={
+      <PageHeader title={en.title} sub={<span className="inline-flex flex-wrap gap-1.5 items-center"><Badge>{en.category}</Badge>{original && <Badge tone="ok">Edited by you</Badge>}{en.tags.map((t) => <Badge key={t} tone="info">#{t}</Badge>)}<span>· {timeAgo(en.updatedAt)}</span></span>} actions={
         <>
           <Button aria-pressed={en.pinned} onClick={() => store.upsert('kbEntries', { ...en, pinned: !en.pinned })}>{en.pinned ? 'Unpin' : 'Pin'}</Button>
           <Button onClick={() => navigate(`/kb/${en.id}/edit`)}>Edit</Button>
-          <Button variant="danger" onClick={() => setConfirmDel(true)}>Delete</Button>
+          <Button variant="danger" onClick={() => setConfirmDel(true)}>{original ? 'Restore the original' : 'Delete'}</Button>
         </>
       } />
+      {original && <Card className="p-3 mb-4 text-sm" data-testid="edited-note">This is your edited copy of a built-in guide. <Link to={originalPath} className="underline">View the original</Link>. Restoring the original removes this copy and its photos.</Card>}
       {hasVisuals(model) && (
         <section className="mb-4" aria-label="Visual guide">
           <SectionTitle>Visual guide</SectionTitle>
-          <Card className="p-4"><VisualGuide model={model} images={imgMap} photos={<StepPhotos entry={en} stepCount={model.steps.length} images={imgs} />} /></Card>
+          <Card className="p-4"><VisualGuide model={model} images={imgMap} /></Card>
         </section>
       )}
       <SectionTitle>Summary and steps</SectionTitle>
       <Card className="p-4"><KbBody text={en.body} /></Card>
-      {confirmDel && <Modal title="Delete this entry?" onClose={() => setConfirmDel(false)} footer={<><Button onClick={() => setConfirmDel(false)}>Cancel</Button><Button variant="danger" onClick={() => { (en.images ?? []).forEach((i) => files().remove(i.path).catch(() => undefined)); store.remove('kbEntries', en.id); notifyFilesChanged(); navigate('/kb'); }}>Delete</Button></>}><p>It will be removed from this device.</p></Modal>}
+      <section className="mt-4" aria-label="Photos" data-testid="guide-photos">
+        <SectionTitle>Photos</SectionTitle>
+        <Card className="p-4"><StepPhotos entry={en} stepCount={model.steps.length} images={imgs} /></Card>
+      </section>
+      {confirmDel && <Modal title={original ? 'Restore the original?' : 'Delete this entry?'} onClose={() => setConfirmDel(false)} footer={<><Button onClick={() => setConfirmDel(false)}>Cancel</Button><Button variant="danger" onClick={remove}>{original ? 'Restore the original' : 'Delete'}</Button></>}><p>{original ? 'Your edited copy and its photos will be removed from this device and the built-in guide will be shown again.' : 'It will be removed from this device.'}</p></Modal>}
     </div>
   );
 }
 
-export function KbEditor({ id }: { id?: string }) {
+function EditorPhotos({ entry }: { entry: KbEntry }) {
+  const imgs = useEntryImages(entry);
+  const steps = useMemo(() => modelFromText(entry.title, entry.body).steps.length, [entry.title, entry.body]);
+  return <StepPhotos entry={entry} stepCount={steps} images={imgs} />;
+}
+
+export function KbEditor({ id, fromGuide }: { id?: string; fromGuide?: string }) {
   const existing = useRecord('kbEntries', id);
-  useTitle(id ? 'Edit entry' : 'New entry');
-  const [title, setTitle] = useState(existing?.title ?? '');
-  const [category, setCategory] = useState<KbCategory>(existing?.category ?? 'Procedures');
-  const [tags, setTags] = useState((existing?.tags ?? []).join(', '));
-  const [body, setBody] = useState(existing?.body ?? '');
+  const seed = fromGuide ? guideById(fromGuide) : undefined;
+  const base = seed ? copyFromGuide(seed) : undefined;
+  useTitle(id ? 'Edit guide' : base ? 'Edit a copy' : 'New guide');
+  const [title, setTitle] = useState(existing?.title ?? base?.title ?? '');
+  const [category, setCategory] = useState<KbCategory>(existing?.category ?? base?.category ?? 'Procedures');
+  const [tags, setTags] = useState((existing?.tags ?? base?.tags ?? []).join(', '));
+  const [body, setBody] = useState(existing?.body ?? base?.body ?? '');
   const [loaded, setLoaded] = useState(!id || !!existing);
   useEffect(() => {
     if (!loaded && existing) { setTitle(existing.title); setCategory(existing.category); setTags(existing.tags.join(', ')); setBody(existing.body); setLoaded(true); }
@@ -130,13 +152,13 @@ export function KbEditor({ id }: { id?: string }) {
   const save = () => {
     if (!title.trim() || !body.trim()) { setError('A title and some content are required.'); return; }
     if (!guard.canSave) { setError(guard.blocked ? 'Remove the secret above before saving.' : 'Confirm the sensitive details above, or redact them.'); return; }
-    const saved = store.upsert('kbEntries', existing ? { ...existing, title: title.trim(), category, tags: parseTags(tags), body } : { title: title.trim(), category, tags: parseTags(tags), body, pinned: false, demo: false });
+    const saved = store.upsert('kbEntries', existing ? { ...existing, title: title.trim(), category, tags: parseTags(tags), body } : { title: title.trim(), category, tags: parseTags(tags), body, pinned: false, demo: false, ...(base ? { basedOn: base.basedOn } : {}) });
     navigate(`/kb/${saved.id}`);
   };
   const redact = (r: Record<string, string>) => { setTitle(r.title); setTags(r.tags); setBody(r.body); guard.setConfirmed(false); };
   return (
     <div className="max-w-3xl pb-20">
-      <PageHeader title={id ? 'Edit entry' : 'New entry'} />
+      <PageHeader title={id ? 'Edit guide' : base ? 'Edit a copy of this guide' : 'New guide'} sub={base ? 'The built-in guide is not changed. Your edited copy takes its place in the library, and you can restore the original at any time.' : undefined} />
       <form onSubmit={(ev: { preventDefault(): void }) => { ev.preventDefault(); save(); }} className="space-y-3">
         <Card className="p-4 space-y-3">
           <Field label="Title" htmlFor="kb-title"><TextInput id="kb-title" value={title} onChange={(e: { target: { value: string } }) => setTitle(e.target.value)} /></Field>
@@ -144,12 +166,15 @@ export function KbEditor({ id }: { id?: string }) {
             <Field label="Category" htmlFor="kb-cat"><Select id="kb-cat" value={category} onChange={(e: { target: { value: string } }) => setCategory(e.target.value as KbCategory)}>{KB_CATEGORIES.map((c) => <option key={c}>{c}</option>)}</Select></Field>
             <Field label="Tags" htmlFor="kb-tags" hint="Comma separated."><TextInput id="kb-tags" value={tags} onChange={(e: { target: { value: string } }) => setTags(e.target.value)} /></Field>
           </div>
-          <Field label="Content" htmlFor="kb-body" hint="Wrap commands in triple backticks to show them as code blocks with a copy button."><TextArea id="kb-body" rows={12} value={body} onChange={(e: { target: { value: string } }) => setBody(e.target.value)} /></Field>
+          <Field label="Content" htmlFor="kb-body" hint="Put a heading line such as STEPS in capitals, then numbered lines, for a visual guide. Wrap commands in triple backticks for code blocks with a copy button."><TextArea id="kb-body" rows={12} value={body} onChange={(e: { target: { value: string } }) => setBody(e.target.value)} /></Field>
         </Card>
+        {existing
+          ? <Card className="p-4 space-y-2" data-testid="editor-photos"><SectionTitle>Photos</SectionTitle><EditorPhotos entry={existing} /></Card>
+          : <p className="text-sm text-muted">Save the guide first, then add photos or screenshots on its page.</p>}
         <SensitivePanel guard={guard} fieldLabels={{ title: 'Title', tags: 'Tags', body: 'Content' }} onRedactAll={() => redact(guard.redactAll(fields))} onRedactKind={(k) => redact(guard.redactOneKind(fields, k))} />
         <PrivacyNote />
         {error && <p role="alert" className="text-sm text-bad">{error}</p>}
-        <div className="flex gap-2 justify-end"><Button onClick={() => navigate(id ? `/kb/${id}` : '/kb')}>Cancel</Button><Button variant="primary" type="submit" disabled={guard.blocked}>Save entry</Button></div>
+        <div className="flex gap-2 justify-end"><Button onClick={() => navigate(id ? `/kb/${id}` : fromGuide ? `/${seed?.set === 'procedures' ? 'procedures' : 'library'}/${fromGuide}` : '/guides')}>Cancel</Button><Button variant="primary" type="submit" disabled={guard.blocked}>Save guide</Button></div>
       </form>
     </div>
   );

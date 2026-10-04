@@ -31,7 +31,7 @@ function useStats(): Record<string, string> {
     if (act.some((t) => t.kind === 'daily')) out['/tasks'] = left ? `${left} left today` : 'All done today';
     out['/live'] = notes.some((n) => n.status === 'open') ? 'A note is open' : 'Start a note';
     if (logs.length) out['/logs'] = plural(logs.length, 'log');
-    if (kb.length) out['/kb'] = plural(kb.length, 'guide');
+    if (kb.length) out['/guides'] = `${plural(kb.length, 'guide')} of your own`;
     const wk = weekHours(hours, now);
     if (hours.length) out['/apprenticeship'] = `${wk} h this week`;
     const rq = reqs.length; if (rq) out['/requirements'] = `${reqs.filter((r) => r.status === 'signed-off' || r.status === 'evidenced').length} of ${rq} evidenced`;

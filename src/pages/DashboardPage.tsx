@@ -250,7 +250,7 @@ function FullDashboard() {
     ),
     pinned: (title) => (
       <>
-        <SectionTitle action={link('/kb', 'Notes')}>{title}</SectionTitle>
+        <SectionTitle action={link('/guides', 'Guides')}>{title}</SectionTitle>
         {pinned.length === 0 ? <Empty title="Nothing pinned.">Pin a note or guide to keep it here.</Empty> : <ul className="space-y-2">{pinned.map((k) => <li key={k.id}><Link to={`/kb/${k.id}`} className="block bg-surface border border-line rounded-md p-3 hover:bg-surface2 text-sm font-medium wrap-any">{k.title}</Link></li>)}</ul>}
       </>
     ),
