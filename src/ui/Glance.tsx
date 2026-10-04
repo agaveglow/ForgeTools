@@ -33,6 +33,7 @@ export function Glance() {
 
   return (
     <div className="max-w-md mx-auto pb-28 md:pb-10 space-y-5 text-center" data-testid="glance">
+      <h1 className="sr-only">Home</h1>
       <Link to="/today" className="block mx-auto w-64 max-w-full rounded-full focus-visible:outline-2 focus-visible:outline-accent" aria-label={`${time}, ${date}. ${rings.map((r) => `${r.label} ${r.v} of ${r.m}`).join(', ')}. Open daily jobs.`}>
         <svg viewBox="0 0 200 200" className="w-full h-auto" role="img" aria-hidden="true">
           {rings.map((r) => (
