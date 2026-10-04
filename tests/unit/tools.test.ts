@@ -51,3 +51,28 @@ describe('cabling and kit content', () => {
     expect(new Set(KIT_LISTS.map((l) => l.id)).size).toBe(KIT_LISTS.length);
   });
 });
+
+import { GLANCE_APPS, cleanLabel, defaultAppSettings, moveItem, pageChoices, readableTint, resolveApps } from '../../src/lib/glance';
+describe('glance editing helpers', () => {
+  test('defaults when nothing saved, saved arrangement otherwise', () => {
+    expect(resolveApps(undefined)).toEqual(GLANCE_APPS);
+    expect(resolveApps([])).toEqual(GLANCE_APPS);
+    const r = resolveApps([{ id: 'x', label: 'Tools', to: '/tools', icon: 'nonsense', color: '2563EB' }]);
+    expect(r[0].icon).toBe('file'); expect(r[0].color).toBe('#2563eb');
+    expect(resolveApps([{ id: 'x', label: 'T', to: '/t', icon: 'tools', color: 'red' }])[0].color).toBeUndefined();
+  });
+  test('default settings mirror the built-in set', () => { expect(defaultAppSettings().map((a) => a.to)).toEqual(GLANCE_APPS.map((a) => a.to)); });
+  test('page choices include areas and pages, once each, with known icons', () => {
+    const c = pageChoices(); const tos = c.map((p) => p.to);
+    expect(new Set(tos).size).toBe(tos.length);
+    expect(tos).toContain('/tools'); expect(tos).toContain('/a/fix'); expect(tos).toContain('/procedures');
+  });
+  test('move and clean', () => {
+    const l = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+    expect(moveItem(l, 'b', -1).map((x) => x.id)).toEqual(['b', 'a', 'c']);
+    expect(moveItem(l, 'a', -1)).toBe(l);
+    expect(moveItem(l, 'c', 1)).toBe(l);
+    expect(cleanLabel('   Very   long   label   that goes on and on  ').length).toBeLessThanOrEqual(20);
+    expect(readableTint('#ffcc00')).toContain('#ffcc00');
+  });
+});

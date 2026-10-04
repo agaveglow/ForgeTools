@@ -1,6 +1,10 @@
 /** Watch-style home screen: round app bubbles in a staggered (honeycomb) layout, and ring maths. */
 
-export interface GlanceApp { id: string; label: string; to: string; icon: string; hue: 'accent' | 'ok' | 'info' | 'warn' | 'bad' }
+import type { GlanceAppSetting } from '../data/types';
+import { AREAS } from './areas';
+import { normalizeHex } from './look';
+
+export interface GlanceApp { id: string; label: string; to: string; icon: string; hue: 'accent' | 'ok' | 'info' | 'warn' | 'bad'; /** Custom colour (#rrggbb), overrides hue. */ color?: string }
 
 export const GLANCE_APPS: GlanceApp[] = [
   { id: 'today', label: 'Today', to: '/a/today', icon: 'clock', hue: 'accent' },
@@ -49,3 +53,39 @@ export function honeycombRows<T>(items: T[], widths: number[] = [3, 4]): T[][] {
 
 export const ringFraction = (value: number, max: number): number => (max > 0 ? Math.max(0, Math.min(1, value / max)) : 0);
 export const ringDash = (radius: number, frac: number): string => { const c = 2 * Math.PI * radius; return `${(c * frac).toFixed(2)} ${c.toFixed(2)}`; };
+
+// ---------- editing the home screen ----------
+
+/** The bubbles to show: the saved arrangement if there is one, otherwise the built-in set. */
+export function resolveApps(saved: GlanceAppSetting[] | undefined): GlanceApp[] {
+  if (!saved || saved.length === 0) return GLANCE_APPS;
+  return saved.map((a) => ({ id: a.id, label: a.label, to: a.to, icon: a.icon in GLANCE_ICONS ? a.icon : 'file', hue: 'accent' as const, color: normalizeHex(a.color) }));
+}
+
+/** The built-in set as saveable settings, so editing starts from what is on screen. */
+export const defaultAppSettings = (): GlanceAppSetting[] => GLANCE_APPS.map((a) => ({ id: a.id, label: a.label, to: a.to, icon: a.icon }));
+
+export interface PageChoice { to: string; label: string; icon: string }
+/** Every page that can be a bubble: the five areas and the pages inside them. */
+export function pageChoices(): PageChoice[] {
+  const out = new Map<string, PageChoice>();
+  for (const a of AREAS) {
+    out.set(a.to, { to: a.to, label: a.label, icon: a.icon });
+    for (const p of a.pages) if (!out.has(p.to)) out.set(p.to, { to: p.to, label: p.label, icon: p.icon });
+  }
+  return [...out.values()];
+}
+
+export const newBubbleId = (): string => 'b' + Math.random().toString(36).slice(2, 8);
+export const cleanLabel = (s: string): string => s.replace(/\s+/g, ' ').trim().slice(0, 20);
+
+/** Moves an item one place up or down. Returns the same list if it cannot move. */
+export function moveItem<T extends { id: string }>(list: T[], id: string, dir: -1 | 1): T[] {
+  const i = list.findIndex((x) => x.id === id), j = i + dir;
+  if (i < 0 || j < 0 || j >= list.length) return list;
+  const out = list.slice(); [out[i], out[j]] = [out[j], out[i]];
+  return out;
+}
+
+/** CSS colour for an icon: the custom colour drawn a little towards the text colour so it stays readable in both themes. */
+export const readableTint = (hex: string): string => `color-mix(in srgb, ${hex} 72%, var(--c-ink))`;

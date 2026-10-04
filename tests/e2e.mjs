@@ -1123,6 +1123,55 @@ async function run(label, viewport) {
     await noHScroll();
   });
 
+  await step(S('glance home: edit mode, add a coloured card, add/rename/recolour/remove a bubble, ring colour, persists'), async () => {
+    await p.goto(BASE + '#/__blank'); await p.goto(BASE + '#/?view=glance'); await p.waitForTimeout(250);
+    await p.locator('[data-testid=glance]').waitFor({ state: 'visible', timeout: 5000 });
+    const before = await p.locator('[data-testid=glance-apps] a').count();
+    await p.locator('[data-testid=glance-edit]').click();
+    await p.locator('[data-testid=glance-editor]').waitFor({ state: 'visible', timeout: 3000 });
+    // card
+    await p.getByRole('button', { name: /^Note/ }).click();
+    await p.locator('#cw-title').fill('Remember');
+    await p.locator('#cw-text').fill('Check the stock cupboard');
+    await p.getByRole('button', { name: 'Card colour: Blue', exact: true }).click();
+    await p.getByRole('button', { name: 'Add card' }).click();
+    await p.locator('[data-testid=home-cards] li').first().waitFor({ state: 'visible', timeout: 3000 });
+    await p.locator('[data-testid=glance-edit]').click();
+    const card = p.locator('[data-testid=glance-cards] [data-card]').first();
+    await card.waitFor({ state: 'visible', timeout: 3000 });
+    ok((await card.innerText()).includes('Check the stock cupboard'), 'card text shown on home');
+    const edge = await card.locator('div').first().evaluate((e) => getComputedStyle(e.querySelector('div') ?? e).borderLeftColor);
+    ok(/37, 99, 235|rgb\(37, 99, 235\)/.test(edge), 'card edge is blue: ' + edge);
+    // bubbles
+    await p.locator('[data-testid=glance-edit]').click();
+    await p.locator('#gl-add').selectOption({ label: 'Toolbox' });
+    await p.getByRole('button', { name: 'Add', exact: true }).click();
+    await until(async () => (await p.locator('[data-testid=bubble-list] li').count()) === before + 1, 'bubble added');
+    const last = p.locator('[data-testid=bubble-list] li').last();
+    await last.getByRole('textbox').fill('Kit');
+    await last.getByText('Colour', { exact: true }).click();
+    await last.getByRole('button', { name: /Colour of Kit: Teal/ }).click();
+    await p.locator('[data-testid=glance-edit]').click();
+    await p.locator('[data-testid=glance-apps] a[aria-label=Kit]').waitFor({ state: 'visible', timeout: 3000 });
+    // ring colour
+    await p.locator('[data-testid=glance-edit]').click();
+    await p.getByRole('button', { name: 'Jobs ring: Purple' }).click();
+    await p.locator('[data-testid=glance-edit]').click();
+    // persists
+    await p.reload(); await p.waitForTimeout(300);
+    await p.locator('[data-testid=glance-apps] a[aria-label=Kit]').waitFor({ state: 'visible', timeout: 3000 });
+    ok((await p.locator('[data-testid=glance-cards] [data-card]').count()) === 1, 'card persisted');
+    await noHScroll();
+    // remove bubble, hide card, reset
+    await p.locator('[data-testid=glance-edit]').click();
+    await p.getByRole('button', { name: 'Remove Kit' }).click();
+    await until(async () => (await p.locator('[data-testid=bubble-list] li').count()) === before, 'bubble removed');
+    await p.getByRole('button', { name: 'Take Remember off the home screen' }).click();
+    await p.getByRole('button', { name: 'Show Remember on the home screen' }).waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('button', { name: 'Reset bubbles' }).click();
+    await p.getByRole('button', { name: 'Done', exact: true }).last().click();
+  });
+
   await step(S('encryption: on, stored as ciphertext, locks, wrong passphrase refused, unlock, lock now'), async () => {
     await go('/kb/new');
     await p.getByLabel('Title').fill('Zebra quartz unique title');

@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useCollection, useSettings } from '../data/hooks';
 import { DEFAULT_DAILY_JOBS, dayProgress, parseDay, watchState } from '../lib/dailyJobs';
-import { GLANCE_APPS, honeycombRows, ringDash, ringFraction } from '../lib/glance';
+import { honeycombRows, readableTint, resolveApps, ringDash, ringFraction } from '../lib/glance';
+import { normalizeHex } from '../lib/look';
+import { CustomWidgetBody } from './CustomWidgets';
+import { GlanceEditor } from './GlanceEditor';
+import { store } from '../data/hooks';
 import { HUE, Icon } from './Bubble';
 import { activeTasks, taskDone } from '../lib/progress';
 import { clsx } from '../lib/util';
@@ -9,6 +13,7 @@ import { Link } from './router';
 
 export function Glance() {
   const settings = useSettings();
+  const [editing, setEditing] = useState(false);
   const tasks = useCollection('tasks');
   const notes = useCollection('jobNotes');
   const [now, setNow] = useState(() => new Date());
@@ -20,19 +25,21 @@ export function Glance() {
   const daily = act.filter((t) => t.kind === 'daily'), weekly = act.filter((t) => t.kind === 'weekly');
   const dj = dayProgress(jobs, day);
   const rings = [
-    { id: 'jobs', label: 'Jobs', v: dj.done, m: dj.total, color: HUE.accent, to: '/today', r: 88 },
-    { id: 'checks', label: 'Checks', v: daily.filter((t) => taskDone(t, now)).length, m: daily.length, color: HUE.ok, to: '/tasks', r: 68 },
-    { id: 'week', label: 'Week', v: weekly.filter((t) => taskDone(t, now)).length, m: weekly.length, color: HUE.info, to: '/tasks', r: 48 },
+    { id: 'jobs', label: 'Jobs', v: dj.done, m: dj.total, color: normalizeHex(settings.glanceRings?.jobs) ?? HUE.accent, to: '/today', r: 88 },
+    { id: 'checks', label: 'Checks', v: daily.filter((t) => taskDone(t, now)).length, m: daily.length, color: normalizeHex(settings.glanceRings?.checks) ?? HUE.ok, to: '/tasks', r: 68 },
+    { id: 'week', label: 'Week', v: weekly.filter((t) => taskDone(t, now)).length, m: weekly.length, color: normalizeHex(settings.glanceRings?.week) ?? HUE.info, to: '/tasks', r: 48 },
   ];
   const due = jobs.filter((j) => j.kind === 'watch' && watchState(j, day.checked[j.id], now) === 'due');
   const openNote = notes.find((n) => n.status === 'open');
-  const rows = honeycombRows(GLANCE_APPS);
+  const rows = honeycombRows(resolveApps(settings.glanceApps));
+  const cards = (settings.customWidgets ?? []).filter((c) => c.glance);
   const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const date = now.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
     <div className="max-w-md mx-auto pb-28 md:pb-10 space-y-5 text-center" data-testid="glance">
       <h1 className="sr-only">Home</h1>
+      <div className="flex justify-end"><button type="button" aria-pressed={editing} onClick={() => setEditing(!editing)} className="min-h-9 px-3 rounded-full border border-line text-sm text-muted hover:text-ink hover:bg-surface2" data-testid="glance-edit">{editing ? 'Done' : 'Edit home'}</button></div>
       <Link to="/today" className="block mx-auto w-64 max-w-full rounded-full focus-visible:outline-2 focus-visible:outline-accent" aria-label={`${time}, ${date}. ${rings.map((r) => `${r.label} ${r.v} of ${r.m}`).join(', ')}. Open daily jobs.`}>
         <svg viewBox="0 0 200 200" className="w-full h-auto" role="img" aria-hidden="true">
           {rings.map((r) => (
@@ -67,7 +74,7 @@ export function Glance() {
           <div key={ri} className={clsx('flex justify-center gap-3', ri > 0 && 'mt-2')}>
             {row.map((a) => (
               <Link key={a.id} to={a.to} aria-label={a.label} className="group flex flex-col items-center w-[22vw] max-w-[88px] min-w-[68px] outline-none">
-                <span className="grid place-items-center rounded-full size-[18vw] max-size-[72px] min-w-[56px] min-h-[56px] max-w-[72px] max-h-[72px] border border-line transition-transform duration-150 group-active:scale-90 group-hover:scale-105 group-focus-visible:outline-2 group-focus-visible:outline-accent" style={{ color: HUE[a.hue], background: `color-mix(in srgb, ${HUE[a.hue]} 20%, var(--c-surface))` }}>
+                <span className="grid place-items-center rounded-full size-[18vw] max-size-[72px] min-w-[56px] min-h-[56px] max-w-[72px] max-h-[72px] border border-line transition-transform duration-150 group-active:scale-90 group-hover:scale-105 group-focus-visible:outline-2 group-focus-visible:outline-accent" style={a.color ? { color: readableTint(a.color), background: `color-mix(in srgb, ${a.color} 20%, var(--c-surface))` } : { color: HUE[a.hue], background: `color-mix(in srgb, ${HUE[a.hue]} 20%, var(--c-surface))` }}>
                   <Icon name={a.icon} size={28} />
                 </span>
                 <span className="mt-1 text-[11px] leading-tight text-muted">{a.label}</span>
@@ -76,6 +83,20 @@ export function Glance() {
           </div>
         ))}
       </nav>
+
+      {cards.length > 0 && (
+        <section aria-label="Your cards" className="space-y-3 text-left" data-testid="glance-cards">
+          {cards.map((c) => (
+            <div key={c.id} data-card={c.id}>
+              <h2 className="text-sm font-semibold mb-1.5">{c.title}</h2>
+              <div className="rounded-2xl border border-line bg-surface p-3" style={c.color ? { borderLeft: `6px solid ${c.color}`, background: `color-mix(in srgb, ${c.color} 8%, var(--c-surface))` } : { borderLeft: '6px solid var(--c-accent)' }}>
+                <CustomWidgetBody w={c} now={now} onChange={(w) => store.updateSettings({ customWidgets: (settings.customWidgets ?? []).map((x) => (x.id === w.id ? w : x)) })} />
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+      {editing && <GlanceEditor onDone={() => setEditing(false)} />}
     </div>
   );
 }

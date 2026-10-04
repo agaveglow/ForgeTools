@@ -282,7 +282,14 @@ export interface CustomWidget {
   date?: string;
   /** links: app routes such as /tasks */
   links?: string[];
+  /** Colour of the card's edge and tint (#rrggbb). Unset = the app accent. */
+  color?: string;
+  /** Show this card on the Glance home screen. */
+  glance?: boolean;
 }
+
+/** A bubble on the Glance home screen. When none are saved the built-in set is used. */
+export interface GlanceAppSetting { id: string; label: string; to: string; icon: string; color?: string }
 
 /** One general daily job. 'job' is ticked once a day. 'watch' is something to keep checking, with a reminder interval. */
 export interface DailyJob {
@@ -310,6 +317,9 @@ export interface Settings {
   /** Home screen style: a calm glanceable watch-style view, or every widget. */
   dashboardView?: 'glance' | 'full';
   customWidgets?: CustomWidget[];
+  /** Glance bubbles as the person arranged them, and the colours of its three rings. */
+  glanceApps?: GlanceAppSetting[];
+  glanceRings?: Partial<Record<'jobs' | 'checks' | 'week', string>>;
   /** The user's own general daily jobs (clock in, watching the inbox and ticket queue, clock out...). */
   dailyJobs?: DailyJob[];
   /** The learning plan components as named in Aptem (the person's own list). */

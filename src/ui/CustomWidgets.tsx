@@ -5,6 +5,7 @@ import { Button, Field, Modal, TextArea, TextInput } from './primitives';
 import { Link } from './router';
 import { PrivacyNote, SensitivePanel, useSaveGuard } from './SensitivePanel';
 import { parseYmd, ymd } from '../lib/progress';
+import { ColourField } from './ColourField';
 
 export const LINK_TARGETS: Array<[string, string]> = [
   ['Tasks', '/tasks'], ['Task board', '/board'], ['Live notes', '/live'], ['Work logs', '/logs'], ['New work log', '/logs/new'], ['Guide agent', '/agent'], ['Voice notes', '/voice'],
@@ -131,6 +132,7 @@ export function CustomWidgetEditor({ initial, isNew, onSave, onDelete, onClose }
             {LINK_TARGETS.map(([label, route]) => <label key={route} className="flex items-center gap-2 min-h-9 text-sm"><input type="checkbox" className="size-5" checked={(w.links ?? []).includes(route)} onChange={(e: { target: { checked: boolean } }) => set({ links: e.target.checked ? [...(w.links ?? []), route] : (w.links ?? []).filter((r) => r !== route) })} />{label}</label>)}
           </fieldset>
         )}
+        <ColourField label="Card colour" value={w.color} onChange={(c) => set({ color: c })} defaultLabel="App accent" />
         <SensitivePanel guard={guard} fieldLabels={{ title: 'Title', text: 'Text', items: 'Items', unit: 'Unit' }} onRedactAll={() => { const r = guard.redactAll(fields); set({ title: r.title, text: r.text }); setItemsText(r.items); guard.setConfirmed(false); }} onRedactKind={(k) => { const r = guard.redactOneKind(fields, k); set({ title: r.title, text: r.text }); setItemsText(r.items); guard.setConfirmed(false); }} />
         <PrivacyNote />
       </div>

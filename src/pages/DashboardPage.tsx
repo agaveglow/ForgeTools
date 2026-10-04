@@ -277,7 +277,7 @@ function FullDashboard() {
         {visible.map((w, i) => {
           const cw = customById.get(w.id);
           const content = cw
-            ? <><SectionTitle>{w.title}</SectionTitle><Card className="p-3"><CustomWidgetBody w={cw} now={now} onChange={upsertCustom} /></Card></>
+            ? <><SectionTitle>{w.title}</SectionTitle><Card className="p-3" style={cw.color ? { borderLeft: `6px solid ${cw.color}` } : undefined}><CustomWidgetBody w={cw} now={now} onChange={upsertCustom} /></Card></>
             : body[w.id](w.title);
           if (content === null && !editing) return null;
           return (
