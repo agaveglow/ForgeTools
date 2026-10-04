@@ -112,3 +112,23 @@ describe('areas and navigation', () => {
     expect(parentPath('/unknown')).toBe('/');
   });
 });
+
+import { cleanEdit } from '../../src/lib/manuals';
+describe('editing a manual', () => {
+  test('trims and tidies the name', () => {
+    expect(cleanEdit({ title: '  My   guide  ', brand: 'Epson', note: ' x ' }, 'Old').title).toBe('My guide');
+    expect(cleanEdit({ title: '  My   guide  ', brand: 'Epson', note: ' x ' }, 'Old').note).toBe('x');
+  });
+  test('a blank name keeps the old one, so a manual is never unnamed', () => {
+    expect(cleanEdit({ title: '   ', brand: 'Ricoh', note: '' }, 'Old name').title).toBe('Old name');
+  });
+  test('an unknown brand becomes Other', () => {
+    expect(cleanEdit({ title: 'a', brand: 'Nashuatec', note: '' }, 'o').brand).toBe('Other');
+    expect(cleanEdit({ title: 'a', brand: 'Sharp', note: '' }, 'o').brand).toBe('Sharp');
+  });
+  test('name and note are length-limited', () => {
+    const c = cleanEdit({ title: 'a'.repeat(500), brand: 'Epson', note: 'b'.repeat(900) }, 'o');
+    expect(c.title.length).toBe(120);
+    expect(c.note.length).toBe(300);
+  });
+});

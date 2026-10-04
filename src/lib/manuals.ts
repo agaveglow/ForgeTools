@@ -5,10 +5,12 @@
 import { uid, nowIso } from './util';
 import { openPdf, pageText } from './pdfjs';
 import type { PdfDoc } from './pdfjs';
-import { searchPages } from './manualSearch';
+import { BRANDS, searchPages } from './manualSearch';
 import type { PageHit } from './manualSearch';
 
-export interface ManualMeta { id: string; title: string; fileName: string; size: number; pages: number; brand: string; added: string; indexed: number }
+export interface ManualMeta { id: string; title: string; fileName: string; size: number; pages: number; brand: string; added: string; indexed: number; note?: string }
+/** The parts of a manual the user may edit. Everything else (file, pages, search progress) is not editable. */
+export interface ManualEdit { title: string; brand: string; note: string }
 export interface ManualMark { id: string; manualId: string; page: number; label: string; added: string }
 
 const DB = 'forgetools-manuals';
@@ -44,6 +46,22 @@ export async function listManuals(): Promise<ManualMeta[]> {
 }
 export const getManual = async (id: string): Promise<ManualMeta | undefined> => (await run<ManualMeta>('meta', 'readonly', (s) => s.get(id))) as ManualMeta | undefined;
 export const putMeta = async (m: ManualMeta): Promise<void> => { await run('meta', 'readwrite', (s) => s.put(m)); };
+/** Cleans user-typed edits. A blank name falls back to the old one so a manual is never left unnamed. */
+export function cleanEdit(edit: ManualEdit, fallbackTitle: string): ManualEdit {
+  const title = edit.title.replace(/\s+/g, ' ').trim().slice(0, 120) || fallbackTitle;
+  const brand = (BRANDS as readonly string[]).includes(edit.brand) ? edit.brand : 'Other';
+  return { title, brand, note: edit.note.trim().slice(0, 300) };
+}
+/** Saves edits onto the stored record (re-read first, so background reading cannot undo or be undone by it). */
+export async function updateManual(id: string, edit: ManualEdit): Promise<ManualMeta | undefined> {
+  const cur = await getManual(id);
+  if (!cur) return undefined;
+  const c = cleanEdit(edit, cur.title);
+  const next: ManualMeta = { ...cur, title: c.title, brand: c.brand };
+  if (c.note) next.note = c.note; else delete next.note;
+  await putMeta(next);
+  return next;
+}
 export const getBlob = async (id: string): Promise<Blob | undefined> => (await run<Blob>('blobs', 'readonly', (s) => s.get(id))) as Blob | undefined;
 
 export class ManualError extends Error {}
@@ -85,7 +103,9 @@ export async function indexManual(id: string, onProgress: (done: number, total: 
     let batch: Array<[string, { page: number; text: string }]> = [];
     const flush = async (upTo: number) => {
       if (batch.length) { const b = batch; batch = []; await run('text', 'readwrite', (s) => { for (const [k, v] of b) s.put(v, k); }); }
-      meta.indexed = upTo; await putMeta(meta);
+      meta.indexed = upTo;
+      const fresh = await getManual(id); // keep any rename made while reading
+      if (fresh) await putMeta({ ...fresh, indexed: upTo });
     };
     for (let p = meta.indexed + 1; p <= meta.pages; p++) {
       if (signal.stop) { await flush(p - 1); return; }

@@ -885,10 +885,47 @@ async function run(label, viewport) {
     await p.waitForSelector('[data-testid=page-canvas][data-ready="1"]', { timeout: 15000 });
     await noHScroll();
     await shot('manual-reader');
+    // edit from the reader: rename, change brand, add a note
+    await p.getByRole('button', { name: 'Edit details' }).click();
+    const ed = p.locator('[data-testid=manual-editor]');
+    await ed.getByLabel('Name').fill('WF-579R user guide');
+    await ed.getByLabel('Brand').selectOption('Other');
+    await ed.getByLabel('Note (optional)').fill('Rev A, rear cover section');
+    await ed.getByLabel('Name').fill('Root password: hunter2-secret');
+    ok(await ed.getByRole('button', { name: 'Save' }).isDisabled(), 'a secret in the name blocks saving');
+    await ed.getByLabel('Name').fill('WF-579R user guide');
+    await ed.getByRole('button', { name: 'Save' }).click();
+    await p.getByRole('heading', { name: 'WF-579R user guide' }).waitFor({ state: 'visible', timeout: 5000 });
+    ok((await p.locator('#main').innerText()).includes('Rev A, rear cover section'), 'note shown in the reader');
+    ok(await p.locator('[data-testid=manual-editor]').count() === 0, 'editor closes after saving');
+    // the library shows it under the new brand, and edits work there too
+    await go('/manuals');
+    await p.getByRole('heading', { name: 'Other' }).waitFor({ state: 'visible', timeout: 5000 });
+    await p.getByText('WF-579R user guide').first().waitFor({ state: 'visible', timeout: 5000 });
+    await p.getByRole('button', { name: 'Edit WF-579R user guide' }).click();
+    await p.locator('[data-testid=manual-editor]').getByLabel('Name').fill('   ');
+    await p.locator('[data-testid=manual-editor]').getByRole('button', { name: 'Save' }).click();
+    await p.getByText('WF-579R user guide').first().waitFor({ state: 'visible', timeout: 5000 });
+    await p.getByRole('button', { name: 'Edit WF-579R user guide' }).click();
+    await p.locator('[data-testid=manual-editor]').getByLabel('Name').fill('WF-579R service notes');
+    await p.locator('[data-testid=manual-editor]').getByLabel('Brand').selectOption('Epson');
+    await p.locator('[data-testid=manual-editor]').getByRole('button', { name: 'Cancel' }).click();
+    await p.getByText('WF-579R user guide').first().waitFor({ state: 'visible', timeout: 5000 });
+    ok(await p.getByText('WF-579R service notes').count() === 0, 'cancel discards changes');
+    await p.getByRole('button', { name: 'Edit WF-579R user guide' }).click();
+    await p.locator('[data-testid=manual-editor]').getByLabel('Name').fill('WF-579R service notes');
+    await p.locator('[data-testid=manual-editor]').getByLabel('Brand').selectOption('Epson');
+    await p.locator('[data-testid=manual-editor]').getByRole('button', { name: 'Save' }).click();
+    await p.getByRole('heading', { name: 'Epson' }).waitFor({ state: 'visible', timeout: 5000 });
+    await p.reload();
+    await p.getByText('WF-579R service notes').first().waitFor({ state: 'visible', timeout: 5000 });
+    // bookmarks and the page picture still belong to the renamed manual
+    await p.locator('a[href^="#/manuals/"]').first().click();
+    await p.getByText('Page 2 · Rear cover jam').waitFor({ state: 'visible', timeout: 8000 });
     // remove it
     await go('/manuals');
     p.once('dialog', (d) => d.accept());
-    await p.getByRole('button', { name: /^Remove Epson WF-579R sample/ }).click();
+    await p.getByRole('button', { name: /^Remove WF-579R service notes/ }).click();
     await p.getByText('No manuals yet.').waitFor({ state: 'visible', timeout: 5000 });
   });
 

@@ -6,7 +6,7 @@ import { BRANDS, formatBytes, guessBrand } from '../lib/manualSearch';
 import type { PageHit } from '../lib/manualSearch';
 import { openPdf } from '../lib/pdfjs';
 import type { PdfDoc } from '../lib/pdfjs';
-import { addMark, addManual, askPersistent, getBlob, getManual, getPageText, indexManual, listManuals, listMarks, ManualError, putMeta, removeMark, removeManual, searchAll, searchManual } from '../lib/manuals';
+import { addMark, addManual, askPersistent, getBlob, getManual, getPageText, indexManual, listManuals, listMarks, ManualError, removeMark, removeManual, searchAll, searchManual, updateManual } from '../lib/manuals';
 import type { ManualMark, ManualMeta } from '../lib/manuals';
 import { Badge, Button, Card, Checkbox, Empty, Field, PageHeader, SectionTitle, TextInput } from '../ui/primitives';
 import { Link, currentQuery, navigate } from '../ui/router';
@@ -32,6 +32,47 @@ function useIndexer(manuals: ManualMeta[], reload: () => void) {
   return progress;
 }
 
+/** Edit a manual's name, brand and a short note. The PDF itself is never changed. */
+function ManualEditor({ meta, onSaved, onCancel }: { meta: ManualMeta; onSaved: (m: ManualMeta) => void; onCancel: () => void }) {
+  const [title, setTitle] = useState(meta.title);
+  const [brand, setBrand] = useState(meta.brand);
+  const [note, setNote] = useState(meta.note ?? '');
+  const [err, setErr] = useState('');
+  const guard = useSaveGuard({ title, note });
+  const save = async () => {
+    if (!guard.canSave) return;
+    try {
+      const next = await updateManual(meta.id, { title, brand, note });
+      if (!next) { setErr('This manual is no longer on this device.'); return; }
+      onSaved(next);
+    } catch { setErr('Could not save. Try again.'); }
+  };
+  const k = `ed-${meta.id}`;
+  return (
+    <form className="space-y-3 border border-line rounded-md p-3 bg-surface2" data-testid="manual-editor" aria-label={`Edit ${meta.title}`}
+      onSubmit={(e: { preventDefault(): void }) => { e.preventDefault(); save(); }}>
+      <Field label="Name" htmlFor={`${k}-t`}>
+        <TextInput id={`${k}-t`} value={title} maxLength={120} onChange={(e: Ev) => setTitle(e.target.value)} />
+      </Field>
+      <Field label="Brand" htmlFor={`${k}-b`}>
+        <select id={`${k}-b`} className="min-h-11 w-full rounded-sm border border-line bg-surface px-2 text-sm" value={brand} onChange={(e: Ev) => setBrand(e.target.value)}>
+          {BRANDS.map((b) => <option key={b}>{b}</option>)}
+        </select>
+      </Field>
+      <Field label="Note (optional)" htmlFor={`${k}-n`} hint="For example the model and revision. No customer details.">
+        <TextInput id={`${k}-n`} value={note} maxLength={300} onChange={(e: Ev) => setNote(e.target.value)} />
+      </Field>
+      <p className="text-xs text-muted wrap-any">File: {meta.fileName}. Renaming does not change the PDF or lose bookmarks.</p>
+      {guard.findings.length > 0 && <p role="alert" className="text-sm text-bad">That looks private or secret. Remove it before saving.</p>}
+      {err && <p role="alert" className="text-sm text-bad">{err}</p>}
+      <div className="flex gap-2">
+        <Button variant="primary" type="submit" disabled={!guard.canSave}>Save</Button>
+        <Button type="button" onClick={onCancel}>Cancel</Button>
+      </div>
+    </form>
+  );
+}
+
 export function ManualsPage() {
   useTitle('Printer guides');
   const [manuals, setManuals] = useState<ManualMeta[]>([]);
@@ -40,6 +81,7 @@ export function ManualsPage() {
   const [busy, setBusy] = useState('');
   const [brand, setBrand] = useState('Auto');
   const [q, setQ] = useState('');
+  const [editing, setEditing] = useState('');
   const [hits, setHits] = useState<Array<PageHit & { manual: ManualMeta }> | null>(null);
   const reload = () => { listManuals().then((m) => { setManuals(m); setLoaded(true); }).catch(() => { setLoaded(true); setErr('Saved manuals could not be read on this device.'); }); };
   useEffect(reload, []);
@@ -111,15 +153,23 @@ export function ManualsPage() {
         <section key={b} aria-label={b}>
           <SectionTitle>{b}</SectionTitle>
           <ul className="space-y-2">{list.map((m) => (
-            <li key={m.id} className="bg-surface border border-line rounded-md p-3 flex items-start justify-between gap-2">
-              <Link to={`/manuals/${m.id}`} className="min-w-0 flex-1">
-                <span className="block text-sm font-medium wrap-any">{m.title}</span>
-                <span className="block text-xs text-muted">{m.pages} pages · {formatBytes(m.size)} {m.indexed < m.pages ? '· search still preparing' : '· searchable'}</span>
-              </Link>
-              <div className="flex items-center gap-1 shrink-0">
-                {m.indexed >= m.pages ? <Badge tone="ok">Ready</Badge> : <Badge tone="warn">Reading</Badge>}
-                <Button size="sm" variant="ghost" aria-label={`Remove ${m.title}`} onClick={() => remove(m)}>Remove</Button>
-              </div>
+            <li key={m.id} className="bg-surface border border-line rounded-md p-3">
+              {editing === m.id ? (
+                <ManualEditor meta={m} onCancel={() => setEditing('')} onSaved={() => { setEditing(''); reload(); }} />
+              ) : (
+                <div className="flex items-start justify-between gap-2">
+                  <Link to={`/manuals/${m.id}`} className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium wrap-any">{m.title}</span>
+                    {m.note && <span className="block text-xs wrap-any">{m.note}</span>}
+                    <span className="block text-xs text-muted">{m.pages} pages · {formatBytes(m.size)} {m.indexed < m.pages ? '· search still preparing' : '· searchable'}</span>
+                  </Link>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {m.indexed >= m.pages ? <Badge tone="ok">Ready</Badge> : <Badge tone="warn">Reading</Badge>}
+                    <Button size="sm" variant="ghost" aria-label={`Edit ${m.title}`} onClick={() => setEditing(m.id)}>Edit</Button>
+                    <Button size="sm" variant="ghost" aria-label={`Remove ${m.title}`} onClick={() => remove(m)}>Remove</Button>
+                  </div>
+                </div>
+              )}
             </li>
           ))}</ul>
         </section>
@@ -132,6 +182,7 @@ export function ManualReaderPage({ id }: { id: string }) {
   const [meta, setMeta] = useState<ManualMeta | null | undefined>(undefined);
   const [doc, setDoc] = useState<PdfDoc | null>(null);
   const [err, setErr] = useState('');
+  const [editingMeta, setEditingMeta] = useState(false);
   const initial = Math.max(1, Number(currentQuery().get('p')) || 1);
   const [page, setPage] = useState(initial);
   const [jump, setJump] = useState(String(initial));
@@ -210,20 +261,15 @@ export function ManualReaderPage({ id }: { id: string }) {
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
     }, 'image/png');
   };
-  const rename = async () => {
-    if (!meta) return;
-    const t = window.prompt('Manual name', meta.title);
-    if (!t || !t.trim()) return;
-    const next = { ...meta, title: t.trim().slice(0, 120) };
-    await putMeta(next); setMeta(next);
-  };
 
   if (meta === undefined) return <p className="text-sm text-muted">Opening…</p>;
   if (meta === null) return <Empty title="Manual not found.">It may have been removed from this device. <Link to="/manuals" className="underline">Back to Printer guides</Link>.</Empty>;
 
   return (
     <div className="max-w-5xl pb-10 space-y-3">
-      <PageHeader title={meta.title} sub={`${meta.brand} · ${meta.pages} pages`} actions={<><Link to="/manuals"><Button>Library</Button></Link><Button onClick={rename}>Rename</Button></>} />
+      <PageHeader title={meta.title} sub={`${meta.brand} · ${meta.pages} pages`} actions={<><Link to="/manuals"><Button>Library</Button></Link><Button onClick={() => setEditingMeta((v) => !v)} aria-expanded={editingMeta}>Edit details</Button></>} />
+      {meta.note && !editingMeta && <p className="text-sm text-muted wrap-any">{meta.note}</p>}
+      {editingMeta && <ManualEditor meta={meta} onCancel={() => setEditingMeta(false)} onSaved={(m) => { setMeta(m); setEditingMeta(false); }} />}
       {err && <p role="alert" className="text-sm text-bad">{err}</p>}
 
       <div className="flex flex-wrap items-center gap-2" role="toolbar" aria-label="Page controls">
