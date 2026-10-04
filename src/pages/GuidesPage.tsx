@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { LIBRARY, PROCEDURES, guideById, guideText } from '../content/library';
 import type { Block, LibGuide } from '../content/library';
+import { useCollection } from '../data/hooks';
 import { Badge, Card, CopyButton, Empty, PageHeader, SectionTitle, TextInput } from '../ui/primitives';
 import { Link } from '../ui/router';
 import { useTitle } from '../ui/hooks';
@@ -38,7 +39,23 @@ export function GuideList({ set }: { set: Set }) {
           ))}
         </ul>
       )}
+      {set === 'procedures' && <MyGuides q={q} />}
     </div>
+  );
+}
+
+/** Guides the person built with the guide agent, kept in the Knowledge base. */
+function MyGuides({ q }: { q: string }) {
+  const kb = useCollection('kbEntries');
+  const t = q.trim().toLowerCase();
+  const mine = kb.filter((k) => k.tags.includes('my-guide') && (!t || `${k.title} ${k.tags.join(' ')}`.toLowerCase().includes(t))).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  return (
+    <section className="mt-6" aria-label="Your own guides" data-testid="my-guides">
+      <SectionTitle action={<Link to="/agent" className="text-sm underline inline-flex items-center min-h-9 px-1">Build one</Link>}>Your own guides</SectionTitle>
+      {mine.length === 0 ? <p className="text-sm text-muted">Guides you build with the guide agent appear here.</p> : (
+        <ul className="space-y-2">{mine.map((k) => <li key={k.id}><Link to={`/kb/${k.id}`} className="block rounded-md border border-line bg-surface p-3 hover:bg-surface2"><span className="font-medium wrap-any">{k.title}</span><span className="block text-xs text-muted">{k.category}</span></Link></li>)}</ul>
+      )}
+    </section>
   );
 }
 

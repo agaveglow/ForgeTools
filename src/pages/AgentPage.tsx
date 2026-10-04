@@ -1,12 +1,14 @@
 import { useMemo, useRef, useState } from 'react';
 import { store, useCollection } from '../data/hooks';
+import { LOG_CATEGORIES } from '../data/types';
+import type { LogCategory } from '../data/types';
 import { saveCreatedFile } from '../data/files';
-import { guideToText, localAgent } from '../lib/agent';
+import { buildCustomGuide, buildGuide, guideToText, localAgent } from '../lib/agent';
 import type { Answer, Guide, TopicAnalysis } from '../lib/agent';
 import { fetchReadable, searchWeb, webSection } from '../lib/web';
 import type { WebResult } from '../lib/web';
 import { timeAgo } from '../lib/util';
-import { Badge, Button, Card, Checkbox, CopyButton, Empty, Field, PageHeader, SectionTitle, TextArea, TextInput } from '../ui/primitives';
+import { Badge, Button, Card, Checkbox, CopyButton, Empty, Field, PageHeader, SectionTitle, Select, TextArea, TextInput } from '../ui/primitives';
 import { GuideView, Sources } from '../ui/GuideView';
 import { hasVisuals, modelFromGuide } from '../lib/visual';
 import { dictationSupported, startDictation } from '../lib/transcribe';
@@ -92,6 +94,46 @@ function WebLookup({ initial, onAdd }: { initial: string; onAdd: (url: string, t
   );
 }
 
+
+function Builder({ analysis, text, onBuild, onOutline }: { analysis: TopicAnalysis; text: string; onBuild: (g: Guide) => void; onOutline: () => void }) {
+  const [goal, setGoal] = useState(text);
+  const [area, setArea] = useState<LogCategory>(analysis.category);
+  const [admin, setAdmin] = useState(false);
+  const [steps, setSteps] = useState('');
+  const [verify, setVerify] = useState('');
+  const [watch, setWatch] = useState('');
+  const guard = useSaveGuard({ goal, steps, verify, watch });
+  const redact = (r: Record<string, string>) => { setGoal(r.goal); setSteps(r.steps); setVerify(r.verify); setWatch(r.watch); guard.setConfirmed(false); };
+  const set = (f: (v: string) => void) => (e: { target: { value: string } }) => f(e.target.value);
+  return (
+    <Card className="p-4 space-y-3 mt-4" data-testid="guide-builder" aria-label="Build a new guide">
+      <div>
+        <h2 className="font-semibold">I don’t have a guide that covers this</h2>
+        <p className="text-sm text-muted">{analysis.unmatched.length ? `Nothing in the library covers: ${analysis.unmatched.join(', ')}.` : 'Nothing in the library covers it closely.'} I won’t guess steps. Answer a few questions and I’ll build a new guide from what you tell me, which you can then add to from the web.</p>
+      </div>
+      {analysis.related.length > 0 && (
+        <div data-testid="related-items">
+          <p className="text-sm font-medium">Related, but not the answer</p>
+          <ul className="text-sm space-y-0.5 mt-1">{analysis.related.map((r) => <li key={r.route}><Link to={r.route} className="underline">{r.label}</Link></li>)}</ul>
+        </div>
+      )}
+      <Field label="1. What is the job, in one sentence?" htmlFor="gb-goal"><TextInput id="gb-goal" value={goal} onChange={set(setGoal)} /></Field>
+      <Field label="2. Which area is it in?" htmlFor="gb-area"><Select id="gb-area" value={area} onChange={(e: { target: { value: string } }) => setArea(e.target.value as LogCategory)}>{LOG_CATEGORIES.map((c) => <option key={c}>{c}</option>)}</Select></Field>
+      <Checkbox checked={admin} onChange={setAdmin} label="3. It needs administrator rights" />
+      <Field label="4. Do you know the steps? Type them, one per line" htmlFor="gb-steps" hint="Leave blank to start with an outline, then look the steps up online or add them later.">
+        <TextArea id="gb-steps" rows={5} value={steps} onChange={set(setSteps)} placeholder={'Open the admin portal\nFind the user\n…'} />
+      </Field>
+      <Field label="5. How do you know it worked?" htmlFor="gb-verify"><TextInput id="gb-verify" value={verify} onChange={set(setVerify)} /></Field>
+      <Field label="6. Anything to watch out for?" htmlFor="gb-watch"><TextInput id="gb-watch" value={watch} onChange={set(setWatch)} /></Field>
+      <SensitivePanel guard={guard} fieldLabels={{ goal: 'Job', steps: 'Steps', verify: 'How you know', watch: 'Watch out for' }} onRedactAll={() => redact(guard.redactAll({ goal, steps, verify, watch }))} onRedactKind={(k) => redact(guard.redactOneKind({ goal, steps, verify, watch }, k))} />
+      <div className="flex flex-wrap gap-2">
+        <Button variant="primary" disabled={!goal.trim() || !guard.canSave} onClick={() => onBuild(buildCustomGuide({ goal, area, needsAdmin: admin, steps: steps.split('\n'), verify, watch }))}>Build my guide</Button>
+        {analysis.kind === 'problem' && <Button onClick={onOutline}>Show a general troubleshooting outline instead</Button>}
+      </div>
+    </Card>
+  );
+}
+
 export function AgentPage() {
   useTitle('Guide agent');
   const logs = useCollection('workLogs');
@@ -118,7 +160,7 @@ export function AgentPage() {
     if (!t.trim()) return;
     const a = await localAgent.analyse(t, ctx);
     setAnalysis(a);
-    setGuide(await localAgent.guide(a));
+    setGuide(a.confidence === 'good' ? await localAgent.guide(a) : null);
     setMsgs([]); setSavedId(undefined); setFilePath('');
   };
   const ask = async (question: string) => {
@@ -180,6 +222,8 @@ export function AgentPage() {
         <Button variant="primary" disabled={!text.trim()} onClick={() => generate()}>{analysis ? 'Generate again' : 'Generate guide'}</Button>
       </Card>
       <div className="mt-2"><PrivacyNote /></div>
+
+      {analysis && !guide && analysis.confidence === 'none' && <Builder key={analysis.text} analysis={analysis} text={analysis.text} onBuild={(g) => { setGuide(g); setSavedId(undefined); setFilePath(''); }} onOutline={() => setGuide(buildGuide(analysis))} />}
 
       {analysis && guide && (
         <>

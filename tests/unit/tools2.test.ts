@@ -74,3 +74,37 @@ describe('converters', () => {
     expect(macFormats('00:1a:2b')).toBeNull();
   });
 });
+
+import { analyseTopic, buildCustomGuide, buildGuide } from '../../src/lib/agent';
+describe('guide agent: honest matching and building', () => {
+  const ctx = { logs: [], kb: [] };
+  test('allow-list request finds the built-in procedure, not an unrelated Outlook fault', () => {
+    const a = analyseTopic('How to whitelist a domain name outlook', ctx);
+    expect(a.confidence).toBe('good');
+    expect(a.libMatch?.id).toBe('proc-allow-sender');
+    expect(a.matches.length).toBe(0);
+    const g = buildGuide(a);
+    expect(g.title).toBe('Allow a sender or domain (safe sender, allow list)');
+    expect(g.sections.some((s) => s.ordered && s.items.length > 2)).toBe(true);
+  });
+  test('an unknown request says so, lists unmatched words and does not pretend', () => {
+    const a = analyseTopic('How to configure a SIP trunk failover on the phone system', ctx);
+    expect(a.confidence).toBe('none');
+    expect(a.unmatched.length).toBeGreaterThan(0);
+    expect(a.unmatched).toContain('sip');
+  });
+  test('only a broad word in common is not a match', () => {
+    const a = analyseTopic('How to export contacts to a spreadsheet outlook', ctx);
+    expect(a.confidence).toBe('none');
+  });
+  test('custom guide uses only the steps given', () => {
+    const g = buildCustomGuide({ goal: 'Add a trunk failover?', area: 'Networking', needsAdmin: true, steps: ['1. Open the portal', '- Add the route', '  '], verify: '', watch: 'Do it out of hours' });
+    const steps = g.sections.find((s) => s.title === 'Steps')!;
+    expect(steps.items).toEqual(['Open the portal', 'Add the route']);
+    expect(g.title).toBe('Add a trunk failover');
+    expect(g.tags).toContain('my-guide');
+    expect(g.sections.some((s) => s.title === 'Watch out for')).toBe(true);
+    const empty = buildCustomGuide({ goal: 'x y', area: 'Other', needsAdmin: false, steps: [], verify: '', watch: '' });
+    expect(empty.sections.find((s) => s.title === 'Steps')!.items).toEqual(['Steps still to be added.']);
+  });
+});

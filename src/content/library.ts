@@ -379,6 +379,80 @@ export const PROCEDURES: LibGuide[] = [
       ]),
     ],
   },
+  {
+    id: 'proc-allow-sender', set: 'procedures', title: 'Allow a sender or domain (safe sender, allow list)',
+    summary: 'Mail from a wanted sender is going to junk or being blocked. Find which layer is stopping it, then allow the narrowest thing that fixes it.',
+    tags: ['allow list', 'whitelist', 'safe sender', 'junk', 'quarantine', 'spam', 'domain', 'outlook', 'email', 'microsoft 365', 'blocked mail'],
+    blocks: [
+      points('Rules', [
+        'Allowing a whole domain lets everything from it past the filters, including forged mail. Prefer one sender, and allow a domain only when the customer has approved it.',
+        'Check the message first. If the sender fails SPF, DKIM or DMARC, find out why before allowing anything.',
+        'Allow at the lowest layer that fixes it: the user, then the mail service, then any third-party filter.',
+        'Write down what was allowed, who approved it and when, so it can be reviewed later.',
+      ]),
+      table('Which layer is stopping it', ['Where the mail ends up', 'Likely layer'], [
+        ['In the user\'s Junk folder', 'The mailbox junk filter. A user-level safe sender may be enough.'],
+        ['In quarantine, or the sender gets a bounce', 'The mail service\'s protection policies. Needs an admin change.'],
+        ['Not delivered and not in quarantine', 'A third-party filter, a mail rule, or the sender\'s own mail system. Trace the message.'],
+      ]),
+      steps('Find the cause first', [
+        'Ask for the sender address, roughly when they sent it, and the exact subject. Do not ask for the content.',
+        'Search the user\'s mailbox including Junk and Deleted Items.',
+        'Check the mail service\'s message trace for the message. Note the status and the reason given.',
+        'Look in quarantine for the message and read why it was held.',
+        'If you can get the message header, read it with the header tool in the Toolbox and note the SPF, DKIM and DMARC results.',
+      ]),
+      steps('Allow one user\'s safe sender (user level)', [
+        'In classic Outlook, open Junk E-mail Options from the Junk menu on the Home tab and go to the Safe Senders tab.',
+        'In Outlook on the web, open Settings, then Mail, then Junk email, and add to Safe senders and domains.',
+        'Add the single address. Add the domain only if approved.',
+        'Ask the sender to send a new test message and check it arrives in the inbox.',
+      ]),
+      steps('Allow at the mail service (admin level, with approval)', [
+        'Open the mail service\'s security or admin area and find the tenant allow and block list, or the anti-spam policy for the customer.',
+        'Add the single sender with an expiry if the service offers one.',
+        'If the message was quarantined as phishing or malware, release it only after you are sure it is genuine.',
+        'Wait for the change to apply, which can take time, then test with a new message.',
+      ]),
+      caution('Do not', [
+        'Do not allow a domain because a user says it is urgent. Confirm through another route first.',
+        'Do not allow a public mail domain such as a free webmail service.',
+        'Do not switch off filtering for a mailbox as a shortcut.',
+        'Menu names and places change often. If a screen differs, follow the screens you see and note it in the ticket.',
+      ]),
+      steps('Finish', [
+        'Test with a fresh message from the sender and confirm it arrives in the inbox.',
+        'Record what was allowed, at which layer, who approved it and the date.',
+        'Set a reminder to review any domain-level allow.',
+      ]),
+    ],
+  },
+  {
+    id: 'proc-mailbox-access', set: 'procedures', title: 'Give a user access to a shared mailbox or calendar',
+    summary: 'Work out which permission is needed, grant the least that does the job, and test the exact action.',
+    tags: ['shared mailbox', 'permissions', 'full access', 'send as', 'send on behalf', 'calendar', 'delegate', 'outlook', 'microsoft 365'],
+    blocks: [
+      table('Permission and what it allows', ['Permission', 'What it allows'], [
+        ['Full access', 'Open the mailbox and read and manage its mail.'],
+        ['Send as', 'Send mail that appears to come from the mailbox itself.'],
+        ['Send on behalf', 'Send mail marked as sent by the user on behalf of the mailbox.'],
+        ['Calendar reviewer or editor', 'See or change calendar items only, not mail.'],
+      ]),
+      steps('Grant access', [
+        'Confirm the request comes from someone allowed to approve it and write down exactly which permission is needed.',
+        'Open the mail admin area, find the shared mailbox and open its delegation or permissions.',
+        'Add the user with only the permission asked for.',
+        'Wait a short while for it to apply, then ask the user to restart Outlook.',
+        'If it does not appear automatically, add the mailbox from the account or folder area of Outlook.',
+        'Test the exact action: open the mailbox, then send a test message if send permission was requested.',
+      ]),
+      caution('Watch for', [
+        'Full access does not include the right to send. They are separate permissions.',
+        'Do not grant broad access to see if it helps. Use the least access that does the job.',
+        'Record who approved it, what was granted and when.',
+      ]),
+    ],
+  },
 ];
 
 export const LIBRARY: LibGuide[] = [

@@ -13,6 +13,8 @@
  */
 import { COMMANDS } from '../content/commands';
 import { CONCEPTS } from '../content/concepts';
+import { ALL_GUIDES } from '../content/library';
+import type { Block, LibGuide } from '../content/library';
 import { WORKFLOWS } from '../content/workflows';
 import type { CommandEntry, Workflow } from '../content/types';
 import type { KbCategory, KbEntry, LogCategory, WorkLog } from '../data/types';
@@ -45,6 +47,14 @@ export interface TopicAnalysis {
   kb: KbEntry[];
   /** True for suspected compromise or incident-style wording. */
   securityIncident: boolean;
+  /** A built-in procedure or study guide that covers the request. */
+  libMatch?: LibGuide;
+  /** 'good' when something in the library really covers the request; 'none' when only loose or no matches exist. */
+  confidence: 'good' | 'none';
+  /** Loosely related items, shown honestly as related rather than as the answer. */
+  related: Source[];
+  /** Words from the request that nothing in the library covered. */
+  unmatched: string[];
 }
 
 export interface Source {
@@ -92,6 +102,9 @@ export interface AgentProvider {
 
 // ---------- text helpers ----------
 
+const GENERIC = new Set('how guide step process procedure new create make setup set use using need want help know way something thing do doing'.split(' '));
+/** Words so broad that matching only on them does not mean a guide covers the request. */
+const BROAD = new Set('outlook window windows printer email mail microsoft 365 network internet computer pc laptop device office system software account'.split(' '));
 const STOP = new Set(('a an and are as at be but by can for from has have he her his i if in into is it its me my no not of on or our she so ' +
   'that the their them then there they this to too up us was we were what when which who will with you your user users ticket please hi hello thanks ' +
   'thank regards cannot cant couldnt wont dont doesnt didnt isnt wasnt just still also very been being does did do get got').split(' '));
@@ -107,6 +120,7 @@ const SYNONYMS: Array<[RegExp, string]> = [
   [/\bno internet\b|\boffline\b|\bnot connect\w*\b/g, 'internet offline connectivity'],
   [/\bphish\w*\b/g, 'phishing suspicious'],
   [/\bvirus\b|\bmalware\b|\bransom\w*\b/g, 'malware suspicious'],
+  [/\bwhite ?-?list\w*|\ballow ?-?list\w*|\bsafe senders?\b|\bsafelist\w*/g, 'allowlist'],
   [/\bout ?look\b/g, 'outlook'],
   [/\bone ?drive\b/g, 'onedrive'],
 ];
@@ -170,14 +184,39 @@ export function analyseTopic(text: string, ctx: AgentContext): TopicAnalysis {
   const shortText = tokens(text).length <= 4;
   const kind: TopicKind = cmd && (COMMAND_Q.test(text) || (shortText && !problem)) ? 'command' : problem && !HOWTO.test(text) ? 'problem' : HOWTO.test(text) || !problem ? 'howto' : 'problem';
 
-  const scored: WorkflowMatch[] = WORKFLOWS.map((w) => {
+  const qList = [...q].filter((w) => !GENERIC.has(w));
+  const cover = (text: string): { hit: string[]; coverage: number } => {
+    const have = new Set(tokens(text));
+    const hit = qList.filter((w) => have.has(w));
+    return { hit, coverage: qList.length ? hit.length / qList.length : 0 };
+  };
+  const enough = (coverage: number, score: number, hit: string[]) => score >= 5 && (coverage >= 0.5 || qList.length <= 1 || hit.filter((w) => !BROAD.has(w)).length >= 2);
+  const scoredAll: Array<WorkflowMatch & { coverage: number; hit: string[] }> = WORKFLOWS.map((w) => {
     let s = scoreAgainst(q, w.title, 3) + scoreAgainst(q, w.tags.join(' '), 3) + scoreAgainst(q, w.symptoms.join(' '), 2) + scoreAgainst(q, w.summary, 1);
     // Require real overlap with your own words; the category bonus alone is not a match.
-    if (s < 4) return { workflow: w, score: 0 };
+    if (s < 4) return { workflow: w, score: 0, coverage: 0, hit: [] };
     if (w.category === category) s += 2;
-    return { workflow: w, score: s };
+    const c = cover([w.title, w.tags.join(' '), w.symptoms.join(' '), w.summary].join(' '));
+    return { workflow: w, score: s, ...c };
   }).filter((m) => m.score >= 5).sort((a, b) => b.score - a.score);
-  const matches = scored.slice(0, 3);
+  const matches = scoredAll.filter((m) => enough(m.coverage, m.score, m.hit)).slice(0, 3);
+
+  const libScored = ALL_GUIDES.map((g) => {
+    const txt = [g.title, g.tags.join(' '), g.summary].join(' ');
+    const s = scoreAgainst(q, g.title, 3) + scoreAgainst(q, g.tags.join(' '), 3) + scoreAgainst(q, g.summary, 1);
+    const c = cover(txt + ' ' + g.blocks.map((b) => b.title).join(' '));
+    return { g, score: s, ...c };
+  }).filter((x) => x.score >= 5).sort((a, b) => b.score - a.score);
+  const libGood = libScored.filter((x) => enough(x.coverage, x.score, x.hit));
+  const libMatch = libGood[0]?.g;
+  const confidence: 'good' | 'none' = matches.length || libMatch || (cmd && kind === 'command') ? 'good' : 'none';
+  const shownIds = new Set([...matches.map((m) => m.workflow.id), libMatch?.id]);
+  const related: Source[] = [
+    ...scoredAll.filter((m) => !shownIds.has(m.workflow.id)).slice(0, 3).map((m) => ({ label: m.workflow.title, route: `/troubleshoot/${m.workflow.id}` })),
+    ...libScored.filter((x) => !shownIds.has(x.g.id)).slice(0, 3).map((x) => ({ label: x.g.title, route: `/${x.g.set}/${x.g.id}` })),
+  ].slice(0, 5);
+  const best = [...scoredAll.map((m) => m.hit), ...libScored.map((x) => x.hit)].sort((a, b) => b.length - a.length)[0] ?? [];
+  const unmatched = confidence === 'good' ? [] : qList.filter((w) => !best.includes(w));
 
   const cmdIds = new Set<string>();
   if (cmd) cmdIds.add(cmd.id);
@@ -193,7 +232,8 @@ export function analyseTopic(text: string, ctx: AgentContext): TopicAnalysis {
 
   return {
     text, kind, category, device: guessDevice(text), command: kind === 'command' ? cmd : undefined,
-    missing: kind === 'problem' ? missingQuestions(text, category, securityIncident) : [], matches, commands, similarLogs, kb, securityIncident,
+    missing: kind === 'problem' ? missingQuestions(text, category, securityIncident) : [], matches: matches.map((m) => ({ workflow: m.workflow, score: m.score })), commands, similarLogs, kb, securityIncident,
+    libMatch, confidence, related, unmatched,
   };
 }
 
@@ -234,9 +274,56 @@ function commandGuide(a: TopicAnalysis, c: CommandEntry): Guide {
   };
 }
 
+function blockSection(b: Block): GuideSection {
+  if (b.kind === 'steps') return { title: b.title, ordered: true, items: b.items };
+  if (b.kind === 'points') return { title: b.title, items: b.items };
+  if (b.kind === 'caution') return { title: b.title, note: 'Read before you start.', items: b.items };
+  if (b.kind === 'table') return { title: b.title, items: b.rows.map(([x, y]) => `${x}: ${y}`) };
+  return { title: b.title, items: [b.text] };
+}
+
+function libraryGuide(a: TopicAnalysis, g: LibGuide): Guide {
+  return {
+    title: g.title, kind: 'howto', summary: `From the built-in ${g.set === 'procedures' ? 'procedures' : 'study library'}. ${g.summary}`,
+    sections: [...g.blocks.map(blockSection), { title: 'Escalate if', items: ['The steps are done and it is still not working.', 'The change needs approval or access you do not have.', 'You see signs of a security problem.'] }],
+    sources: [{ label: g.title, route: `/${g.set}/${g.id}` }, ...a.kb.map((k) => ({ label: k.title, route: `/kb/${k.id}` }))],
+    tags: [...new Set(['generated', ...g.tags.slice(0, 4).map((t) => t.toLowerCase().replace(/\s+/g, '-'))])], kbCategory: kbCategoryFor('howto', a.category),
+  };
+}
+
+export interface CustomGuideInput {
+  goal: string; area: LogCategory; needsAdmin: boolean; steps: string[]; verify: string; watch: string;
+}
+/** A guide built from what the person typed. Steps are theirs; nothing is invented. */
+export function buildCustomGuide(i: CustomGuideInput): Guide {
+  const goal = i.goal.trim().replace(/\s+/g, ' ').replace(/[?.!]+$/, '');
+  const area = i.area;
+  const steps = i.steps.map((x) => x.trim().replace(/^\s*(?:\d+[.)]|[-*•])\s*/, '')).filter(Boolean);
+  const sections: GuideSection[] = [
+    { title: 'Before you start', items: [
+      'Make sure you are authorised to make this change and that the customer knows.',
+      ...(i.needsAdmin ? ['This needs administrator rights. Use the account you are meant to use for this, not a shared one.'] : []),
+      'Note how things look now, so you can put them back.',
+    ] },
+    steps.length
+      ? { title: 'Steps', note: 'Written from your own notes. Check them against the screens you see.', ordered: true, items: steps }
+      : { title: 'Steps', note: 'Not filled in yet. Add them from the vendor\'s own documentation or your own notes, then save again.', items: ['Steps still to be added.'] },
+    { title: 'Check it worked', items: i.verify.trim() ? [i.verify.trim()] : ['Do the task the user originally wanted and confirm it works.', 'Check nothing nearby stopped working.'] },
+  ];
+  if (i.watch.trim()) sections.push({ title: 'Watch out for', items: [i.watch.trim()] });
+  sections.push({ title: 'Undo it', items: ['If it does not work or something else breaks, put back the settings you noted at the start.'] });
+  sections.push({ title: 'Escalate if', items: ['You are not sure what the change will affect.', 'It needs access or approval you do not have.', 'You see signs of a security problem.'] });
+  return {
+    title: cap(goal.slice(0, 80)) || 'My guide', kind: 'howto',
+    summary: steps.length ? 'A guide built from your own steps.' : 'A guide outline. The steps still need to be added.',
+    sections, sources: [], tags: ['generated', 'my-guide', area.toLowerCase().replace(/\s+/g, '-')], kbCategory: kbCategoryFor('howto', area),
+  };
+}
+
 export function buildGuide(a: TopicAnalysis): Guide {
   if (a.kind === 'command' && a.command) return commandGuide(a, a.command);
   const top = a.matches[0]?.workflow;
+  if (!top && a.libMatch) return libraryGuide(a, a.libMatch);
   const sections: GuideSection[] = [];
 
   sections.push({

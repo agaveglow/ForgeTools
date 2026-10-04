@@ -1182,6 +1182,28 @@ async function run(label, viewport) {
     ok((await p.locator('[data-testid=ck-incident]').innerText()).startsWith('1 of'), 'procedure tick counted');
   });
 
+  await step(S('guide agent: finds the built-in allow-list procedure; unknown request asks questions, builds from my steps, lists under Procedures'), async () => {
+    await go('/agent');
+    await p.locator('#ag-text').fill('How to whitelist a domain name outlook');
+    await p.getByRole('button', { name: 'Generate guide' }).click();
+    await p.getByText('Allow a sender or domain').first().waitFor({ state: 'visible', timeout: 4000 });
+    eq(await p.locator('[data-testid=guide-builder]').count(), 0, 'no builder when the library covers it');
+    await go('/agent');
+    await p.locator('#ag-text').fill('How to configure a SIP trunk failover on the phone system');
+    await p.getByRole('button', { name: 'Generate guide' }).click();
+    await p.locator('[data-testid=guide-builder]').waitFor({ state: 'visible', timeout: 4000 });
+    ok((await p.locator('[data-testid=guide-builder]').innerText()).includes('I don’t have a guide that covers this'), 'honest no-match message');
+    await p.locator('#gb-steps').fill('1. Open the phone system admin page\n2. Add a second route\n3. Set it as backup');
+    await p.locator('#gb-verify').fill('A test call still connects when the first route is off');
+    await p.getByRole('button', { name: 'Build my guide' }).click();
+    await p.locator('[data-testid=guide]').getByText('Add a second route').waitFor({ state: 'visible', timeout: 4000 });
+    await p.getByRole('button', { name: 'Save guide' }).click();
+    await p.getByText('Saved to Knowledge base').first().waitFor({ state: 'visible', timeout: 4000 });
+    await go('/procedures');
+    await until(async () => (await p.locator('[data-testid=my-guides]').innerText()).includes('How to configure a SIP trunk failover'), 'saved guide listed under Your own guides');
+    await noHScroll();
+  });
+
   await step(S('home button: on every page, returns to the Glance home, fits the header'), async () => {
     await go('/tools/cable');
     await p.locator('[data-testid=home-button]').click();
