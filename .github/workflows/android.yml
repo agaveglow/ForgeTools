@@ -20,12 +20,12 @@ jobs:
       - run: npm install --no-audit --no-fund --ignore-scripts
       - run: bun scripts/build.ts
       - run: npx cap add android
-      - name: Harden Android manifest (no cloud auto-backup, no plain-http traffic, not debuggable)
+      - name: Harden Android manifest (no cloud auto-backup, no plain-http traffic)
         run: |
           f=android/app/src/main/AndroidManifest.xml
           sed -i 's/android:allowBackup="true"/android:allowBackup="false"/' $f
-          sed -i 's/<application/<application android:usesCleartextTraffic="false" android:debuggable="false"/' $f
-          grep -n "allowBackup\|usesCleartextTraffic\|debuggable" $f
+          sed -i 's/<application/<application android:usesCleartextTraffic="false"/' $f
+          grep -n "allowBackup\|usesCleartextTraffic" $f
       - run: npx cap sync android
       - run: chmod +x gradlew && ./gradlew assembleRelease
         working-directory: android
