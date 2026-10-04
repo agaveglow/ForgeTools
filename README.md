@@ -209,6 +209,10 @@ The entry form mirrors Aptem's **Activity details** screen field for field: type
 
 Fix & guides → **Procedures** has eight step-by-step jobs (ticket routine, new PC handover, taking over a device, adding a printer by IP, MFA reset, freeing disk space, client discovery, safe remote network changes) with tickable steps and copyable note templates. Learning → **Study library** has plain-English references (networking, ports, how a copier makes a copy, paper path, service documents, Windows evidence tools). Requirements → **Suggested learning goals** adds a general ten-stage apprenticeship roadmap on request. All of it is written from scratch as general practice: no employer, customer, vendor-platform or training-provider names, no addresses and no credentials. A unit test checks that stays true. Ticks in procedures are for the visit only and are not saved.
 
+## Toolbox
+
+Fix & guides → **Toolbox**: a cable guide with a drawn T568A/T568B pinout (straight and crossover, faults, limits, PoE), calculators (subnet, number converter, transfer time, cost per page), a screenshot redactor (covered areas are burned into a new image, nothing is uploaded), a ticket note builder (copy is withheld while a secret is present) and kit checklists (ticks and your own items stay on this device).
+
 ## Packs and PDF import
 
 Import → **Import a pack** loads a JSON file of guides and requirements onto this device only. The app shows what it would add, skips anything already here (same title), refuses any item that contains a secret, and asks you to tick a box if an item looks like it holds personal details. Format: `{"forgetoolsPack":1,"name":"…","kb":[{"title","category","tags","body"}],"requirements":[{"title","kind":"job|apprenticeship","group","notes"}]}`. Packs exist so employer or training material stays on your device and out of this public repository. Import → document also reads PDFs that have a text layer (scanned PDFs need “copy text from image” first).

@@ -13,6 +13,7 @@ export const AREAS: Area[] = [
   ] },
   { id: 'fix', to: '/a/fix', label: 'Fix & guides', blurb: 'Find the steps for a job or a fault.', icon: 'tools', hue: 'warn', pages: [
     { to: '/agent', label: 'Guide agent', blurb: 'Ask how to do something', icon: 'spark' },
+    { to: '/tools', label: 'Toolbox', blurb: 'Cable guide, calculators, redactor', icon: 'tools' },
     { to: '/procedures', label: 'Procedures', blurb: 'Build, install, reset, onboard', icon: 'list' },
     { to: '/troubleshoot', label: 'Troubleshooting', blurb: 'Step-by-step fault finding', icon: 'search' },
     { to: '/commands', label: 'Commands', blurb: 'What each command does', icon: 'terminal' },

@@ -868,7 +868,7 @@ async function run(label, viewport) {
     // all apps lists every page
     await p.getByRole('link', { name: 'All apps', exact: true }).click();
     await p.locator('[data-testid=all-apps]').waitFor({ state: 'visible', timeout: 5000 });
-    eq(await p.locator('[data-testid=all-apps] li').count(), 23, 'twenty-three pages');
+    eq(await p.locator('[data-testid=all-apps] li').count(), 24, 'twenty-four pages');
     await noHScroll();
     await shot('all-apps');
     await go('/a/today'); await noHScroll(); await shot('area-today');
@@ -1051,6 +1051,76 @@ async function run(label, viewport) {
     await p.getByRole('button', { name: /Add \d+ suggested goals/ }).click();
     await p.locator('[data-testid=goals-done]').waitFor({ state: 'visible', timeout: 3000 });
     ok(await p.getByRole('button', { name: /All suggested goals are on your list/ }).isDisabled(), 'second add is disabled');
+  });
+
+  await step(S('toolbox: cable pinout, subnet maths, note builder guard, kit ticks persist'), async () => {
+    await go('/tools');
+    eq(await p.locator('[data-testid=tool-list] a').count(), 5, 'five tools');
+    await go('/tools/cable');
+    await p.locator('[data-testid=pinouts] svg').first().waitFor({ state: 'visible', timeout: 3000 });
+    ok((await p.locator('[data-testid=pinouts] svg').first().getAttribute('aria-label')).includes('Pin 1 White/Orange'), 'T568B pin 1 is white/orange');
+    await p.getByRole('button', { name: 'T568A' }).click();
+    ok((await p.locator('[data-testid=pinouts] svg').first().getAttribute('aria-label')).includes('Pin 1 White/Green'), 'T568A pin 1 is white/green');
+    await p.getByRole('button', { name: 'Crossover' }).click();
+    const labels = await p.locator('[data-testid=pinouts] svg').evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')));
+    ok(labels[0].includes('T568A') && labels[1].includes('T568B'), 'crossover has A and B ends');
+    await noHScroll();
+    await go('/tools/calc');
+    await p.locator('#sn-addr').fill('192.168.10.25/24'); await p.locator('#sn-pre').fill('24');
+    await p.locator('[data-testid=sn-result]').waitFor({ state: 'visible', timeout: 3000 });
+    const r = await p.locator('[data-testid=sn-result]').innerText();
+    ok(r.includes('192.168.10.0/24') && r.includes('254'), 'subnet result: ' + r.slice(0, 80));
+    await p.locator('#sn-other').fill('192.168.11.5');
+    await until(async () => (await p.locator('[data-testid=sn-same]').innerText()).includes('Different subnet'), 'different subnet flagged');
+    await p.locator('#sn-addr').fill('999.1.1.1');
+    await p.locator('[data-testid=sn-error]').waitFor({ state: 'visible', timeout: 3000 });
+    await p.locator('#sn-need').fill('30');
+    await until(async () => (await p.locator('[data-testid=sn-need-out]').innerText()).includes('/27'), 'hosts needed gives /27');
+    await go('/tools/notes');
+    await p.locator('#nb-rep').fill('Scanner cannot reach the shared folder');
+    await p.locator('#nb-act').fill('updated the saved scan login');
+    await until(async () => (await p.locator('[data-testid=nb-note]').innerText()).includes('Reported: Scanner cannot reach the shared folder.'), 'note built');
+    ok((await p.getByRole('button', { name: 'Copy note' }).count()) === 1, 'copy offered when clean');
+    await p.locator('#nb-chk').fill('password: Hunter2Hunter2!');
+    await until(async () => (await p.getByRole('button', { name: 'Copy note' }).count()) === 0, 'copy withheld while a secret is present');
+    await go('/tools/kit');
+    await p.getByLabel('Add an item to Hand tools and test gear').fill('Spare label tape');
+    await p.getByRole('button', { name: 'Add', exact: true }).first().click();
+    await p.getByText('Spare label tape').waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByLabel('Screwdriver set (precision and standard), Torx bits').check();
+    await p.reload(); await p.waitForTimeout(300);
+    ok(await p.getByLabel('Screwdriver set (precision and standard), Torx bits').isChecked(), 'tick persisted');
+    ok((await p.getByText('Spare label tape').count()) === 1, 'custom item persisted');
+    await p.getByLabel('Add an item to Before you leave for a visit').fill('Call Jane Smith on 07700 900123');
+    await p.getByRole('button', { name: 'Add', exact: true }).nth(3).click();
+    await p.getByText(/not added/).waitFor({ state: 'visible', timeout: 3000 });
+  });
+
+  await step(S('screenshot redactor: choose, cover by drag and by numbers, pixels are black, export'), async () => {
+    await go('/tools/redact');
+    const dataUrl = await p.evaluate(() => { const c = document.createElement('canvas'); c.width = 400; c.height = 200; const x = c.getContext('2d'); x.fillStyle = '#ff0000'; x.fillRect(0, 0, 400, 200); return c.toDataURL('image/png'); });
+    await p.setInputFiles('[data-testid=redact-file]', { name: 'shot.png', mimeType: 'image/png', buffer: Buffer.from(dataUrl.split(',')[1], 'base64') });
+    await p.locator('[data-testid=redact-canvas]').waitFor({ state: 'visible', timeout: 5000 });
+    const px = (x, y) => p.locator('[data-testid=redact-canvas]').evaluate((c, [x, y]) => Array.from(c.getContext('2d').getImageData(x, y, 1, 1).data), [x, y]);
+    eq((await px(100, 100))[0], 255, 'image starts red');
+    const box = await p.locator('[data-testid=redact-canvas]').boundingBox();
+    await p.mouse.move(box.x + box.width * 0.1, box.y + box.height * 0.1);
+    await p.mouse.down(); await p.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5, { steps: 4 }); await p.mouse.up();
+    await until(async () => (await p.locator('[data-testid=redact-count]').innerText()).startsWith('1'), 'one area covered by dragging');
+    const c = await px(100, 60);
+    ok(c[0] === 0 && c[1] === 0 && c[2] === 0, 'dragged area is black: ' + c.join(','));
+    await p.getByText('Cover an area by numbers').click();
+    await p.locator('#rd-x').fill('60'); await p.locator('#rd-y').fill('60'); await p.locator('#rd-w').fill('30'); await p.locator('#rd-h').fill('30');
+    await p.getByRole('button', { name: 'Cover this area' }).click();
+    await until(async () => (await p.locator('[data-testid=redact-count]').innerText()).startsWith('2'), 'second area covered');
+    await p.getByRole('button', { name: 'Undo' }).click();
+    await until(async () => (await p.locator('[data-testid=redact-count]').innerText()).startsWith('1'), 'undo works');
+    await p.getByRole('button', { name: 'Coarse blocks' }).click();
+    await p.locator('#rd-x').fill('60'); await p.getByRole('button', { name: 'Cover this area' }).click();
+    await until(async () => (await p.locator('[data-testid=redact-count]').innerText()).startsWith('2'), 'pixel area added');
+    await p.getByRole('button', { name: 'Save to Files' }).click();
+    await p.locator('[data-testid=redact-note]').waitFor({ state: 'visible', timeout: 5000 });
+    await noHScroll();
   });
 
   await step(S('encryption: on, stored as ciphertext, locks, wrong passphrase refused, unlock, lock now'), async () => {
