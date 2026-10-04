@@ -32,7 +32,7 @@ The home screen opens five areas. Every page belongs to exactly one. The Toolbox
 | **Learning** | Apprenticeship, Study library, Requirements, Skills profile |
 | **Settings** | Appearance, Security, Backup (including the encrypted folder copy), Voice transcription, Privacy, Erase |
 
-**Toolbox sections:** Managed print · Networking · Security · IT service desk · Calculate and convert · Practice and reference (see [Toolbox](#toolbox)).
+**Toolbox sections:** Managed print · Networking · Security · Remote session messages · IT service desk · Calculate and convert · Practice and reference (see [Toolbox](#toolbox)).
 
 All the old page addresses still work.
 
@@ -199,18 +199,28 @@ Under the diagram and the player, **Ask about step N** answers questions about o
 
 ## Toolbox
 
-Fix & guides → **Toolbox**. Six sections, each tool listed once, with search and jump chips. Everything runs on this device and nothing is sent anywhere.
+Fix & guides → **Toolbox**. Seven sections, each tool listed once, with search and jump chips. Everything runs on this device and nothing is sent anywhere.
 
 | Section | Tools |
 | --- | --- |
 | Managed print | Print and scan reference: where to look first, ports and protocols, intake, queue, scan-to-folder and scan-to-email checklists |
 | Networking | Cable guide (drawn T568A/T568B pinout, straight and crossover, faults, limits, PoE) · Ports and services · DNS and mail records with an SPF and DMARC checker |
 | Security | Security event reference · Email header reader with phishing triage · File hash checker · Hardening checklists · Password generator and guessability test |
+| Remote session messages | Message builder and ready-made lines for the text window on a user's screen while you work remotely |
 | IT service desk | Ticket note builder (copy is withheld while a secret is present) · Procedure checklists · Kit checklists |
 | Calculate and convert | Calculators (subnet, number converter, transfer time, cost per page) · Converters (Base64, hex, URL text, timestamps, MAC formats) · Screenshot redactor |
 | Practice and reference | Network lab · Engineer tool guide |
 
 The Print and scan reference is generic and original, and holds no customer or company-specific data.
+
+### Remote session messages
+
+Toolbox > Remote session messages. Wording to paste into a text window on the user's screen while you are connected, so updates are quick and clean.
+
+- **Message builder:** fill in their first name, what it is about, what you are doing and how long, pick what you need from them (keep hands off, save work, restart, type their own password, test, confirm), choose a closing (fixed, stopping for now, passing to a specialist, site visit, cannot see the fault) and get one message. Friendly or brief tone. An option breaks the text into short lines for a plain window that does not wrap.
+- **Ready-made lines:** 27 lines in six stages (starting, while I work, I need you to, problems and delays, finishing, staying safe), searchable, filled in from the builder boxes.
+- **My own lines:** save your own wording with `{name}`, `{issue}`, `{time}` and `{app}` placeholders. They are kept in the vault (encrypted when encryption is on) and refused if they contain a secret or a personal detail.
+- The builder boxes are never saved, and copying is withheld while the sensitive-data guard has flagged something. Content is original and generic (`src/content/say.ts`, `src/lib/say.ts`). Only send what is true: nothing is added that was not chosen or typed.
 
 ### Network lab (simulation)
 

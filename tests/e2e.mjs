@@ -1106,10 +1106,42 @@ async function run(label, viewport) {
     eq((await p.locator('[data-testid=eng-count]').innerText()).trim(), '0 tools');
   });
 
+  await step(S('remote session messages: builder, guard, library, own lines'), async () => {
+    const out = async () => await p.locator('[data-testid=say-out]').innerText();
+    await go('/tools/say');
+    await p.locator('[data-testid=say]').waitFor({ state: 'visible', timeout: 5000 });
+    await p.locator('#say-name').fill('Sam');
+    await p.locator('#say-issue').fill('the printer queue');
+    await p.locator('#say-mins').fill('10');
+    await p.getByLabel('Restart needed').check();
+    await p.getByLabel('Keep hands off the mouse and keyboard').check();
+    await p.locator('#say-closing').selectOption('closing-fixed');
+    const m = await out();
+    ok(m.includes('Hi Sam') && m.includes('the printer queue') && m.includes('about 10 minutes') && m.includes('restart your computer') && m.includes('sorted'), 'message built');
+    await p.getByRole('button', { name: 'Brief', exact: true }).click();
+    ok((await out()).includes('Restart needed.'), 'brief tone');
+    await p.locator('#say-action').fill('password is hunter2secret99');
+    await p.getByRole('button', { name: 'Copy message' }).waitFor({ state: 'detached', timeout: 3000 });
+    await p.locator('#say-action').fill('checking the queue');
+    await p.getByRole('button', { name: 'Copy message' }).waitFor({ state: 'visible', timeout: 3000 });
+    await p.locator('#say-q').fill('password');
+    ok((await p.locator('[data-testid=say-phrase-type-password]').count()) === 1, 'library search finds the line');
+    await p.locator('#say-q').fill('');
+    await p.locator('#say-new-title').fill('Hold on');
+    await p.locator('#say-new-text').fill('One moment {name}, still on it.');
+    await p.getByRole('button', { name: 'Save this line' }).click();
+    ok((await p.locator('[data-testid=say-mine-item]').innerText()).includes('One moment Sam'), 'own line saved and filled');
+    await p.locator('#say-new-title').fill('Bad');
+    await p.locator('#say-new-text').fill('my password: Tr0ub4dor&3xyz');
+    await p.getByRole('button', { name: 'Save this line' }).click();
+    ok((await p.locator('[data-testid=say-mine] [role=alert]').count()) === 1, 'secret refused');
+    eq(await p.locator('[data-testid=say-mine-item]').count(), 1);
+  });
+
   await step(S('toolbox: cable pinout, subnet maths, note builder guard, kit ticks persist'), async () => {
     await go('/tools');
-    eq(await p.locator('[data-testid^=tool-section-] a').count(), 17, 'seventeen tool cards');
-    eq(await p.locator('[data-testid^=tool-section-]').count(), 6, 'six sections');
+    eq(await p.locator('[data-testid^=tool-section-] a').count(), 18, 'eighteen tool cards');
+    eq(await p.locator('[data-testid^=tool-section-]').count(), 7, 'seven sections');
     await p.getByLabel('Search the toolbox').fill('hash');
     eq(await p.locator('[data-testid^=tool-section-] a').count(), 1, 'search narrows to one card');
     await p.getByLabel('Search the toolbox').fill('');

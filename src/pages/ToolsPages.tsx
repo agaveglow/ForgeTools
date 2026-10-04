@@ -32,6 +32,9 @@ const TOOL_GROUPS: Array<{ id: string; title: string; blurb: string; tools: Tool
     { to: '/tools/harden', title: 'Hardening checklists', blurb: 'Windows, Microsoft 365, firewall and printer settings to tick through' },
     { to: '/tools/password', title: 'Password tools', blurb: 'Random password generator and a guessability test' },
   ] },
+  { id: 'remote', title: 'Remote session messages', blurb: 'Wording for the text window while you work on a user\'s screen', tools: [
+    { to: '/tools/say', title: 'Remote session messages', blurb: 'Build a clean message, or copy a ready-made line: introduce, keep hands off, restart, test, finish' },
+  ] },
   { id: 'desk', title: 'IT service desk', blurb: 'Tickets, visits and checklists', tools: [
     { to: '/tools/notes', title: 'Ticket note builder', blurb: 'A closure note and a customer update from a few boxes' },
     { to: '/tools/checks', title: 'Procedure checklists', blurb: 'Incident first response, restore test, starter, leaver, site exit' },

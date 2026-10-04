@@ -26,6 +26,7 @@ import { ManualReaderPage, ManualsPage } from './pages/ManualsPage';
 import { GuideList, GuideView } from './pages/GuidesPage';
 import { CablePage, CalcPage, KitPage, NotePage, ToolsHub } from './pages/ToolsPages';
 import { EventsPage, HardenPage, HashPage, HeaderPage } from './pages/SecurityPages';
+import { SayPage } from './pages/SayPage';
 import { LabPage } from './pages/LabPage';
 import { ConvertPage, DnsPage, OpsChecksPage, PasswordPage, PortsPage, PrintPage, EngToolsPage } from './pages/ReferencePages';
 import { RedactPage } from './pages/RedactPage';
@@ -81,6 +82,7 @@ function route(path: string): ReactNode {
   if (path === '/tools/checks') return <OpsChecksPage />;
   if (path === '/tools/print') return <PrintPage />;
   if (path === '/tools/lab') return <LabPage />;
+  if (path === '/tools/say') return <SayPage />;
   if (path === '/tools/engineer') return <EngToolsPage />;
   if (path === '/procedures') return <GuideList set="procedures" />;
   if (path === '/library') return <GuideList set="library" />;
