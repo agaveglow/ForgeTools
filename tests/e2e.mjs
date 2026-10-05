@@ -853,11 +853,11 @@ async function run(label, viewport) {
     eq(await p.getByRole('link', { name: 'Back', exact: true }).count(), 0, 'no Back on home');
     await p.locator('[data-testid=glance-apps]').getByRole('link', { name: 'Today', exact: true }).click();
     await p.locator('[data-testid=area-today]').waitFor({ state: 'visible', timeout: 5000 });
-    eq(await p.locator('[data-testid=area-today] li').count(), 6, 'six Today pages');
+    eq(await p.locator('[data-testid=area-today] li').count(), 7, 'seven Today pages');
     await p.locator('[data-testid=area-today]').getByRole('link', { name: /Tasks/ }).click();
     await p.getByRole('heading', { name: 'Tasks', exact: true }).first().waitFor({ state: 'visible', timeout: 5000 });
     const tabs = await p.locator('[data-testid=area-tabs] a').allInnerTexts();
-    eq(tabs.join('|'), 'Daily jobs|Daily workflow|Tasks|Task board|Check guides|Response times', 'sibling tabs');
+    eq(tabs.join('|'), 'Daily jobs|Daily workflow|Tasks|Task board|Check guides|Response times|Reminders', 'sibling tabs');
     eq(await p.locator('[data-testid=area-tabs] a[aria-current=page]').innerText(), 'Tasks');
     await p.locator('[data-testid=area-tabs]').getByRole('link', { name: 'Check guides' }).click();
     await p.getByRole('heading', { name: 'Check guides' }).waitFor({ state: 'visible', timeout: 5000 });
@@ -877,7 +877,7 @@ async function run(label, viewport) {
     // all apps lists every page
     await p.getByRole('link', { name: 'All apps', exact: true }).click();
     await p.locator('[data-testid=all-apps]').waitFor({ state: 'visible', timeout: 5000 });
-    eq(await p.locator('[data-testid=all-apps] li').count(), 22, 'twenty-two pages');
+    eq(await p.locator('[data-testid=all-apps] li').count(), 23, 'twenty-three pages');
     await noHScroll();
     await shot('all-apps');
     await go('/a/today'); await noHScroll(); await shot('area-today');
@@ -1545,6 +1545,37 @@ async function run(label, viewport) {
     await p.locator('[data-testid=customize-toggle]').first().click();
     await p.getByRole('button', { name: 'Reset page' }).first().click();
     await p.locator('[data-testid=customize-toggle]').first().click();
+    await noHScroll();
+  });
+
+  await step(S('reminders: add one-off and repeating, capability notice matches environment, toggle off, delete, persist'), async () => {
+    await go('/reminders');
+    ok((await p.getByText('website, not the installed app').count()) === 1, 'honest browser notice shown');
+    await p.getByRole('button', { name: 'Add reminder' }).click();
+    await p.locator('#rem-title').fill('Check the ticket queue');
+    const future = new Date(Date.now() + 3 * 86400000);
+    const v = future.toISOString().slice(0, 16);
+    await p.locator('#rem-at').fill(v);
+    await p.locator('#rem-repeat').selectOption('daily');
+    await p.getByRole('button', { name: 'Add reminder', exact: true }).last().click();
+    await p.locator('[data-testid=reminder-row]').first().waitFor({ state: 'visible', timeout: 3000 });
+    ok((await p.getByText('Every day').count()) === 1, 'repeat shown');
+    // sensitive text refused
+    await p.getByRole('button', { name: 'Add reminder' }).click();
+    await p.locator('#rem-title').fill('Call customer Jane Smith 07700 900123');
+    await p.locator('#rem-at').fill(v);
+    await p.getByText('Check for sensitive details before saving').waitFor({ state: 'visible', timeout: 3000 });
+    ok((await p.getByRole('button', { name: 'Add reminder', exact: true }).last().isDisabled()), 'blocked while sensitive text is present');
+    await p.getByRole('button', { name: 'Cancel' }).click();
+    // toggle off / on, delete
+    await p.getByRole('button', { name: /^Turn off/ }).first().click();
+    await p.getByText('Off', { exact: true }).first().waitFor({ state: 'visible', timeout: 3000 });
+    await p.reload(); await p.waitForTimeout(300);
+    ok((await p.getByText('Off', { exact: true }).count()) === 1, 'off state persisted');
+    await p.getByRole('button', { name: /^Turn on/ }).first().click();
+    p.once('dialog', (d) => d.accept());
+    await p.getByRole('button', { name: /^Delete/ }).first().click();
+    await until(async () => (await p.locator('[data-testid=reminder-row]').count()) === 0, 'reminder deleted');
     await noHScroll();
   });
 

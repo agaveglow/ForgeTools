@@ -11,6 +11,7 @@ export const AREAS: Area[] = [
     { to: '/board', label: 'Task board', blurb: 'To do, doing, blocked, done', icon: 'board' },
     { to: '/checks', label: 'Check guides', blurb: 'How to do and monitor each check', icon: 'check' },
     { to: '/sla', label: 'Response times', blurb: 'Priorities and deadlines', icon: 'timer' },
+    { to: '/reminders', label: 'Reminders', blurb: 'Local, one-off or repeating', icon: 'clock' },
   ] },
   { id: 'fix', to: '/a/fix', label: 'Fix & guides', blurb: 'Find the steps for a job or a fault.', icon: 'tools', hue: 'warn', pages: [
     { to: '/agent', label: 'Guide agent', blurb: 'Ask how to do something', icon: 'spark' },

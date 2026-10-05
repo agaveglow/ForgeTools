@@ -382,6 +382,17 @@ export interface Meta {
   counters: { workLog: number };
 }
 
+export type ReminderRepeat = 'none' | 'daily' | 'weekdays' | 'weekly';
+export interface Reminder extends BaseRecord {
+  title: string;
+  text?: string;
+  /** ISO date-time of the next (or only) time it is due. */
+  at: string;
+  repeat: ReminderRepeat;
+  /** Turn off without deleting, so a one-off past reminder or a paused repeat stays in the list. */
+  enabled: boolean;
+}
+
 export const COLLECTIONS = [
   'workLogs',
   'sessions',
@@ -393,6 +404,7 @@ export const COLLECTIONS = [
   'requirements',
   'apprenticeLogs',
   'jobNotes',
+  'reminders',
 ] as const;
 export type CollectionName = (typeof COLLECTIONS)[number];
 
@@ -407,6 +419,7 @@ export interface CollectionMap {
   requirements: Requirement;
   apprenticeLogs: ApprenticeEntry;
   jobNotes: JobNote;
+  reminders: Reminder;
 }
 
 export const SCHEMA_VERSION = 1;

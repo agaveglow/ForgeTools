@@ -26,7 +26,7 @@ The home screen opens five areas. Every page belongs to exactly one. The Toolbox
 
 | Area | Pages |
 | --- | --- |
-| **Today** | Daily jobs, Daily workflow, Tasks, Task board, Check guides, Response times |
+| **Today** | Daily jobs, Daily workflow, Tasks, Task board, Check guides, Response times, Reminders |
 | **Fix & guides** | Guide agent, Troubleshooting, Guide library (procedures, study, troubleshooting flows and your own guides), Commands, Printer guides, Security checklist, Toolbox |
 | **Notes** | Live notes, Work logs, Voice notes, Import documents, Files |
 | **Learning** | Apprenticeship, Requirements, Skills profile |
@@ -146,6 +146,14 @@ Built for work where customer details must not be stored.
 ### Daily jobs
 
 **Daily jobs** is the page for the general jobs of the day, next to your daily checks. The starting list is: clock in on your clocking-in system, check Outlook emails, check your ticketing system tickets, clock out on your clocking-in system. Edit it to suit: add, rename, reorder or delete jobs. Once-a-day jobs can note the time you ticked them. "Keep watching" jobs (inbox, ticket queue) show when you last checked and turn amber when you are past your chosen interval. The page never connects to your clocking-in system, Outlook or your ticketing system: the ticks and times are your own, kept on this device, and clear themselves the next day. The reminder only shows while the page is open.
+
+### Reminders
+
+**Reminders** are local notifications, one-off or repeating (daily, weekdays, weekly). Nothing is sent anywhere and there is no account. What actually happens depends on how you're using the app, and the page says which applies:
+- **Installed app (the APK):** a native Android notification, scheduled by the phone itself, so it still fires if ForgeTools is closed or the phone is asleep. The first time, Android will ask permission to show notifications; turn it on from the page if you missed that prompt. Every reminder is re-sent to the phone's scheduler each time you open the app (including after a restart), so nothing is silently lost.
+- **The website, in any browser:** a reminder can only pop up while that tab is open in front of you. Closing the tab, or the browser going to sleep in the background, stops it. This is a real limit of browsers, not a bug — install the app for reminders that keep working when closed.
+
+Reminder text shows in the phone's notification tray, and on the installed app is hidden on a locked screen behind a generic "Reminder" placeholder, since this is work-related and the phone may be glanced at by someone else. Titles and notes go through the same check as everywhere else and are blocked from saving while they look like they hold customer details.
 
 ### Daily workflow
 

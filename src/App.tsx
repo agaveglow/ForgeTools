@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { clsx } from './lib/util';
 import { folderPlugin, syncNow } from './lib/folderSync';
@@ -18,6 +18,9 @@ import { applyLook } from './lib/look';
 import { LivePage } from './pages/LivePage';
 import { CheckGuidePage, ChecksPage } from './pages/ChecksPage';
 import { TodayPage } from './pages/TodayPage';
+import { RemindersPage } from './pages/RemindersPage';
+import { isNativeApp, syncAll } from './lib/reminderBridge';
+import { dueReminders, nextOccurrence } from './lib/reminders';
 import { AllAppsPage, AreaHub } from './pages/AreasPage';
 import { Icon } from './ui/Bubble';
 import { areaOfPath, parentPath } from './lib/areas';
@@ -103,6 +106,7 @@ function route(path: string): ReactNode {
   if ((p = match('/kb/:id/edit', path))) return <KbEditor id={p.id} key={p.id} />;
   if ((p = match('/kb/:id', path))) return <KbDetail id={p.id} />;
   if (path === '/skills') return <SkillsPage />;
+  if (path === '/reminders') return <RemindersPage />;
   if (path === '/settings') return <SettingsPage />;
   return (
     <div className="max-w-md mx-auto text-center py-16">
@@ -216,12 +220,41 @@ function useAutoLock() {
   }, [v, v.state, mins]);
 }
 
+/**
+ * Re-arms every enabled reminder with the OS scheduler once the app opens and is unlocked, so a phone restart or
+ * a stale alarm never silently loses one. In the browser (no OS scheduler), checks every 20 seconds instead and
+ * pops a browser notification while this tab stays open — the honest limit explained on the Reminders page.
+ */
+function useRemindersSync() {
+  const v = useVault();
+  const list = useCollection('reminders');
+  const native = isNativeApp();
+  useEffect(() => { if (v.state === 'unlocked' && native) void syncAll(list); }, [v.state, native, list]);
+  const fired = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (v.state !== 'unlocked' || native) return;
+    const tick = () => {
+      const now = new Date();
+      for (const r of dueReminders(list, now)) {
+        const key = r.id + '@' + nextOccurrence(r.at, r.repeat, new Date(now.getTime() - 60_000))?.getTime();
+        if (fired.current.has(key)) continue;
+        fired.current.add(key);
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') new Notification(r.title, { body: r.text, tag: r.id });
+      }
+    };
+    tick();
+    const t = setInterval(tick, 20_000);
+    return () => clearInterval(t);
+  }, [v.state, native, list]);
+}
+
 function Shell() {
   const { appName } = useSettings();
   const hasOpenNote = useCollection('jobNotes').some((n) => n.status === 'open');
   const vaultState = useVault().state;
   useAutoLock();
   useFolderSync();
+  useRemindersSync();
   const path = usePath();
   const [searchOpen, setSearchOpen] = useState(false);
 

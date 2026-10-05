@@ -26,11 +26,23 @@ jobs:
           sed -i 's/android:allowBackup="true"/android:allowBackup="false"/' $f
           sed -i 's/<application/<application android:usesCleartextTraffic="false"/' $f
           grep -n "allowBackup\|usesCleartextTraffic" $f
-      - name: Add the folder-backup plugin
+      - name: Add the reminders permission and receiver
+        run: |
+          f=android/app/src/main/AndroidManifest.xml
+          python3 - "$f" <<'PYEOF'
+          import re, sys
+          p = sys.argv[1]
+          s = open(p).read()
+          s = re.sub(r'(<manifest[^>]*>)', r'\1\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />', s, count=1)
+          s = s.replace('</application>', '    <receiver android:name=".ReminderReceiver" android:exported="false" />\n  </application>')
+          open(p, 'w').write(s)
+          PYEOF
+          grep -n "POST_NOTIFICATIONS\|ReminderReceiver" $f
+      - name: Add the folder-backup and reminders plugins
         run: |
           d=android/app/src/main/java/app/forgetools/mobile
           mkdir -p "$d"
-          cp native/android/FolderSyncPlugin.java native/android/MainActivity.java "$d/"
+          cp native/android/FolderSyncPlugin.java native/android/MainActivity.java native/android/RemindersPlugin.java native/android/ReminderReceiver.java "$d/"
       - run: npx cap sync android
       - name: Build release APK
         working-directory: android
