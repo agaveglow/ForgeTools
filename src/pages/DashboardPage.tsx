@@ -24,7 +24,7 @@ import { summarise } from './SecurityPage';
 import { TaskRow } from './TasksPage';
 
 const QUICK: Array<[string, string]> = [
-  ['+ Work log', '/logs/new'], ['Guide agent', '/agent'], ['Voice note', '/voice'], ['Import doc', '/import'], ['Troubleshoot', '/troubleshoot'], ['Security', '/security'], ['Commands', '/commands'], ['Notes', '/kb'],
+  ['+ Work log', '/logs/new'], ['Find a guide', '/agent'], ['Voice note', '/voice'], ['Import doc', '/import'], ['Troubleshoot', '/troubleshoot'], ['Security', '/security'], ['Commands', '/commands'], ['Notes', '/kb'],
 ];
 const DAY = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -242,7 +242,7 @@ function FullDashboard() {
     ),
     guides: (title) => (
       <>
-        <SectionTitle action={link('/agent', 'Guide agent')}>{title}</SectionTitle>
+        <SectionTitle action={link('/agent', 'Find a guide')}>{title}</SectionTitle>
         {guides.length === 0 ? <Empty title="No saved guides.">Ask the guide agent and save the result.</Empty> : (
           <ul className="space-y-2">{guides.map((g) => <li key={g.id}><Link to={`/kb/${g.id}`} className="block bg-surface border border-line rounded-md p-3 hover:bg-surface2"><span className="text-sm font-medium wrap-any">{g.title}</span><span className="block text-xs text-muted">{g.category} · {timeAgo(g.updatedAt)}</span></Link></li>)}</ul>
         )}

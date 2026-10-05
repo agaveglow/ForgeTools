@@ -207,6 +207,21 @@ async function run(label, viewport) {
     ok((await p.getByText('generated').count()) > 0, 'KB entry tagged generated (url ' + p.url() + ')');
   });
 
+  await step(S('find a guide: asking twice replaces the answer, not a growing chat thread'), async () => {
+    await go('/agent');
+    await p.getByLabel('What do you need?').fill('Ricoh printer jams when printing from tray 2');
+    await p.getByRole('button', { name: 'Generate guide' }).click();
+    await p.getByRole('heading', { level: 2 }).first().waitFor({ state: 'visible', timeout: 3000 });
+    await p.getByRole('button', { name: 'What should I check first?' }).click();
+    await p.getByTestId('agent-answer').waitFor({ state: 'visible', timeout: 3000 });
+    ok((await p.getByTestId('agent-answer').count()) === 1, 'one answer panel');
+    await p.getByRole('button', { name: 'What are the risks?' }).click();
+    await p.waitForTimeout(100);
+    ok((await p.getByTestId('agent-answer').count()) === 1, 'still one panel after a second question, not a thread');
+    ok((await p.getByTestId('agent-answer').getByText('What should I check first?').count()) === 0, 'first question no longer shown');
+    ok((await p.getByTestId('agent-answer').getByText('What are the risks?').count()) === 1, 'latest question shown instead');
+  });
+
   await step(S('visual guide: diagram, animated player, photos attach with confirmation'), async () => {
     await go('/agent');
     await p.getByLabel('What do you need?').fill('Ricoh printer jams when printing from tray 2');

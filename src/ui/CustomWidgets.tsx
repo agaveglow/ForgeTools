@@ -8,7 +8,7 @@ import { parseYmd, ymd } from '../lib/progress';
 import { ColourField } from './ColourField';
 
 export const LINK_TARGETS: Array<[string, string]> = [
-  ['Tasks', '/tasks'], ['Task board', '/board'], ['Live notes', '/live'], ['Work logs', '/logs'], ['New work log', '/logs/new'], ['Guide agent', '/agent'], ['Voice notes', '/voice'],
+  ['Tasks', '/tasks'], ['Task board', '/board'], ['Live notes', '/live'], ['Work logs', '/logs'], ['New work log', '/logs/new'], ['Find a guide', '/agent'], ['Voice notes', '/voice'],
   ['Import documents', '/import'], ['Troubleshoot', '/troubleshoot'], ['Commands', '/commands'], ['Security', '/security'], ['Notes', '/kb'], ['Requirements', '/requirements'], ['Apprenticeship', '/apprenticeship'], ['Skills', '/skills'],
 ];
 

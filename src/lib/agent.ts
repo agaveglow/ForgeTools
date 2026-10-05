@@ -1,5 +1,5 @@
 /**
- * Guide agent: a local, grounded assistant for on-the-fly questions and guides.
+ * Find a guide: a local, grounded search over fixed content for on-the-fly questions and guides.
  *
  * Describe a problem or ask how to do something ("how do I clear a stuck print queue", "what does sfc /scannow do",
  * "Ricoh tray 2 keeps jamming") and it builds a step-by-step guide from the built-in troubleshooting library,

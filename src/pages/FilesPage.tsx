@@ -28,7 +28,7 @@ export function FilesPage() {
       <PageHeader title="Files" sub={`Guides, transcripts and backups you have created, kept in ${where}.`} />
       {files().kind !== 'native' && !isNativeApp() && <p className="text-xs text-muted mb-3" role="note">In the phone app these are real files in the app’s private storage. In a browser they are kept in browser storage and can be cleared with site data, so download anything important.</p>}
       {msg && <p role="status" className="text-sm text-warn mb-2">{msg}</p>}
-      {list === null ? <p className="text-sm text-muted">Loading…</p> : list.length === 0 ? <Empty title="No files yet.">Save a guide from the Guide agent or Voice notes, or export a backup in Settings.</Empty> : (
+      {list === null ? <p className="text-sm text-muted">Loading…</p> : list.length === 0 ? <Empty title="No files yet.">Save a guide from Find a guide or Voice notes, or export a backup in Settings.</Empty> : (
         <>
           <p className="text-sm text-muted mb-2">{plural(list.length, 'file')}</p>
           <ul className="space-y-2">

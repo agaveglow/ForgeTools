@@ -14,7 +14,7 @@ export const AREAS: Area[] = [
     { to: '/reminders', label: 'Reminders', blurb: 'Local, one-off or repeating', icon: 'clock' },
   ] },
   { id: 'fix', to: '/a/fix', label: 'Fix & guides', blurb: 'Find the steps for a job or a fault.', icon: 'tools', hue: 'warn', pages: [
-    { to: '/agent', label: 'Guide agent', blurb: 'Ask how to do something', icon: 'spark' },
+    { to: '/agent', label: 'Find a guide', blurb: 'Search your library for a how-to', icon: 'spark' },
     { to: '/troubleshoot', label: 'Troubleshooting', blurb: 'Step-by-step fault finding', icon: 'search' },
     { to: '/guides', label: 'Guide library', blurb: 'Procedures, study, troubleshooting and your own, with photos', icon: 'book' },
     { to: '/commands', label: 'Commands', blurb: 'What each command does', icon: 'terminal' },

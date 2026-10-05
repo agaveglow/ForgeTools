@@ -27,7 +27,7 @@ The home screen opens five areas. Every page belongs to exactly one. The Toolbox
 | Area | Pages |
 | --- | --- |
 | **Today** | Daily jobs, Daily workflow, Tasks, Task board, Check guides, Response times, Reminders |
-| **Fix & guides** | Guide agent, Troubleshooting, Guide library (procedures, study, troubleshooting flows and your own guides), Commands, Printer guides, Security checklist, Toolbox |
+| **Fix & guides** | Find a guide, Troubleshooting, Guide library (procedures, study, troubleshooting flows and your own guides), Commands, Printer guides, Security checklist, Toolbox |
 | **Notes** | Live notes, Work logs, Voice notes, Import documents, Files |
 | **Learning** | Apprenticeship, Requirements, Skills profile |
 | **Settings** | Appearance, Security, Backup (including the encrypted folder copy), Voice transcription, Privacy, Erase |
@@ -173,11 +173,11 @@ The dashboard is built for tracking your own progress: today's daily routine and
 
 ## Fix and guides
 
-### Guide agent
+### Find a guide
 
-`src/lib/agent.ts` + `src/pages/AgentPage.tsx`. Type a how-to, a command or a problem. It matches your troubleshooting library, command reference, Knowledge base notes and past logs and builds a guide with sources. You can ask follow-ups ("what should I check first?", "what are the risks?", "which commands?"); when nothing matches it says so instead of guessing. **Save guide** stores it in the Knowledge base (tag `generated`) and as a file in Files. **Look it up online** searches the vendor documentation site and can add a cited, dated section from a page, labelled as external and unchecked.
+`src/lib/agent.ts` + `src/pages/AgentPage.tsx`. A local, instant **search over fixed content** — your troubleshooting library, command reference, Knowledge base notes and past logs — that builds a guide with sources. It is deliberately **not** a chat: it is rules-based, never guesses, works with no signal, and when nothing matches it says so plainly. For open-ended help, writing or reasoning, a chat with Claude is the better tool, and the page says so. "Ask about this guide" is a single lookup against the same material (each question replaces the previous answer, not a growing thread). **Save guide** stores it in the Knowledge base (tag `generated`) and as a file. **Look it up online** searches the vendor documentation site and can add a cited, dated, external section.
 
-It is local and rules-based, not a language model. To add a real model, implement `AgentProvider` and keep the save guard in front of anything sent off-device.
+Design note: this used to be framed as an "agent" that competed with just asking Claude in chat, which it always loses. It is now scoped to what a chat can't do — offline, instant, deterministic, and grounded only in your own saved material.
 
 The guide agent only offers a library guide when it really covers what you asked, not just because one word (such as "Outlook") matches. It now also searches the built-in Procedures and Study library, so a request like "how to whitelist a domain in Outlook" finds the built-in allow-list procedure. When nothing covers the request it says so, names the words nothing matched, lists loosely related guides as "related, not the answer", and asks a few questions (the job, the area, whether admin rights are needed, the steps if you know them, how you know it worked, what to watch for). **Build my guide** then assembles a new guide from your own answers; it never invents steps, and with no steps typed it makes an outline and says the steps are still to be added. You can then add pages from the online lookup, save it to the Knowledge base, and it appears under **Procedures > Your own guides**.
 

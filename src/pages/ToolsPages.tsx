@@ -77,7 +77,7 @@ export function ToolsHub() {
           </ul>
         </section>
       ) }))} />
-      {!ql && <p className="text-sm text-muted border-t border-dashed border-line pt-3">Looking for something else? Step-by-step jobs are in <Link to="/procedures" className="underline">Procedures</Link>, fault finding in <Link to="/troubleshoot" className="underline">Troubleshooting</Link>, asking how to do something in the <Link to="/agent" className="underline">Guide agent</Link>, and study material in the <Link to="/library" className="underline">Study library</Link>.</p>}
+      {!ql && <p className="text-sm text-muted border-t border-dashed border-line pt-3">Looking for something else? Step-by-step jobs are in <Link to="/procedures" className="underline">Procedures</Link>, fault finding in <Link to="/troubleshoot" className="underline">Troubleshooting</Link>, searching your library in <Link to="/agent" className="underline">Find a guide</Link>, and study material in the <Link to="/library" className="underline">Study library</Link>.</p>}
     </div>
   );
 }

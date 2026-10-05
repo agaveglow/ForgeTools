@@ -147,7 +147,7 @@ function Builder({ analysis, text, onBuild, onOutline }: { analysis: TopicAnalys
 }
 
 export function AgentPage() {
-  useTitle('Guide agent');
+  useTitle('Find a guide');
   const logs = useCollection('workLogs');
   const kb = useCollection('kbEntries');
   const saved = kb.filter((k) => k.tags.includes('generated')).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
@@ -178,7 +178,7 @@ export function AgentPage() {
   const ask = async (question: string) => {
     if (!analysis || !question.trim()) return;
     const answer = await localAgent.answer(question, analysis, ctx);
-    setMsgs((m) => [...m, { id: nextId.current++, role: 'you', text: question }, { id: nextId.current++, role: 'agent', answer }]);
+    setMsgs([{ id: nextId.current++, role: 'you', text: question }, { id: nextId.current++, role: 'agent', answer }]);
     setQ('');
     if (readAnswers) { const r = speak(answer.blocks.map((b) => [b.heading, ...b.lines].filter(Boolean).join('. ')).join('. ')); if (!r.ok) { setReadAnswers(false); setVoiceMsg(speakFailMessage(r)); } else setVoiceMsg(''); }
     setTimeout(() => document.getElementById('agent-end')?.scrollIntoView({ block: 'nearest' }), 30);
@@ -218,10 +218,10 @@ export function AgentPage() {
 
   return (
     <div className="max-w-3xl pb-10">
-      <PageHeader title="Guide agent" sub="Ask how to do something or describe a problem. Get a guide and keep it." actions={analysis ? <Button onClick={reset}>New question</Button> : undefined} />
+      <PageHeader title="Find a guide" sub="Searches your own library, not a chat. Get a guide built from fixed content and keep it." actions={analysis ? <Button onClick={reset}>New search</Button> : undefined} />
       <Blocks pageKey="AgentPage" group="AgentPage" className="space-y-4">
         <Block title="Note">
-      <p className="text-xs text-muted mb-3" role="note">The guide is built on this device from your troubleshooting library, command reference, notes and past logs. It is not a cloud AI and does not diagnose. The optional web lookup below is the only part that uses the internet.</p>
+      <p className="text-xs text-muted mb-3" role="note">This only searches what is fixed and built in: your troubleshooting library, command reference, notes and past logs. It is not a cloud AI, it never guesses, and it is instant and works with no signal. If it says nothing matches, that is honest — it means the library doesn't cover it, not that the answer doesn't exist. For anything open-ended, ask Claude in a chat instead. The optional web lookup below is the only part that uses the internet.</p>
         </Block>
         <Block title="Examples">
       <Card className="p-4 space-y-3">
@@ -270,18 +270,17 @@ export function AgentPage() {
           <div className="mt-4"><WebLookup key={guide.title} initial={text} onAdd={addWeb} /></div>
 
           <div className="mt-4">
-            <SectionTitle>Ask a follow-up</SectionTitle>
+            <SectionTitle>Ask about this guide</SectionTitle>
+            <p className="text-xs text-muted mb-2">A single lookup against the same fixed material, not a conversation — each question replaces the last answer rather than building a thread.</p>
             <div className="flex gap-1.5 flex-wrap mb-2">{FOLLOW_UPS.map((s) => <button key={s} type="button" onClick={() => ask(s)} className="min-h-9 px-3 rounded-sm border border-line bg-surface text-sm hover:bg-surface2">{s}</button>)}</div>
-            <ul className="space-y-2" aria-live="polite">
-              {msgs.map((m) => (
-                <li key={m.id} className={m.role === 'you' ? 'flex justify-end' : ''}>
-                  {m.role === 'you' ? <p className="max-w-[85%] rounded-md bg-accent text-accent-ink px-3 py-2 text-sm wrap-any">{m.text}</p>
-                    : <Card className="p-3 max-w-full">{m.answer && <AnswerView a={m.answer} />}</Card>}
-                </li>
-              ))}
-            </ul>
+            {msgs.length > 0 && (
+              <div aria-live="polite" data-testid="agent-answer">
+                <p className="text-sm font-medium text-muted mb-1">{msgs[0].text}</p>
+                <Card className="p-3 max-w-full">{msgs[1]?.answer && <AnswerView a={msgs[1].answer} />}</Card>
+              </div>
+            )}
             <form className="flex gap-2 mt-2" onSubmit={(e: { preventDefault(): void }) => { e.preventDefault(); ask(q); }}>
-              <TextInput aria-label="Ask a follow-up question" placeholder="Ask a follow-up…" value={q} onChange={(e: { target: { value: string } }) => setQ(e.target.value)} />
+              <TextInput aria-label="Ask a follow-up question" placeholder="Ask about this guide…" value={q} onChange={(e: { target: { value: string } }) => setQ(e.target.value)} />
               <Button variant="primary" type="submit" disabled={!q.trim()}>Ask</Button>
               {dictationSupported() && <Button onClick={listen} aria-pressed={listening} variant={listening ? 'danger' : 'secondary'} aria-label={listening ? 'Stop listening' : 'Ask by voice'}>{listening ? '■' : '🎤'}</Button>}
             </form>
