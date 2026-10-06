@@ -50,6 +50,7 @@ export function CommandsPage({ id }: { id?: string }) {
   useTitle('Command reference');
   const [q, setQ] = useState('');
   const [group, setGroup] = useState<'All' | CommandGroup>('All');
+  const [shell, setShell] = useState<'All' | 'cmd' | 'powershell'>('All');
   const [open, setOpen] = useState<string | undefined>(id);
   useEffect(() => {
     setOpen(id);
@@ -60,19 +61,32 @@ export function CommandsPage({ id }: { id?: string }) {
   }, [id]);
   const rows = useMemo(() => {
     const words = q.toLowerCase().split(/\s+/).filter(Boolean);
-    return COMMANDS.filter((c) => group === 'All' || c.group === group).filter((c) => {
-      if (!words.length) return true;
-      const hay = [c.name, c.purpose, c.syntax, c.group, ...(c.keywords ?? [])].join(' ').toLowerCase();
-      return words.every((w) => hay.includes(w));
-    });
-  }, [q, group]);
+    return COMMANDS
+      .filter((c) => group === 'All' || c.group === group)
+      .filter((c) => shell === 'All' || c.shell === shell || c.shell === 'both')
+      .filter((c) => {
+        if (!words.length) return true;
+        const hay = [c.name, c.purpose, c.syntax, c.group, ...(c.keywords ?? [])].join(' ').toLowerCase();
+        return words.every((w) => hay.includes(w));
+      });
+  }, [q, group, shell]);
+  const cmdCount = useMemo(() => COMMANDS.filter((c) => c.shell === 'cmd' || c.shell === 'both').length, []);
+  const psCount = useMemo(() => COMMANDS.filter((c) => c.shell === 'powershell' || c.shell === 'both').length, []);
 
   return (
     <div className="max-w-4xl">
-      <PageHeader title="CMD and PowerShell reference" sub={`${COMMANDS.length} commands. Examples use fictional hosts and names.`} />
+      <PageHeader title="CMD and PowerShell reference" sub={`${COMMANDS.length} commands — ${cmdCount} work in CMD, ${psCount} in PowerShell. Examples use fictional hosts and names.`} />
       <Blocks pageKey="CommandsPage" group="CommandsPage" className="space-y-4">
         <Block title="Search commands">
       <TextInput type="search" aria-label="Search commands" placeholder="Search commands, e.g. dns, spooler, bitlocker…" value={q} onChange={(e: { target: { value: string } }) => setQ(e.target.value)} />
+        </Block>
+        <Block title="CMD or PowerShell">
+      <div className="flex gap-1.5 py-2 -mx-1 px-1" role="group" aria-label="Filter by shell">
+        <Chip active={shell === 'All'} onClick={() => setShell('All')}>Both shells</Chip>
+        <Chip active={shell === 'cmd'} onClick={() => setShell('cmd')}>CMD</Chip>
+        <Chip active={shell === 'powershell'} onClick={() => setShell('powershell')}>PowerShell</Chip>
+      </div>
+      <p className="text-xs text-muted -mt-1">Commands marked “CMD + PowerShell” run in either, so they show under both.</p>
         </Block>
         <Block title="Filter by group">
       <div className="flex gap-1.5 overflow-x-auto py-2 -mx-1 px-1" role="group" aria-label="Filter by group">

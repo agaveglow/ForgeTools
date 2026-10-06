@@ -191,6 +191,10 @@ Fix & guides → **Guide library** (`/guides`) is one list for every guide: the 
 - Troubleshooting flows are interactive and open as they are; they are not editable.
 - The old addresses (`/procedures`, `/library`, `/kb`) still work.
 
+### Commands (CMD and PowerShell reference)
+
+`src/content/commands.ts` + `src/pages/CommandsPage.tsx`. 138 Windows and Microsoft 365 commands grouped into Networking, Windows, Users & Access, Disk & Storage, Security, Printing and Microsoft 365. Each entry has the syntax, a copy-pasteable example (fictional hosts and names only), what it does, what healthy and unhealthy output look like, when to use it, a plain risk statement, and a risk badge (read-only / changes state / can disrupt or lose data). Destructive ones (for example `robocopy /MIR`, `shutdown /f`, `Restart-Computer -Force`) are flagged and the risk text says what to check first. A **CMD / PowerShell** filter splits the list by shell: commands that run in either are tagged "CMD + PowerShell" and appear under both. There is also a group filter and a search box. ForgeTools never executes anything — this is copy-only reference. A content validator checks every entry has all fields and that related-command links resolve, and a unit test checks there are no employer, customer or vendor names and no secrets.
+
 ### Procedures
 
 Fix & guides → **Procedures** has eight step-by-step jobs (ticket routine, new PC handover, taking over a device, adding a printer by IP, MFA reset, freeing disk space, client discovery, safe remote network changes) with tickable steps and copyable note templates. Learning → **Study library** has plain-English references (networking, ports, how a copier makes a copy, paper path, service documents, Windows evidence tools). Requirements → **Suggested learning goals** adds a general ten-stage apprenticeship roadmap on request. All of it is written from scratch as general practice: no employer, customer, vendor-platform or training-provider names, no addresses and no credentials. A unit test checks that stays true. Ticks in procedures are for the visit only and are not saved.

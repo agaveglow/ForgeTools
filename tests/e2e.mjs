@@ -167,6 +167,26 @@ async function run(label, viewport) {
     await p.getByText(/Copied|Copy failed/).first().waitFor({ state: 'visible', timeout: 3000 });
   });
 
+  await step(S('commands: CMD / PowerShell shell split filters the list'), async () => {
+    await go('/commands');
+    const count = async () => p.locator('ul > li #cmd-ipconfig, [id^=cmd-]').count();
+    const all = await p.locator('[id^=cmd-]').count();
+    ok(all > 100, 'more than 100 commands listed by default: ' + all);
+    // PowerShell only: a powershell command shows, a cmd-only command does not
+    await p.getByRole('group', { name: 'Filter by shell' }).getByRole('button', { name: 'PowerShell' }).click();
+    await p.waitForTimeout(150);
+    ok((await p.locator('#cmd-get-netadapter').count()) === 1, 'PowerShell cmdlet shown under PowerShell');
+    ok((await p.locator('#cmd-nbtstat').count()) === 0, 'CMD-only command hidden under PowerShell');
+    ok((await p.locator('#cmd-ipconfig').count()) === 1, 'both-shell command still shown under PowerShell');
+    // CMD only: the reverse
+    await p.getByRole('group', { name: 'Filter by shell' }).getByRole('button', { name: 'CMD', exact: true }).click();
+    await p.waitForTimeout(150);
+    ok((await p.locator('#cmd-nbtstat').count()) === 1, 'CMD command shown under CMD');
+    ok((await p.locator('#cmd-get-netadapter').count()) === 0, 'PowerShell-only command hidden under CMD');
+    ok((await p.locator('#cmd-ipconfig').count()) === 1, 'both-shell command still shown under CMD');
+    await noHScroll();
+  });
+
   await step(S('security checklist run'), async () => {
     await go('/security');
     await p.getByRole('button', { name: 'New check' }).click();
